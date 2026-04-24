@@ -1,0 +1,9 @@
+@echo off
+echo Starting server...
+start "Test Server" cmd /c "node server.js > server_log.txt 2>&1"
+timeout /t 3 /nobreak >nul
+echo Running test request...
+node test_500.js
+echo Killing server...
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8000') do taskkill /F /PID %%a 2>nul
+type server_log.txt

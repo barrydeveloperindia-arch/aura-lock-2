@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+supabase
+face-recognition
+pillow
+numpy
+python-dotenv
+httpx
+python-multipart
+google-generativeai

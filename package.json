@@ -1,0 +1,22 @@
+{
+  "name": "smart-door-lock",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently -n \"BACKEND,BIOMETRIC,FRONTEND,ADMIN\" -c \"bgBlue.bold,bgGreen.bold,bgMagenta.bold,bgCyan.bold\" \"npm run dev --prefix backend\" \"cd edge && start_biometric_api.bat\" \"npm run dev --prefix frontend\" \"npm run dev --prefix admin-panel\"",
+    "clean": "clean_ports.bat",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.99.1",
+    "axios": "^1.13.6",
+    "dotenv": "^17.3.1"
+  }
+}
