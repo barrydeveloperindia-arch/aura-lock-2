@@ -61,7 +61,7 @@ function MethodBadge({ method }) {
     const isFace = method === 'face';
     return (
         <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border
-            ${isFace ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-purple-500/10 border-purple-500/20 text-purple-400'}`}>
+            ${isFace ? 'bg-blue-500/10 border-blue-500/20 text-emerald-500' : 'bg-purple-500/10 border-purple-500/20 text-purple-400'}`}>
             {isFace ? <ScanFace className="w-3 h-3" /> : <Fingerprint className="w-3 h-3" />}
             {method || '—'}
         </div>
@@ -79,7 +79,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
             onClick={() => onSort(col)}>
             <div className="flex items-center gap-1.5">
                 {label}
-                <Icon className={`w-3 h-3 transition-colors ${active ? 'text-blue-400' : 'text-slate-700 group-hover:text-slate-500'}`} />
+                <Icon className={`w-3 h-3 transition-colors ${active ? 'text-emerald-500' : 'text-slate-700 group-hover:text-slate-500'}`} />
             </div>
         </th>
     );
@@ -274,7 +274,7 @@ export default function Attendance() {
     const checkedOut = attendance.filter(r => r.check_out).length;
     const onTimeCount = attendance.filter(r => r.status === 'ON_TIME').length;
 
-    const inputCls = 'w-full bg-slate-950 border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/30 transition-colors';
+    const inputCls = 'w-full bg-white border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500/30 transition-colors';
     const selCls = `${inputCls} appearance-none cursor-pointer`;
 
     return (
@@ -283,20 +283,20 @@ export default function Attendance() {
             {/* ── Header ── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tighter">Attendance Registry</h1>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 tracking-tighter">Attendance Registry</h1>
                     <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">
-                        Verified Presence // <span className="text-blue-400">{totalRecords}</span> Records
+                        Verified Presence // <span className="text-emerald-500">{totalRecords}</span> Records
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button onClick={handleExportPdf} disabled={exportingPdf}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-rose-600/80 hover:bg-rose-600 disabled:opacity-60 disabled:cursor-not-allowed border border-rose-500/40 rounded-xl text-white text-xs font-black shadow-lg shadow-rose-600/20 transition-all">
+                        className="flex items-center gap-2 px-5 py-2.5 bg-rose-600/80 hover:bg-rose-600 disabled:opacity-60 disabled:cursor-not-allowed border border-rose-500/40 rounded-xl text-slate-900 text-xs font-black shadow-lg shadow-rose-600/20 transition-all">
                         {exportingPdf
                             ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
                             : <><FileText className="w-4 h-4" /> Export PDF</>}
                     </button>
                     <button onClick={handleExport} disabled={exporting}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl text-white text-xs font-black shadow-lg shadow-emerald-600/20 transition-all">
+                        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl text-slate-900 text-xs font-black shadow-lg shadow-emerald-600/20 transition-all">
                         {exporting
                             ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
                             : <><Download className="w-4 h-4" /> Export Excel</>}
@@ -307,7 +307,7 @@ export default function Attendance() {
             {/* ── Summary Stat Cards ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'Total Records', value: totalRecords, icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
+                    { label: 'Total Records', value: totalRecords, icon: Users, color: 'text-emerald-500', bg: 'bg-blue-500/10 border-blue-500/20' },
                     { label: 'Checked In', value: presentCount, icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
                     { label: 'On Time', value: onTimeCount, icon: CheckCircle2, color: 'text-teal-400', bg: 'bg-teal-500/10 border-teal-500/20' },
                     { label: 'Late', value: lateCount, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
@@ -326,7 +326,7 @@ export default function Attendance() {
             </div>
 
             {/* ── Filter Bar ── */}
-            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] space-y-4">
+            <div className="p-5 rounded-2xl bg-white border-slate-200 space-y-4">
 
                 {/* Quick Date Presets */}
                 <div className="flex items-center gap-2 flex-wrap">
@@ -335,8 +335,8 @@ export default function Attendance() {
                         <button key={key} onClick={() => applyPreset(key)}
                             className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border
                                 ${activePreset === key
-                                    ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20'
-                                    : 'bg-white/[0.03] border-white/[0.06] text-slate-500 hover:text-white hover:border-white/10'}`}>
+                                    ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/20'
+                                    : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900 hover:border-slate-300'}`}>
                             {label}
                         </button>
                     ))}
@@ -411,7 +411,7 @@ export default function Attendance() {
                 {hasActiveFilter && (
                     <div className="flex flex-wrap gap-2 pt-1">
                         {searchInput && (
-                            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-lg text-[10px] font-bold">
+                            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 text-emerald-500 rounded-lg text-[10px] font-bold">
                                 Name: "{searchInput}"
                                 <button onClick={() => setSearchInput('')}><X className="w-2.5 h-2.5" /></button>
                             </span>)}
@@ -433,11 +433,11 @@ export default function Attendance() {
             </div>
 
             {/* ── Table ── */}
-            <div className="rounded-3xl bg-white/[0.02] border border-white/[0.05] overflow-hidden">
+            <div className="rounded-3xl bg-white border-slate-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="border-b border-white/[0.03] bg-white/[0.01]">
+                            <tr className="border-b border-slate-200 bg-slate-50">
                                 <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Employee</th>
                                 <th className="hidden lg:table-cell px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Department</th>
                                 <SortTh label="Date" col="date" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-center" />
@@ -448,7 +448,7 @@ export default function Attendance() {
                                 <th className="hidden md:table-cell px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Method</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/[0.025]">
+                        <tbody className="divide-y divide-slate-200">
                             {loading ? (
                                 Array(5).fill(0).map((_, i) => (
                                     <tr key={i} className="animate-pulse">
@@ -468,7 +468,7 @@ export default function Attendance() {
                                                 No records match the selected filters
                                             </div>
                                             <button onClick={resetFilters}
-                                                className="text-[10px] text-blue-400 hover:underline font-bold">
+                                                className="text-[10px] text-emerald-500 hover:underline font-bold">
                                                 Clear filters
                                             </button>
                                         </div>
@@ -479,18 +479,18 @@ export default function Attendance() {
                                 const initials = name.slice(0, 2).toUpperCase();
                                 return (
                                     <tr key={rec.id} 
-                                        className="group hover:bg-white/[0.04] cursor-pointer transition-all border-l-2 border-l-transparent hover:border-l-blue-500"
+                                        className="group hover:bg-slate-50 cursor-pointer transition-all border-l-2 border-l-transparent hover:border-l-blue-500"
                                         onClick={() => navigate(`/admin/attendance/employee/${rec.employees?.employee_id || rec.employee_id}`)}>
                                         {/* Employee */}
                                         <td className="px-4 md:px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/20 to-slate-800 border border-white/[0.06] flex items-center justify-center text-[10px] md:text-[11px] font-black text-blue-400 overflow-hidden">
+                                                <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/20 to-slate-800 border border-white/[0.06] flex items-center justify-center text-[10px] md:text-[11px] font-black text-emerald-500 overflow-hidden">
                                                     {rec.employees?.image_url
                                                         ? <img src={rec.employees.image_url} alt="" className="w-full h-full object-cover" />
                                                         : initials}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <div className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors whitespace-nowrap truncate">
+                                                    <div className="text-sm font-bold text-slate-900 group-hover:text-emerald-500 transition-colors whitespace-nowrap truncate">
                                                         {name}
                                                     </div>
                                                     <div className="text-[9px] md:text-[10px] font-mono text-slate-500 truncate">
@@ -536,7 +536,7 @@ export default function Attendance() {
 
                                         {/* Working Hours */}
                                         <td className="hidden xl:table-cell px-6 py-4 text-center">
-                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-950 border border-white/[0.05] text-xs font-black text-white tabular-nums">
+                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-950 border border-white/[0.05] text-xs font-black text-slate-900 tabular-nums">
                                                 <Clock className="w-3 h-3 text-slate-600" />
                                                 {workHoursDisplay(rec)}
                                             </div>
@@ -559,19 +559,19 @@ export default function Attendance() {
                 </div>
 
                 {/* ── Pagination ── */}
-                <div className="px-8 py-5 border-t border-white/[0.03] flex items-center justify-between gap-4">
+                <div className="px-8 py-5 border-t border-slate-200 flex items-center justify-between gap-4">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                         Showing&nbsp;
-                        <span className="text-white">{((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalRecords)}</span>
+                        <span className="text-slate-900">{((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalRecords)}</span>
                         &nbsp;of&nbsp;
-                        <span className="text-white">{totalRecords}</span>
+                        <span className="text-slate-900">{totalRecords}</span>
                         &nbsp;records
                     </p>
 
                     <div className="flex items-center gap-2">
                         <button disabled={page === 1}
                             onClick={() => setPage(p => Math.max(1, p - 1))}
-                            className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-white disabled:opacity-20 transition-all">
+                            className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-slate-900 disabled:opacity-20 transition-all">
                             <ChevronLeft className="w-4 h-4" />
                         </button>
 
@@ -585,8 +585,8 @@ export default function Attendance() {
                                 <button key={p} onClick={() => setPage(p)}
                                     className={`w-8 h-8 rounded-xl text-xs font-black transition-all
                                         ${p === page
-                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                                            : 'bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-white'}`}>
+                                            ? 'bg-blue-600 text-slate-900 shadow-lg shadow-blue-600/20'
+                                            : 'bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-slate-900'}`}>
                                     {p}
                                 </button>
                             );
@@ -594,7 +594,7 @@ export default function Attendance() {
 
                         <button disabled={page >= (totalPages || 1)}
                             onClick={() => setPage(p => p + 1)}
-                            className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-white disabled:opacity-20 transition-all">
+                            className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-slate-900 disabled:opacity-20 transition-all">
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>

@@ -6,13 +6,18 @@ param (
 
 $ErrorActionPreference = "Stop"
 
+# Set Environment Variables for Android Studio Bundled Tools
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$env:Path += ";$env:JAVA_HOME\bin"
+
 # 1. Configuration Constants
 $PROJECT_ROOT = Get-Location
 $TERMINAL_DIR = Join-Path $PROJECT_ROOT "terminal-app"
 $ASSETS_BASE = Join-Path $TERMINAL_DIR "assets"
 $ASSETS_DIR = Join-Path $ASSETS_BASE "builds"
 $TIMESTAMP = Get-Date -Format "yyyyMMdd-HHmm"
-$PROD_API = "https://smart-door-backend-50851729985.asia-south1.run.app"
+$PROD_API = "http://192.168.2.117:8000"
 
 Write-Host "--- AuraLock APK Build Factory ---" -ForegroundColor Cyan
 
@@ -33,8 +38,7 @@ if ([string]::IsNullOrWhiteSpace($ApiBase)) {
     if ($Target -eq "production") {
         $ApiBase = $PROD_API
     } else {
-        $ipv4 = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatch "Loopback" -and $_.InterfaceAlias -match "Wi-Fi|Ethernet" }).IPAddress | Select-Object -First 1
-        $ApiBase = "http://$($ipv4):8000"
+        $ApiBase = "http://192.168.2.117:8000"
     }
 }
 Write-Host "Using API: $ApiBase"

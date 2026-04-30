@@ -1,7 +1,7 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
 
-echo 🔍 Checking for Python installation...
+echo ???? Checking for Python installation...
 
 :: Try common Windows User path (Python 3.13)
 if exist "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" (
@@ -41,31 +41,31 @@ if exist "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python.exe" (
     goto FOUND
 )
 
-echo ❌ Python not found in standard paths.
+echo ??? Python not found in standard paths.
 echo Please ensure Python is installed and added to your PATH environment variable.
 echo Or edit this file to include your specific python.exe path.
 pause
 exit /b
 
 :FOUND
-echo ✅ Using Python command: !PY_CMD!
+echo ??? Using Python command: !PY_CMD!
 
-:: --- Kill any stale Python processes on port 8001 to prevent WinError 10048 ---
-echo 🔄 Clearing port 8001 of any stale processes...
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8001"') do (
+:: --- Kill any stale Python processes on port 8003 to prevent WinError 10048 ---
+echo ???? Clearing port 8003 of any stale processes...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8003"') do (
     taskkill /F /PID %%a >nul 2>&1
 )
-echo ✅ Port 8001 is clear. Starting Biometric API...
+echo ??? Port 8003 is clear. Starting Biometric API...
 
 !PY_CMD! biometric_api.py
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo ❌ Server crashed or failed to start.
+    echo ??? Server crashed or failed to start.
     echo Ensuring dependencies are installed...
-    !PY_CMD! -m pip install fastapi uvicorn face_recognition pillow numpy supabase
+    !PY_CMD! -m pip install fastapi uvicorn pillow numpy supabase httpx python-multipart google-generativeai python-dotenv
     echo.
-    echo 🔄 Retrying...
+    echo ???? Retrying...
     !PY_CMD! biometric_api.py
 )
 

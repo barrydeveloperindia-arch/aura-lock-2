@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-    --color-background: #0f172a;
-    --color-text-main: #cbd5e1;
+    --color-background: #f8fafc;
+    --color-text-main: #334155;
 }
 
 @layer base {
     body {
-        @apply bg-[#0f172a] text-[#cbd5e1] antialiased selection:bg-blue-500/30;
+        @apply bg-[#f8fafc] text-[#334155] antialiased selection:bg-emerald-500/30;
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
@@ -17,25 +17,25 @@
     h4,
     h5,
     h6 {
-        color: white;
+        color: #0f172a;
         @apply font-bold tracking-tight;
     }
 }
 
 @layer components {
     .card {
-        @apply bg-[#1f2937] border border-white/5 rounded-2xl shadow-lg p-6;
+        @apply bg-white border border-slate-200/60 rounded-2xl shadow-sm p-6;
     }
 
     .btn-primary {
-        @apply px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50;
+        @apply px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50 shadow-sm shadow-emerald-500/20;
     }
 
     .btn-secondary {
-        @apply px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold transition-all duration-200 active:scale-95;
+        @apply px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition-all duration-200 active:scale-95 border border-slate-200;
     }
 
     .input-field {
-        @apply w-full bg-[#111827] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500/50 transition-all font-medium placeholder:text-slate-600;
+        @apply w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all font-medium placeholder:text-slate-400 shadow-sm;
     }
 }

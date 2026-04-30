@@ -24,7 +24,7 @@ module.exports = {
         {
             name: 'auralock-backend',
             script: 'server.js',
-            cwd: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\backend',
+            cwd: __dirname + '\\backend',
             watch: false,          // don't restart on file changes in prod
             autorestart: true,           // restart if the process crashes
             max_restarts: 20,             // stop trying after 20 consecutive crashes
@@ -33,11 +33,11 @@ module.exports = {
             max_memory_restart: '300M',       // restart if RAM usage exceeds 300MB
             env: {
                 NODE_ENV: 'production',
-                PORT: 8000
+                PORT: 8002
             },
-            log_file: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\logs\\backend-combined.log',
-            out_file: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\logs\\backend-out.log',
-            error_file: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\logs\\backend-err.log',
+            log_file: __dirname + '\\logs\\backend-combined.log',
+            out_file: __dirname + '\\logs\\backend-out.log',
+            error_file: __dirname + '\\logs\\backend-err.log',
             time: true            // timestamp every log line
         },
 
@@ -46,7 +46,7 @@ module.exports = {
             name: 'auralock-engine',
             script: 'biometric_api.py',
             interpreter: 'python',
-            cwd: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\edge',
+            cwd: __dirname + '\\edge',
             watch: false,
             autorestart: true,
             max_restarts: 10,
@@ -55,11 +55,12 @@ module.exports = {
             kill_timeout: 5000,
             max_memory_restart: '1G',
             env: {
-                PYTHONUNBUFFERED: '1'
+                PYTHONUNBUFFERED: '1',
+                PORT: 8003
             },
-            log_file: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\logs\\engine-combined.log',
-            out_file: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\logs\\engine-out.log',
-            error_file: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\logs\\engine-err.log',
+            log_file: __dirname + '\\logs\\engine-combined.log',
+            out_file: __dirname + '\\logs\\engine-out.log',
+            error_file: __dirname + '\\logs\\engine-err.log',
             time: true
         },
 
@@ -67,13 +68,13 @@ module.exports = {
         {
             name: 'auralock-frontend',
             script: 'node_modules/vite/bin/vite.js',
-            cwd: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\frontend',
+            cwd: __dirname + '\\frontend',
             watch: false,
             autorestart: true,
             env: {
                 NODE_ENV: 'development'
             },
-            log_file: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\logs\\frontend-combined.log',
+            log_file: __dirname + '\\logs\\frontend-combined.log',
             time: true
         },
 
@@ -81,13 +82,13 @@ module.exports = {
         {
             name: 'auralock-admin',
             script: 'node_modules/vite/bin/vite.js',
-            cwd: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\admin-panel',
+            cwd: __dirname + '\\admin-panel',
             watch: false,
             autorestart: true,
             env: {
                 NODE_ENV: 'development'
             },
-            log_file: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\logs\\admin-combined.log',
+            log_file: __dirname + '\\logs\\admin-combined.log',
             time: true
         },
 
@@ -95,13 +96,13 @@ module.exports = {
         {
             name: 'auralock-terminal',
             script: 'node_modules/vite/bin/vite.js',
-            cwd: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\terminal-app',
+            cwd: __dirname + '\\terminal-app',
             watch: false,
             autorestart: true,
             env: {
                 NODE_ENV: 'development'
             },
-            log_file: 'c:\\Users\\abrbh\\Documents\\Antigravity\\LockingMech\\logs\\terminal-combined.log',
+            log_file: __dirname + '\\logs\\terminal-combined.log',
             time: true
         }
     ]

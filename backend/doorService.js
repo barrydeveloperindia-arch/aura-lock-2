@@ -93,6 +93,31 @@ function getDeviceInfo() {
     };
 }
 
+/**
+ * Triggers a cache rebuild in the Biometric Engine.
+ */
+async function rebuildCache() {
+    console.log(`🧬 Requesting Biometric Engine to rebuild cache...`);
+    return await runBleCommand('/api/biometrics/cache/rebuild');
+}
+
+/**
+ * Clears access logs from Supabase.
+ */
+async function clearLogs() {
+    console.log(`🗑️ Clearing access logs from database...`);
+    const { createClient } = require('@supabase/supabase-js');
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+    
+    const { error } = await supabase
+        .from('access_logs')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+    if (error) throw new Error(error.message);
+    return { success: true, message: 'Audit logs cleared successfully' };
+}
+
 module.exports = {
     unlockDoor,
     lockDoor,
@@ -100,5 +125,7 @@ module.exports = {
     getDeviceInfo,
     runBleCommand,
     connectBle,
-    disconnectBle
+    disconnectBle,
+    rebuildCache,
+    clearLogs
 };

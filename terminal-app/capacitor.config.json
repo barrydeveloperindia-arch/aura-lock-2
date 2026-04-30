@@ -1,6 +1,6 @@
 {
-    "appId": "com.smartlock.terminal",
-    "appName": "Smart Lock Terminal",
+    "appId": "com.auralock.terminal.v3",
+    "appName": "AuraLock V2",
     "webDir": "dist",
     "server": {
         "androidScheme": "http",

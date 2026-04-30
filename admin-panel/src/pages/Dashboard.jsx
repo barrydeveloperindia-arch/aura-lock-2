@@ -142,7 +142,7 @@ export default function Dashboard() {
             {/* ── Header ── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-white mb-1 md:mb-2 tracking-tighter">Command Center</h1>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-1 md:mb-2 tracking-tighter">Command Center</h1>
                     <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Operational Oversight // AuraLock v2.4</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
@@ -173,7 +173,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* label */}
-                        <div className="text-[11px] sm:text-sm font-bold text-white/90 mb-0.5 leading-tight">{kpi.label}</div>
+                        <div className="text-[11px] sm:text-sm font-bold text-slate-900/90 mb-0.5 leading-tight">{kpi.label}</div>
 
                         {/* sub-label */}
                         <div className="text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase tracking-[0.15em] leading-tight line-clamp-1">{kpi.sub}</div>
@@ -186,15 +186,15 @@ export default function Dashboard() {
                 ))}
 
                 {/* --- Door Status Card --- */}
-                <div className={`relative overflow-hidden rounded-2xl bg-slate-900/50 border border-white/5 p-4 sm:p-6 
+                <div className={`relative overflow-hidden rounded-2xl bg-white border-slate-200 p-4 sm:p-6 
                                 hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group`}>
                     <div className="flex items-center justify-between mb-3 sm:mb-4">
-                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-black/30 border border-white/5 flex items-center justify-center`}>
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-50 border-slate-200 flex items-center justify-center`}>
                             {doorStatus === 'Locked' ? <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" /> : <Unlock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 animate-pulse" />}
                         </div>
                         <div className="flex flex-col items-end gap-1">
                             <div className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded 
-                                            ${doorStatus === 'Locked' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                                            ${doorStatus === 'Locked' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
                                 {doorStatus}
                             </div>
                             <div className={`flex items-center gap-1 text-[7px] sm:text-[8px] font-bold uppercase tracking-widest ${isOnline ? 'text-emerald-500' : 'text-red-500'}`}>
@@ -206,7 +206,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="mb-3 sm:mb-4">
-                        <div className="text-[11px] sm:text-sm font-bold text-white/90 mb-0.5 leading-tight">Door Status</div>
+                        <div className="text-[11px] sm:text-sm font-bold text-slate-900/90 mb-0.5 leading-tight">Door Status</div>
                         <div className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-tight">
                             Last Unlock: <span className="text-slate-300">{lastUnlock}</span>
                         </div>
@@ -216,7 +216,7 @@ export default function Dashboard() {
                         onClick={handleRemoteUnlock}
                         disabled={unlocking || doorStatus === 'Unlocked'}
                         className="w-full py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-slate-800 
-                                   rounded-xl text-[9px] sm:text-[10px] font-black text-white uppercase tracking-widest transition-all
+                                   rounded-xl text-[9px] sm:text-[10px] font-black text-slate-900 uppercase tracking-widest transition-all
                                    flex items-center justify-center gap-2 group/btn"
                     >
                         {unlocking ? (
@@ -240,12 +240,12 @@ export default function Dashboard() {
             {/* ── Analytics Row 1: Daily Trend + Monthly Pulse ── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Daily Attendance Trend – area chart */}
-                <div className="lg:col-span-2 p-5 md:p-8 rounded-3xl bg-white/[0.02] border border-white/[0.05]">
+                <div className="lg:col-span-2 p-5 md:p-8 rounded-3xl bg-white border-slate-200">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <Activity className="w-4 h-4 text-blue-400" />
-                                <h2 className="text-lg font-black text-white tracking-tight">Daily Attendance Trend</h2>
+                                <h2 className="text-lg font-black text-slate-900 tracking-tight">Daily Attendance Trend</h2>
                             </div>
                             <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Present vs Late // Last 15 Days</p>
                         </div>
@@ -280,11 +280,11 @@ export default function Dashboard() {
                 </div>
 
                 {/* Monthly Pulse card */}
-                <div className="p-5 md:p-8 rounded-3xl bg-white/[0.02] border border-white/[0.05] flex flex-col justify-between">
+                <div className="p-5 md:p-8 rounded-3xl bg-white border-slate-200 flex flex-col justify-between">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <BarChart2 className="w-4 h-4 text-indigo-400" />
-                            <h2 className="text-lg font-black text-white tracking-tight">Monthly Pulse</h2>
+                            <h2 className="text-lg font-black text-slate-900 tracking-tight">Monthly Pulse</h2>
                         </div>
                         <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-8">Active Attendance // This vs Last Month</p>
                     </div>
@@ -292,7 +292,7 @@ export default function Dashboard() {
                     <div className="flex flex-col gap-6">
                         <div>
                             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Current Month</p>
-                            <div className="text-4xl font-black text-white tabular-nums">{loading ? '—' : analytics?.monthly?.current ?? 0}</div>
+                            <div className="text-4xl font-black text-slate-900 tabular-nums">{loading ? '—' : analytics?.monthly?.current ?? 0}</div>
                             <p className="text-[9px] text-slate-500 mt-1">unique attendees</p>
                         </div>
                         <div className="w-full h-px bg-white/5" />
@@ -308,7 +308,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <div className="mt-8 p-4 rounded-2xl bg-slate-950/40 border border-white/5">
+                    <div className="mt-8 p-4 rounded-2xl bg-slate-50 border-slate-200">
                         <div className="flex items-center gap-2 mb-3">
                             <ShieldCheck className="w-4 h-4 text-emerald-500" />
                             <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">System Integrity</span>
@@ -322,12 +322,12 @@ export default function Dashboard() {
             </div>
 
             {/* ── Analytics Row 2: Department Comparison ── */}
-            <div className="p-5 md:p-8 rounded-3xl bg-white/[0.02] border border-white/[0.05]">
+            <div className="p-5 md:p-8 rounded-3xl bg-white border-slate-200">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <Building2 className="w-4 h-4 text-purple-400" />
-                            <h2 className="text-lg font-black text-white tracking-tight">Department Attendance</h2>
+                            <h2 className="text-lg font-black text-slate-900 tracking-tight">Department Attendance</h2>
                         </div>
                         <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Present vs Absent // Today's Breakdown</p>
                     </div>
@@ -353,12 +353,12 @@ export default function Dashboard() {
             </div>
 
             {/* ── Monthly Attendance Rate (last 6 months) ── */}
-            <div className="p-5 md:p-8 rounded-3xl bg-white/[0.02] border border-white/[0.05]">
+            <div className="p-5 md:p-8 rounded-3xl bg-white border-slate-200">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <Percent className="w-4 h-4 text-teal-400" />
-                            <h2 className="text-lg font-black text-white tracking-tight">Monthly Attendance Rate</h2>
+                            <h2 className="text-lg font-black text-slate-900 tracking-tight">Monthly Attendance Rate</h2>
                         </div>
                         <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">
                             Unique Attendees as % of Workforce // Last 6 Months
@@ -398,12 +398,12 @@ export default function Dashboard() {
             </div>
 
             {/* ── 24h Access Distribution ── */}
-            <div className="p-5 md:p-8 rounded-3xl bg-white/[0.02] border border-white/[0.05]">
+            <div className="p-5 md:p-8 rounded-3xl bg-white border-slate-200">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <Shield className="w-4 h-4 text-slate-400" />
-                            <h2 className="text-lg font-black text-white tracking-tight">Access Distribution</h2>
+                            <h2 className="text-lg font-black text-slate-900 tracking-tight">Access Distribution</h2>
                         </div>
                         <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Biometric Activity // Last 24 Hours</p>
                     </div>

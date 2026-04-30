@@ -131,7 +131,7 @@ create trigger tr_purge_biometrics
     execute function purge_biometrics_on_delete();
 
 -- 8. PERFORMANCE INDEXES
-create index if not exists idx_employees_active_not_deleted on public.employees (status, is_deleted);
+-- Index creation moved to the end of file where column is_deleted is added
 create index if not exists idx_face_embedding_cosine on public.face_encodings using ivfflat (embedding vector_cosine_ops) with (lists = 100);
 create index if not exists idx_logs_created_at on public.access_logs (created_at desc);
 

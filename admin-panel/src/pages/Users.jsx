@@ -134,12 +134,17 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                 {field('Employee ID', 'employee_id', 'text', 'e.g. EMP-001')}
                 <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Department</label>
-                    <select value={form.department || 'Engineering'}
+                    <input 
+                        list="departments-list"
+                        value={form.department || ''}
                         onChange={e => setForm(f => ({ ...f, department: e.target.value }))}
+                        placeholder="Select or type department"
                         className="w-full bg-slate-950 border border-white/[0.07] rounded-xl px-4 py-2.5 text-sm text-white
-                                   focus:outline-none focus:border-blue-500/40 appearance-none transition-colors">
-                        {DEPARTMENTS.map(d => <option key={d}>{d}</option>)}
-                    </select>
+                                   focus:outline-none focus:border-blue-500/40 transition-colors placeholder:text-slate-700" 
+                    />
+                    <datalist id="departments-list">
+                        {DEPARTMENTS.map(d => <option key={d} value={d} />)}
+                    </datalist>
                 </div>
                 {err && <p className="text-xs font-bold text-red-400 bg-red-500/10 px-3 py-2 rounded-xl border border-red-500/20">{err}</p>}
                 
@@ -200,20 +205,15 @@ function FaceEnrollModal({ user, onDone, onClose }) {
     const startCamera = useCallback(async () => {
         setCamError('');
         try {
-            // Check if we are in a secure context or localhost, which is required for getUserMedia
             const isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
             
             if (!navigator.mediaDevices?.getUserMedia && !isSecure) {
-                setCamError('Camera requires HTTPS or Localhost. Please use the "Upload Photo" button below, which will open your camera directly.');
+                setCamError('Camera requires HTTPS or Localhost.');
                 return;
             }
 
             const s = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    width: { ideal: 640 }, 
-                    height: { ideal: 480 }, 
-                    facingMode: 'user' 
-                } 
+                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } 
             });
             streamRef.current = s;
             if (videoRef.current) videoRef.current.srcObject = s;
@@ -242,11 +242,22 @@ function FaceEnrollModal({ user, onDone, onClose }) {
     };
 
     const stopCamera = useCallback(() => {
-        streamRef.current?.getTracks().forEach(t => t.stop());
-        streamRef.current = null;
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(t => t.stop());
+            streamRef.current = null;
+        }
     }, []);
 
-    useEffect(() => { startCamera(); return stopCamera; }, [startCamera, stopCamera]);
+    useEffect(() => { 
+        // Using a slight delay to allow React 18 StrictMode unmount/remount to settle
+        const timer = setTimeout(() => {
+            if (!captured) startCamera();
+        }, 100);
+        return () => {
+            clearTimeout(timer);
+            stopCamera();
+        };
+    }, [startCamera, stopCamera, captured]);
 
     const capture = () => {
         if (!videoRef.current || !canvasRef.current) return;
@@ -695,13 +706,13 @@ export default function Users() {
             {/* ── Header ── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-white mb-2 tracking-tighter">Personnel Management</h1>
+                    <h1 className="text-3xl font-black text-slate-900 mb-2 tracking-tighter">Personnel Management</h1>
                     <p className="text-slate-500 text-sm font-medium uppercase tracking-[0.2em]">
                         {users.length} Employees // Biometric Access Control
                     </p>
                 </div>
                 <button onClick={() => setAddOpen(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-black rounded-xl transition-all shadow-lg shadow-blue-600/20">
+                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-slate-900 text-sm font-black rounded-xl transition-all shadow-lg shadow-blue-600/20">
                     <UserPlus className="w-4 h-4" /> Add Employee
                 </button>
             </div>
@@ -709,12 +720,12 @@ export default function Users() {
             {/* ── Stat Cards ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'Total', value: users.length, color: 'text-blue-400' },
+                    { label: 'Total', value: users.length, color: 'text-emerald-500' },
                     { label: 'Active', value: users.filter(u => u.status === 'Active' || !u.status).length, color: 'text-emerald-400' },
                     { label: 'Face Enrolled', value: users.filter(u => u.face_embedding || u.face_registered).length, color: 'text-indigo-400' },
                     { label: 'FP Enrolled', value: users.filter(u => u.fingerprint_registered).length, color: 'text-violet-400' },
                 ].map(s => (
-                    <div key={s.label} className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
+                    <div key={s.label} className="p-5 rounded-2xl bg-white border-slate-200">
                         <div className={`text-2xl font-black tabular-nums ${s.color}`}>{loading ? '—' : s.value}</div>
                         <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">{s.label}</div>
                     </div>
@@ -722,14 +733,14 @@ export default function Users() {
             </div>
 
             {/* ── Table ── */}
-            <div className="rounded-3xl bg-white/[0.02] border border-white/[0.05] overflow-hidden">
+            <div className="rounded-3xl bg-white border-slate-200 overflow-hidden">
                 {/* Search */}
-                <div className="px-8 py-5 border-b border-white/[0.04] flex items-center gap-4">
+                <div className="px-8 py-5 border-b border-slate-200 flex items-center gap-4">
                     <div className="relative flex-1 max-w-sm">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600" />
                         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                             placeholder="Search name, email or ID..."
-                            className="w-full bg-slate-950 border border-white/[0.07] rounded-xl pl-9 pr-4 py-2 text-sm text-white
+                            className="w-full bg-white border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900
                                        focus:outline-none focus:border-blue-500/30 placeholder:text-slate-700" />
                     </div>
                     <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-auto">
@@ -740,7 +751,7 @@ export default function Users() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="border-b border-white/[0.03] bg-white/[0.01]">
+                            <tr className="border-b border-slate-200 bg-slate-50">
                                 <th className="px-4 md:px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Employee</th>
                                 <th className="hidden md:table-cell px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Department</th>
                                 <th className="px-4 md:px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</th>
@@ -749,12 +760,12 @@ export default function Users() {
                                 <th className="px-4 md:px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/[0.025]">
+                        <tbody className="divide-y divide-slate-200">
                             {loading ? (
                                 [1, 2, 3, 4].map(i => (
                                     <tr key={i} className="animate-pulse">
                                         <td colSpan={6} className="px-8 py-5">
-                                            <div className="h-10 bg-white/[0.03] rounded-xl" />
+                                            <div className="h-10 bg-slate-100 rounded-xl" />
                                         </td>
                                     </tr>
                                 ))
@@ -771,16 +782,16 @@ export default function Users() {
                                     : '—';
                                 return (
                                     <tr key={user.id}
-                                        className={`group transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-white/[0.02]'}`}>
+                                        className={`group transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-slate-50'}`}>
 
                                         {/* Employee */}
                                         <td className="px-4 md:px-8 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/30 to-indigo-600/30 border border-blue-500/20 flex items-center justify-center text-[10px] md:text-xs font-black text-blue-400">
+                                                <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/30 to-indigo-600/30 border border-blue-500/20 flex items-center justify-center text-[10px] md:text-xs font-black text-emerald-500">
                                                     {initials}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <div className="text-sm font-bold text-white truncate">{user.name}</div>
+                                                    <div className="text-sm font-bold text-slate-900 truncate">{user.name}</div>
                                                     <div className="text-[9px] md:text-[10px] text-slate-500 font-mono truncate">{user.employee_id || user.email}</div>
                                                 </div>
                                             </div>
@@ -817,7 +828,7 @@ export default function Users() {
                                         <td className="px-4 md:px-8 py-4 text-right">
                                             <div className="flex items-center justify-end gap-0.5 md:gap-1">
                                                 <button onClick={() => setEditTarget(user)} title="Edit"
-                                                    className="p-1.5 md:p-2 rounded-lg hover:bg-blue-500/10 text-slate-500 hover:text-blue-400 transition-all">
+                                                    className="p-1.5 md:p-2 rounded-lg hover:bg-blue-500/10 text-slate-500 hover:text-emerald-500 transition-all">
                                                     <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                                 </button>
                                                 <button onClick={() => handleDisableToggle(user)} disabled={isActioning}

@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.smartdoor.terminal"
+    namespace "com.auralock.terminal.v3"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.smartdoor.terminal"
+        applicationId "com.auralock.terminal.v3"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

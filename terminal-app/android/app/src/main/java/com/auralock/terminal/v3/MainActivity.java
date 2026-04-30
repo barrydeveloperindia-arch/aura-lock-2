@@ -1,4 +1,4 @@
-package com.smartdoor.terminal;
+package com.auralock.terminal.v3;
 
 import android.os.Bundle;
 import android.view.View;

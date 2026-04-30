@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 body {
-  background-color: #020617;
-  /* slate-950/deep navy */
-  color: #f8fafc;
+  background-color: #f8fafc;
+  /* slate-50/light theme */
+  color: #0f172a;
   font-family: 'Inter', sans-serif;
   margin: 0;
   overflow: hidden;
@@ -13,11 +13,11 @@ body {
 
 @layer utilities {
   .text-shadow-glow {
-    text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
   }
 
   .box-shadow-glow {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
   }
 }
 

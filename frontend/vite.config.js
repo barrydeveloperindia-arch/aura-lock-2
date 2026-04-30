@@ -9,15 +9,15 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api/biometrics': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8002',
         changeOrigin: true
       },
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8002',
         changeOrigin: true
       },
       '/auth': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8002',
         changeOrigin: true
       }
     }

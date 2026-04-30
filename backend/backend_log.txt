@@ -1,0 +1,1435 @@
+
+> backend@1.0.0 dev
+> nodemon server.js
+
+[33m[nodemon] 3.1.11[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: ⚙️  override existing env vars with { override: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+📡 [12:47:09 pm] GET /api/users
+📡 [12:47:13 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [12:47:22 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [12:47:37 pm] GET /api/terminal/users
+📡 [12:47:37 pm] GET /api/biometrics/health
+🔍 [Health Check] Trying: http://localhost:8003/health
+📡 [12:47:52 pm] POST /auth/login
+📦 Body: {
+  "email": "admin@auralock.com",
+  "password": "admin123"
+}
+🔐 [Login Attempt] Email: "admin@auralock.com", Expected: "admin@auralock.com"
+🔑 [Login Attempt] Pass Match: true
+✅ Admin credentials verified
+📡 [12:47:52 pm] GET /api/stats
+📡 [12:47:52 pm] GET /api/stats/activity
+📡 [12:47:52 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [12:47:52 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+❌ Attendance Analytics Error: {
+  code: 'PGRST205',
+  details: null,
+  hint: "Perhaps you meant the table 'public.face_encodings'",
+  message: "Could not find the table 'public.attendance' in the schema cache"
+}
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=2
+📡 [12:48:02 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:48:05 pm] GET /api/users
+🔓 Authenticated User: admin@auralock.com
+📡 [12:48:11 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [12:48:11 pm] GET /api/stats/activity
+📡 [12:48:11 pm] GET /api/stats
+📡 [12:48:11 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+❌ Attendance Analytics Error: {
+  code: 'PGRST205',
+  details: null,
+  hint: "Perhaps you meant the table 'public.face_encodings'",
+  message: "Could not find the table 'public.attendance' in the schema cache"
+}
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=2
+📡 [12:48:18 pm] GET /api/users
+🔓 Authenticated User: admin@auralock.com
+📡 [12:48:42 pm] POST /api/biometrics/face/register
+📦 Body: {}
+🛡️ [IdentityValidation] POST /api/biometrics/face/register | finalId: EMP-002 | isReEnroll: true
+✅ [IdentityValidation] Bypassing checks for re-enrollment.
+📸 Received biometric registration for: EMP-002
+📡 Forwarding to Biometric Engine (Port 8001)...
+✅ Face successfully registered by AI Engine
+📡 [12:48:51 pm] PATCH /api/users/e55a1267-f7ef-4c4c-841d-babcfd5a56c4
+🔓 Authenticated User: admin@auralock.com
+🛡️ [IdentityValidation] PATCH /api/users/e55a1267-f7ef-4c4c-841d-babcfd5a56c4 | finalId: undefined | isReEnroll: false
+📝 [Biometric] Marking fingerprint as registered for EMP-002
+📡 [12:49:04 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [12:49:04 pm] GET /api/stats
+📡 [12:49:04 pm] GET /api/stats/activity
+📡 [12:49:04 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+❌ Attendance Analytics Error: {
+  code: 'PGRST205',
+  details: null,
+  hint: "Perhaps you meant the table 'public.face_encodings'",
+  message: "Could not find the table 'public.attendance' in the schema cache"
+}
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=2
+📡 [12:49:14 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:49:25 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:49:34 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:49:44 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:49:54 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:50:04 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [12:50:04 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:50:04 pm] GET /api/stats
+📡 [12:50:04 pm] GET /api/stats/activity
+❌ Attendance Analytics Error: {
+  code: 'PGRST205',
+  details: null,
+  hint: "Perhaps you meant the table 'public.face_encodings'",
+  message: "Could not find the table 'public.attendance' in the schema cache"
+}
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=2
+📡 [12:50:14 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:51:43 pm] GET /api/stats
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=2
+📡 [12:52:13 pm] GET /api/stats/activity
+📡 [12:52:25 pm] GET /api/stats/attendance-analytics
+📡 [12:53:47 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:53:47 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [12:53:47 pm] GET /api/stats
+📡 [12:53:47 pm] GET /api/stats/activity
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=2
+❌ Attendance Analytics Error: {
+  code: 'PGRST205',
+  details: null,
+  hint: "Perhaps you meant the table 'public.face_encodings'",
+  message: "Could not find the table 'public.attendance' in the schema cache"
+}
+📡 [12:53:54 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:54:04 pm] GET /api/stats
+📡 [12:54:04 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [12:54:04 pm] GET /api/stats/activity
+📡 [12:54:04 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=2
+❌ Attendance Analytics Error: {
+  code: 'PGRST205',
+  details: null,
+  hint: "Perhaps you meant the table 'public.face_encodings'",
+  message: "Could not find the table 'public.attendance' in the schema cache"
+}
+📡 [12:54:14 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:54:14 pm] GET /api/attendance
+📡 [12:54:24 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:54:33 pm] POST /api/door/unlock
+📦 Body: {}
+🔓 Authenticated User: admin@auralock.com
+📡 [12:54:33 pm] Admin/Remote Door Unlock request received
+🔓 Forwarding unlock request to Biometric Engine...
+❌ Door unlock failed: Bluetooth features are disabled in this environment.
+📡 [12:54:34 pm] POST /api/door/unlock
+📦 Body: {}
+🔓 Authenticated User: admin@auralock.com
+📡 [12:54:34 pm] Admin/Remote Door Unlock request received
+🔓 Forwarding unlock request to Biometric Engine...
+❌ Door unlock failed: Bluetooth features are disabled in this environment.
+📡 [12:54:34 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:54:35 pm] POST /api/door/unlock
+📦 Body: {}
+🔓 Authenticated User: admin@auralock.com
+📡 [12:54:35 pm] Admin/Remote Door Unlock request received
+🔓 Forwarding unlock request to Biometric Engine...
+❌ Door unlock failed: Bluetooth features are disabled in this environment.
+📡 [12:54:44 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:54:54 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:55:04 pm] GET /api/stats
+📡 [12:55:04 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [12:55:04 pm] GET /api/stats/activity
+📡 [12:55:04 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=2
+❌ Attendance Analytics Error: {
+  code: 'PGRST205',
+  details: null,
+  hint: "Perhaps you meant the table 'public.face_encodings'",
+  message: "Could not find the table 'public.attendance' in the schema cache"
+}
+📡 [12:55:14 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:55:24 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:55:34 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:55:44 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:55:54 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:56:04 pm] GET /api/stats/activity
+📡 [12:56:04 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [12:56:04 pm] GET /api/stats
+📡 [12:56:04 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+❌ Attendance Analytics Error: {
+  code: 'PGRST205',
+  details: null,
+  hint: "Perhaps you meant the table 'public.face_encodings'",
+  message: "Could not find the table 'public.attendance' in the schema cache"
+}
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=2
+📡 [12:56:14 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:56:24 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:56:34 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:56:44 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:56:54 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:57:01 pm] GET /api/users
+🔓 Authenticated User: admin@auralock.com
+📡 [12:57:05 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [12:57:05 pm] GET /api/stats
+📡 [12:57:05 pm] GET /api/stats/activity
+📡 [12:57:05 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=2
+📡 [12:57:06 pm] GET /api/users
+🔓 Authenticated User: admin@auralock.com
+📡 [12:57:07 pm] GET /api/stats
+📡 [12:57:07 pm] GET /api/stats/activity
+📡 [12:57:07 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [12:57:07 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=2
+📡 [12:57:10 pm] GET /api/terminal/users
+📡 [12:57:10 pm] GET /api/biometrics/health
+🔍 [Health Check] Trying: http://localhost:8003/health
+📡 [12:57:14 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [12:57:22 pm] GET /api/terminal/users
+📡 [12:57:22 pm] GET /api/biometrics/health
+🔍 [Health Check] Trying: http://localhost:8003/health
+📡 [12:57:38 pm] POST /auth/login
+📦 Body: {
+  "email": "admin@auralock.com",
+  "password": "admin123"
+}
+🔐 [Login Attempt] Email: "admin@auralock.com", Expected: "admin@auralock.com"
+🔑 [Login Attempt] Pass Match: true
+✅ Admin credentials verified
+📡 [12:57:38 pm] GET /api/stats
+📡 [12:57:38 pm] GET /api/stats/activity
+📡 [12:57:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [12:57:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [12:57:49 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:57:59 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:58:09 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:58:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:58:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:58:38 pm] GET /api/stats/activity
+📡 [12:58:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:58:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [12:58:38 pm] GET /api/stats
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [12:58:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:58:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:59:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:59:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:59:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:59:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:59:38 pm] GET /api/stats
+📡 [12:59:38 pm] GET /api/stats/activity
+📡 [12:59:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [12:59:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [12:59:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:00:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:00:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:00:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:00:38 pm] GET /api/stats
+📡 [1:00:38 pm] GET /api/stats/activity
+📡 [1:00:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:00:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:00:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:00:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:01:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:01:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:01:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:01:38 pm] GET /api/stats
+📡 [1:01:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [1:01:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:01:38 pm] GET /api/stats/activity
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:01:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:01:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:02:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:02:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:02:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:02:38 pm] GET /api/stats
+📡 [1:02:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [1:02:38 pm] GET /api/stats/activity
+📡 [1:02:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:02:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:02:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:03:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:03:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:03:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:03:38 pm] GET /api/stats/activity
+📡 [1:03:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:03:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [1:03:38 pm] GET /api/stats
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:03:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:03:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:04:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:04:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:04:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:04:38 pm] GET /api/stats
+📡 [1:04:38 pm] GET /api/stats/activity
+📡 [1:04:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [1:04:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:04:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:04:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:05:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:05:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:05:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:05:38 pm] GET /api/stats
+📡 [1:05:38 pm] GET /api/stats/activity
+📡 [1:05:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [1:05:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:05:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:05:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:06:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:06:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:06:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:06:38 pm] GET /api/stats
+📡 [1:06:38 pm] GET /api/stats/activity
+📡 [1:06:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:06:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:06:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:06:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:07:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:07:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:07:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:07:38 pm] GET /api/stats
+📡 [1:07:38 pm] GET /api/stats/activity
+📡 [1:07:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [1:07:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:07:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:07:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:08:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:08:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:08:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:08:38 pm] GET /api/stats
+📡 [1:08:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [1:08:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:08:38 pm] GET /api/stats/activity
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:08:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:08:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:09:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:09:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:09:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:09:38 pm] GET /api/stats
+📡 [1:09:38 pm] GET /api/stats/activity
+📡 [1:09:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [1:09:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:09:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:09:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:10:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:10:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:10:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:10:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:10:38 pm] GET /api/stats
+📡 [1:10:38 pm] GET /api/stats/activity
+📡 [1:10:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:10:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:10:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:11:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:11:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:11:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:11:38 pm] GET /api/stats
+📡 [1:11:38 pm] GET /api/stats/activity
+📡 [1:11:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [1:11:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:11:48 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:11:58 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:12:08 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:12:18 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:12:28 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:12:38 pm] GET /api/stats
+📡 [1:12:38 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [1:12:38 pm] GET /api/stats/activity
+📡 [1:12:38 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=3
+📡 [1:12:49 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:12:59 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:13:09 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [1:13:19 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:09:36 pm] GET /api/terminal/users
+📡 [2:09:37 pm] GET /api/biometrics/health
+🔍 [Health Check] Trying: http://localhost:8003/health
+📡 [2:09:40 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:25:46 pm] GET /api/terminal/users
+📡 [2:25:46 pm] GET /api/biometrics/health
+🔍 [Health Check] Trying: http://localhost:8003/health
+📡 [2:25:49 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:25:51 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:25:53 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:25:55 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:25:57 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:25:59 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:26:01 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:26:03 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:26:55 pm] POST /auth/login
+📦 Body: {
+  "email": "admin@auralock.com",
+  "password": "admin123"
+}
+🔐 [Login Attempt] Email: "admin@auralock.com", Expected: "admin@auralock.com"
+🔑 [Login Attempt] Pass Match: true
+✅ Admin credentials verified
+📡 [2:26:55 pm] GET /api/stats
+📡 [2:26:56 pm] GET /api/stats/activity
+📡 [2:26:56 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:26:56 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=12
+📡 [2:27:05 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:27:14 pm] GET /api/departments
+🔓 Authenticated User: admin@auralock.com
+📡 [2:27:14 pm] GET /api/users
+🔓 Authenticated User: admin@auralock.com
+📡 [2:27:14 pm] GET /api/attendance?startDate=2026-04-25&endDate=2026-04-25&employee_id=&department=&search=&status=&page=1&pageSize=10&sortBy=date&sortDir=desc
+🔓 Authenticated User: admin@auralock.com
+📡 [2:27:27 pm] GET /api/users
+🔓 Authenticated User: admin@auralock.com
+📡 [2:27:39 pm] GET /api/departments
+🔓 Authenticated User: admin@auralock.com
+📡 [2:27:39 pm] GET /api/users
+🔓 Authenticated User: admin@auralock.com
+📡 [2:27:39 pm] GET /api/attendance?startDate=2026-04-25&endDate=2026-04-25&employee_id=&department=&search=&status=&page=1&pageSize=10&sortBy=date&sortDir=desc
+🔓 Authenticated User: admin@auralock.com
+📡 [2:27:41 pm] GET /api/stats
+📡 [2:27:41 pm] GET /api/stats/activity
+📡 [2:27:41 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:27:41 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=12
+📡 [2:27:44 pm] GET /api/terminal/users
+📡 [2:27:44 pm] GET /api/biometrics/health
+🔍 [Health Check] Trying: http://localhost:8003/health
+📡 [2:27:47 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:27:49 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:27:51 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:27:53 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:27:56 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:27:57 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:27:59 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:01 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:03 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:05 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:11 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:13 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:15 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:17 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:19 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:21 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:23 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:25 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:27 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:29 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:31 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:33 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:35 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:37 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:39 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:41 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:43 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:45 pm] GET /api/biometrics/health
+🔍 [Health Check] Trying: http://localhost:8003/health
+📡 [2:28:45 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:47 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:49 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:51 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:53 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:28:55 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:41:20 pm] GET /api/terminal/users
+📡 [2:41:20 pm] GET /api/biometrics/health
+🔍 [Health Check] Trying: http://localhost:8003/health
+📡 [2:41:24 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:41:37 pm] POST /auth/login
+📦 Body: {
+  "email": "admin@auralock.com",
+  "password": "admin123"
+}
+🔐 [Login Attempt] Email: "admin@auralock.com", Expected: "admin@auralock.com"
+🔑 [Login Attempt] Pass Match: true
+✅ Admin credentials verified
+📡 [2:41:37 pm] GET /api/stats/activity
+📡 [2:41:37 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:41:37 pm] GET /api/stats
+📡 [2:41:37 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=46
+📡 [2:41:47 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:41:57 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:42:07 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:42:17 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:42:27 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:42:37 pm] GET /api/stats
+📡 [2:42:37 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:42:37 pm] GET /api/stats/activity
+📡 [2:42:37 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=46
+📡 [2:42:47 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:42:57 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:43:07 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:43:17 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:43:27 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:43:37 pm] GET /api/stats
+📡 [2:43:37 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:43:37 pm] GET /api/stats/activity
+📡 [2:43:37 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=46
+📡 [2:43:47 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:43:57 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:44:07 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:44:17 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:44:27 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:44:37 pm] GET /api/stats
+📡 [2:44:37 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:44:37 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:44:37 pm] GET /api/stats/activity
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=46
+📡 [2:44:47 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:44:57 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:45:07 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:45:17 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:45:27 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:45:37 pm] GET /api/stats
+📡 [2:45:37 pm] GET /api/stats/activity
+📡 [2:45:37 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:45:37 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=46
+📡 [2:45:47 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:45:57 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:46:07 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:46:17 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:46:27 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:46:37 pm] GET /api/stats
+📡 [2:46:37 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:46:37 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:46:37 pm] GET /api/stats/activity
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=46
+📡 [2:46:47 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:46:57 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:47:07 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:47:17 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:47:27 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:47:37 pm] GET /api/stats
+📡 [2:47:37 pm] GET /api/stats/activity
+📡 [2:47:37 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:47:37 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=46
+📡 [2:47:47 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:47:57 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:48:07 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:48:17 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:48:27 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:48:37 pm] GET /api/stats
+📡 [2:48:37 pm] GET /api/stats/activity
+📡 [2:48:37 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:48:37 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=46
+📡 [2:48:47 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:48:57 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:49:07 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:49:17 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:49:27 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:49:37 pm] GET /api/stats
+📡 [2:49:37 pm] GET /api/stats/activity
+📡 [2:49:37 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:49:37 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=46
+📡 [2:49:47 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:49:57 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:50:07 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:50:17 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:50:27 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:50:37 pm] GET /api/stats/activity
+📡 [2:50:37 pm] GET /api/stats
+📡 [2:50:37 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:50:37 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=46
+📡 [2:50:47 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:50:57 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:51:28 pm] GET /api/terminal/users
+📡 [2:51:28 pm] GET /api/biometrics/health
+🔍 [Health Check] Trying: http://localhost:8003/health
+📡 [2:51:31 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:51:34 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:51:35 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:51:37 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:51:39 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:51:41 pm] POST /api/biometrics/face/verify
+📦 Body: {}
+🔍 [Verification] Checking face identity...
+📡 Attempting Biometric Engine (Port 8001)...
+🚫 Engine Rejection: Unrecognized face.
+📡 [2:51:53 pm] POST /auth/login
+📦 Body: {
+  "email": "admin@auralock.com",
+  "password": "admin123"
+}
+🔐 [Login Attempt] Email: "admin@auralock.com", Expected: "admin@auralock.com"
+🔑 [Login Attempt] Pass Match: true
+✅ Admin credentials verified
+📡 [2:51:54 pm] GET /api/stats
+📡 [2:51:54 pm] GET /api/stats/activity
+📡 [2:51:54 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:51:54 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [2:51:57 pm] GET /api/users
+🔓 Authenticated User: admin@auralock.com
+📡 [2:52:03 pm] GET /api/stats
+📡 [2:52:03 pm] GET /api/stats/activity
+📡 [2:52:03 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:52:03 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [2:52:05 pm] GET /api/users
+🔓 Authenticated User: admin@auralock.com
+📡 [2:52:05 pm] GET /api/departments
+🔓 Authenticated User: admin@auralock.com
+📡 [2:52:05 pm] GET /api/attendance?startDate=2026-04-25&endDate=2026-04-25&employee_id=&department=&search=&status=&page=1&pageSize=10&sortBy=date&sortDir=desc
+🔓 Authenticated User: admin@auralock.com
+📡 [2:52:09 pm] GET /api/stats
+📡 [2:52:09 pm] GET /api/stats/activity
+📡 [2:52:09 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:52:09 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [2:52:10 pm] GET /api/users
+🔓 Authenticated User: admin@auralock.com
+📡 [2:52:10 pm] GET /api/departments
+🔓 Authenticated User: admin@auralock.com
+📡 [2:52:10 pm] GET /api/attendance?startDate=2026-04-25&endDate=2026-04-25&employee_id=&department=&search=&status=&page=1&pageSize=10&sortBy=date&sortDir=desc
+🔓 Authenticated User: admin@auralock.com
+📡 [2:52:20 pm] GET /api/stats
+📡 [2:52:20 pm] GET /api/stats/activity
+📡 [2:52:20 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:52:20 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [2:52:30 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:52:40 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:52:50 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:53:00 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:53:10 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:53:20 pm] GET /api/stats/activity
+📡 [2:53:20 pm] GET /api/stats
+📡 [2:53:20 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:53:20 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [2:53:30 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:53:40 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:53:50 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:54:00 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:54:10 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:54:20 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:54:20 pm] GET /api/stats
+📡 [2:54:20 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:54:20 pm] GET /api/stats/activity
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [2:54:30 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:54:40 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:54:50 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:55:00 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:55:10 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:55:20 pm] GET /api/stats
+📡 [2:55:20 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:55:20 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:55:20 pm] GET /api/stats/activity
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [2:55:30 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:55:40 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:55:50 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:56:00 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:56:10 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:56:20 pm] GET /api/stats
+📡 [2:56:20 pm] GET /api/stats/activity
+📡 [2:56:20 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:56:20 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [2:56:30 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:56:40 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:56:50 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:57:00 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:57:10 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:57:13 pm] GET /api/access-logs?page=1&limit=20&startDate=2026-04-25&endDate=2026-04-25
+🔓 Authenticated User: admin@auralock.com
+📡 [2:57:35 pm] GET /api/stats
+📡 [2:57:35 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:57:35 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:57:35 pm] GET /api/stats/activity
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [2:57:42 pm] GET /api/ble/scan
+🔓 Authenticated User: admin@auralock.com
+🔍 Starting BLE scan...
+📡 [2:57:42 pm] GET /api/ble/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:57:44 pm] POST /api/door/unlock
+📦 Body: {}
+🔓 Authenticated User: admin@auralock.com
+📡 [2:57:44 pm] Admin/Remote Door Unlock request received
+🔓 Forwarding unlock request to Biometric Engine...
+❌ Door unlock failed: Bluetooth features are disabled in this environment.
+📡 [2:57:47 pm] GET /api/ble/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:57:51 pm] GET /api/stats
+📡 [2:57:51 pm] GET /api/stats/activity
+📡 [2:57:51 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:57:51 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [2:58:01 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:58:11 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:58:21 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:58:31 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:58:41 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:58:51 pm] GET /api/stats
+📡 [2:58:51 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:58:51 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:58:51 pm] GET /api/stats/activity
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [2:59:01 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:59:11 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:59:21 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:59:31 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:59:41 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [2:59:51 pm] GET /api/stats
+📡 [2:59:51 pm] GET /api/stats/activity
+📡 [2:59:51 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [2:59:51 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [3:00:01 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:00:11 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:00:21 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:00:31 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:00:41 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:00:51 pm] GET /api/stats
+📡 [3:00:51 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [3:00:51 pm] GET /api/stats/activity
+📡 [3:00:51 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [3:01:01 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:01:11 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:01:21 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:01:31 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:01:41 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:01:51 pm] GET /api/stats
+📡 [3:01:51 pm] GET /api/stats/activity
+📡 [3:01:51 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [3:01:51 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [3:02:01 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:02:11 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:02:21 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:02:31 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:02:41 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:02:51 pm] GET /api/stats
+📡 [3:02:51 pm] GET /api/stats/activity
+📡 [3:02:51 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:02:51 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [3:03:01 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:03:11 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:03:21 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:03:31 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:03:41 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:03:51 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+📡 [3:03:51 pm] GET /api/stats/activity
+📡 [3:03:51 pm] GET /api/stats/attendance-analytics
+🔓 Authenticated User: admin@auralock.com
+📡 [3:03:51 pm] GET /api/stats
+📊 [Stats] todayIST=2026-04-25 | employees=1 | present=0 | late=0 | scans=52
+📡 [3:04:01 pm] GET /api/door/status
+🔓 Authenticated User: admin@auralock.com
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[32m[nodemon] restarting due to changes...[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: ⚙️  override existing env vars with { override: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[32m[nodemon] restarting due to changes...[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (7) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+🧬 [Biometrics] Target Engine: http://localhost:8003
+🚀 [Config] ADMIN_EMAIL: admin@auralock.com
+🚀 [Config] ADMIN_PASSWORD: SET
+🚀 [Config] JWT_SECRET: SET
+🚀 [Config] SUPABASE_URL: https://ngprtoaoqqrscbjbahpb.supabase.co
+Backend running on http://localhost:8000
+[32m[nodemon] clean exit - waiting for changes before restart[39m

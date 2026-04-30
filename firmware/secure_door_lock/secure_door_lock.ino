@@ -5,8 +5,8 @@
 #include <time.h>
 
 // --- Configuration ---
-const char *ssid = "YOUR_WIFI_SSID";
-const char *password = "YOUR_WIFI_PASSWORD";
+const char *ssid = "Englabs_5G";
+const char *password = "Eng@9878407934";
 const char *secret_token = "door_secret_pass_123";
 
 const int RELAY_PIN = 23;
