@@ -1,9 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
-
-const supabaseUrl = process.env.SUPABASE_URL || "https://wdtizlzfsijikcejerwq.supabase.co";
-const supabase = createClient(supabaseUrl, process.env.SUPABASE_KEY);
+const supabase = require('../supabase');
 
 /**
  * Middleware to enforce identity integrity.

@@ -106,8 +106,7 @@ async function rebuildCache() {
  */
 async function clearLogs() {
     console.log(`🗑️ Clearing access logs from database...`);
-    const { createClient } = require('@supabase/supabase-js');
-    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+    const supabase = require('./supabase');
     
     const { error } = await supabase
         .from('access_logs')

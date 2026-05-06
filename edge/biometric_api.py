@@ -427,8 +427,20 @@ async def register_face(
     try:
         # 1. Read image
         contents = await file.read()
-        image = Image.open(io.BytesIO(contents)).convert("RGB")
-        frame = np.array(image)
+        try:
+            image = Image.open(io.BytesIO(contents))
+            # FORCE CONVERSION TO RGB
+            if image.mode != "RGB":
+                image = image.convert("RGB")
+            
+            frame = np.array(image)
+            
+            # Final sanity check for dlib
+            if frame.dtype != np.uint8:
+                frame = frame.astype(np.uint8)
+        except Exception as img_err:
+            print(f"[ERROR] Registration Image Decoding Failed: {img_err}")
+            return {"success": False, "message": "Invalid image format received."}
 
         # 2. Detect and encode using face-recognition
         try:
@@ -580,8 +592,28 @@ async def verify_face(file: UploadFile = File(...)):
         contents = await file.read()
         t_read = time.time()
         
-        image = Image.open(io.BytesIO(contents)).convert("RGB")
-        frame = np.array(image)
+        try:
+            # USE OPENCV FOR ROBUST DECODING
+            import cv2
+            nparr = np.frombuffer(contents, np.uint8)
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            
+            if frame is None:
+                raise Exception("OpenCV decoding returned None")
+                
+            # Convert BGR (OpenCV default) to RGB
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            
+            # Final sanity check for dlib: must be 8-bit RGB and contiguous
+            # IMPORTANT: Use .copy() to ensure we own the memory and it's not a read-only view
+            frame = np.ascontiguousarray(frame, dtype=np.uint8).copy()
+            
+            print(f"[DEBUG] OpenCV Processed - Shape: {frame.shape}, Dtype: {frame.dtype}, Contiguous: {frame.flags['C_CONTIGUOUS']}")
+                
+        except Exception as img_err:
+            print(f"[ERROR] Image Decoding Failed: {img_err}")
+            return {"success": False, "message": "Invalid image format received."}
+            
         t_preprocess = time.time()
 
         # 2. Single Embedding Generation
@@ -603,7 +635,10 @@ async def verify_face(file: UploadFile = File(...)):
                 live_encoding = np.random.rand(128)
                 print(f"[MOCK] Detected {len(faces)} face(s). Generated mock face encoding.")
         except Exception as e:
-            return {"success": False, "message": "Engine Error"}
+            import traceback
+            print(f"[ERROR] Embedding generation failed: {str(e)}")
+            traceback.print_exc()
+            return {"success": False, "message": f"Engine Error: {str(e)}"}
         
         t_encode = time.time()
 

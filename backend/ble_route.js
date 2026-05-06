@@ -9,10 +9,7 @@ const {
     connectBle,
     disconnectBle
 } = require('./doorService');
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = process.env.SUPABASE_URL || "https://wdtizlzfsijikcejerwq.supabase.co";
-const supabase = createClient(supabaseUrl, process.env.SUPABASE_KEY);
+const supabase = require('./supabase');
 
 /**
  * @route GET /api/ble/scan

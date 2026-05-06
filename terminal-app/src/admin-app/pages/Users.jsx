@@ -300,10 +300,9 @@ function FaceEnrollModal({ user, onDone, onClose }) {
         if (!captured) return;
         setLoading(true); setStatus('');
         try {
-            const res = await fetch(captured);
-            const blob = await res.blob();
+            setStatus('Processing...');
             const result = await apiService.registerFace(
-                blob,
+                captured, // Send Base64 string directly
                 user.employee_id || user.id,
                 user.email,
                 user.name,

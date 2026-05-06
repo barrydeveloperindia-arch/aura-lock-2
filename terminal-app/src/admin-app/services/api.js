@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    // HARDCODED IP FOR RELIABILITY ON MOBILE
-    baseURL: 'http://192.168.2.117:8000', 
+    // USE CLOUD URL FOR MOBILE DATA COMPATIBILITY
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'https://auralock-backend-50851729985.asia-south1.run.app', 
     headers: {
         'Content-Type': 'application/json'
     }
@@ -52,15 +52,28 @@ export const apiService = {
     },
 
     // Face Registration
-    registerFace: async (imageBlob, employeeId, email, name, reEnroll = false) => {
+    registerFace: async (image, employeeId, email, name, reEnroll = false) => {
+        // Handle both Base64 string and Blob
+        if (typeof image === 'string') {
+            console.log(`📤 Sending face registration (Base64) for: ${employeeId}`);
+            const response = await api.post('/api/biometrics/face/register', {
+                image: image,
+                employeeId,
+                email: email || `${employeeId}@internal.com`,
+                name,
+                re_enroll: reEnroll ? 'true' : 'false'
+            });
+            return response.data;
+        }
+
         const formData = new FormData();
-        formData.append('file', imageBlob, 'register.jpg');
+        formData.append('file', image, 'register.jpg');
         formData.append('employeeId', employeeId);
         formData.append('email', email);
         if (name) formData.append('name', name);
-        if (reEnroll) formData.append('re_enroll', 'true');  // bypass duplicate-ID guard
+        if (reEnroll) formData.append('re_enroll', 'true');
 
-        console.log(`📤 Sending face registration for: ${employeeId} (re_enroll=${reEnroll})`);
+        console.log(`📤 Sending face registration (Multipart) for: ${employeeId}`);
         const response = await api.post('/api/biometrics/face/register', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });

@@ -18,5 +18,6 @@ COPY . .
 # Expose port
 EXPOSE 8000
 
-# Start application
+# Start application with dynamic port
 CMD ["node", "server.js"]
+

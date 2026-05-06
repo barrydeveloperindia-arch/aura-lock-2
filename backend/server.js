@@ -22,15 +22,16 @@ const PORT = process.env.PORT || 8000;
 // Trust reverse proxy for rate limiter (required for Google Cloud Run)
 app.set('trust proxy', 1);
 // --- Configuration & Initialization ---
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@auralock.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '2565';
+const JWT_SECRET = process.env.JWT_SECRET || 'auralock_super_secret_key_2026';
+
 // ── Service Discovery ──
-let PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'http://localhost:8001';
+let PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'https://smart-door-edge-50851729985.asia-south1.run.app';
 
 console.log('🧬 [Biometrics] Target Engine:', PYTHON_ENGINE_URL);
-
-console.log('🚀 [Config] ADMIN_EMAIL:', process.env.ADMIN_EMAIL);
-console.log('🚀 [Config] ADMIN_PASSWORD:', process.env.ADMIN_PASSWORD ? 'SET' : 'MISSING');
-console.log('🚀 [Config] JWT_SECRET:', process.env.JWT_SECRET ? 'SET' : 'MISSING');
-console.log('🚀 [Config] SUPABASE_URL:', process.env.SUPABASE_URL);
+console.log('🚀 [Config] ADMIN_EMAIL:', ADMIN_EMAIL);
+console.log('🚀 [Config] JWT_SECRET:', JWT_SECRET ? 'SET' : 'MISSING');
 
 // --- Security: Rate Limiters (TEMPORARY DISABLED FOR DEBUGGING) ---
 const authLimiter = (req, res, next) => next(); 
@@ -42,9 +43,7 @@ const logRateLimiter = new Map(); // Rate limiter for Access Logs (3s)
 const LOG_THROTTLE_MS = 3000;
 
 // --- Supabase Connection ---
-const supabaseUrl = process.env.SUPABASE_URL || "https://wdtizlzfsijikcejerwq.supabase.co";
-const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = require('./supabase');
 
 app.use(cors({
     origin: '*', // Allow connections from ANY origin (including Wi-Fi IP and arbitrary phones)
@@ -138,7 +137,7 @@ const authenticateToken = (req, res, next) => {
 
     if (!token) return res.sendStatus(401);
 
-    jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
+    jwt.verify(token, JWT_SECRET, async (err, user) => {
         if (err) {
             console.error("❌ Token Verification Failed:", err.message);
             return res.status(403).json({ error: "Forbidden", message: "Invalid or expired token" });
@@ -415,7 +414,7 @@ app.post('/auth/login', authLimiter, async (req, res) => {
         // MASTER BYPASS FOR USER LOCKOUT
         console.log("🔓 [Login Bypass] Automatically authorizing request for:", email);
         const user = { name: 'Super Admin', email: email || 'admin@aura.com', role: 'admin' };
-        const accessToken = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const accessToken = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
         return res.json({ token: accessToken, user });
 
         /*
@@ -2442,61 +2441,65 @@ app.delete('/api/users/:id', authenticateToken, isAdmin, async (req, res) => {
 // Biometric Support (Mock Fallback when Python API is offline)
 app.post('/api/biometrics/face/register', upload.single('file'), validateIdentity, async (req, res) => {
     try {
-        const { employeeId, email, name } = req.body;
+        const { employeeId, email, name, re_enroll } = req.body;
         console.log(`📸 Received biometric registration for: ${employeeId}`);
 
         if (!employeeId) {
             return res.status(400).json({ success: false, message: "Missing employeeId" });
         }
 
-        let imageUrl = null;
+        let imageBuffer;
+        if (req.file) {
+            imageBuffer = req.file.buffer;
+            console.log("📦 Received registration photo as Multipart File");
+        } else if (req.body.image) {
+            const base64Data = req.body.image.replace(/^data:image\/\w+;base64,/, "");
+            imageBuffer = Buffer.from(base64Data, 'base64');
+            console.log("📦 Received registration photo as Base64 String");
+        }
 
-        // --- Hybrid Registration Flow (Hardened) ---
+        if (!imageBuffer) {
+            return res.status(400).json({ success: false, message: "No image data provided" });
+        }
+
+        // --- Forward to Biometric Engine ---
         try {
-            if (req.file) {
-                const FormData = require('form-data');
-                const form = new FormData();
-                form.append('file', req.file.buffer, {
-                    filename: 'register.jpg',
-                    contentType: 'image/jpeg'
-                });
-                form.append('employeeId', employeeId);
-                form.append('email', email || `${employeeId}@internal.com`);
-                if (name) form.append('name', name);
-                if (req.body.re_enroll) form.append('re_enroll', req.body.re_enroll);
+            const FormData = require('form-data');
+            const form = new FormData();
+            form.append('file', imageBuffer, {
+                filename: 'register.jpg',
+                contentType: 'image/jpeg'
+            });
+            form.append('employeeId', employeeId);
+            form.append('email', email || `${employeeId}@internal.com`);
+            if (name) form.append('name', name);
+            if (re_enroll) form.append('re_enroll', String(re_enroll));
 
-                console.log("📡 Forwarding to Biometric Engine (Port 8001)...");
-                const response = await axios.post(`${PYTHON_ENGINE_URL}/api/biometrics/face/register`, form, {
-                    headers: form.getHeaders(),
-                    timeout: 45000 // Increased timeout for cloud
-                });
+            console.log("📡 Forwarding to Biometric Engine...");
+            const response = await axios.post(`${PYTHON_ENGINE_URL}/api/biometrics/face/register`, form, {
+                headers: form.getHeaders(),
+                timeout: 45000
+            });
 
-                if (response.data.success) {
-                    console.log(`✅ Face successfully registered by AI Engine`);
-                    return res.json({
-                        success: true,
-                        message: response.data.message,
-                        encoding: response.data.encoding,
-                        image_url: response.data.image_url,
-                        employeeId: employeeId
-                    });
-                } else {
-                    throw new Error(response.data.message || "Engine rejected registration");
-                }
+            if (response.data.success) {
+                console.log(`✅ Face successfully registered by AI Engine`);
+                return res.json({
+                    success: true,
+                    message: response.data.message,
+                    encoding: response.data.encoding,
+                    image_url: response.data.image_url,
+                    employeeId: employeeId
+                });
             } else {
-                throw new Error("No image file provided");
+                return res.status(400).json({ success: false, message: response.data.message });
             }
         } catch (engineError) {
             console.error("❌ Biometric Engine error:", engineError.message);
-
-            if (engineError.code === 'ECONNREFUSED') {
-                return res.status(503).json({
-                    success: false,
-                    message: "Biometric Engine is currently offline. Please start it via 'edge/start_biometric_api.bat' or contact systems admin."
-                });
-            }
-
-            throw engineError; // Re-throw for generic catch logic
+            return res.status(503).json({
+                success: false,
+                message: "Biometric Engine error or offline.",
+                details: engineError.message
+            });
         }
     } catch (error) {
         console.error("❌ Registration error:", error.message);
@@ -2537,6 +2540,23 @@ app.get('/api/biometrics/health', async (req, res) => {
 app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'), async (req, res) => {
     try {
         console.log("🔍 [Verification] Checking face identity...");
+        
+        // Handle both Multipart (file) and JSON (Base64 image)
+        let imageBuffer;
+        if (req.file) {
+            imageBuffer = req.file.buffer;
+            console.log("📦 Received photo as Multipart File");
+        } else if (req.body.image) {
+            // Extract Base64 data (strip prefix if present)
+            const base64Data = req.body.image.replace(/^data:image\/\w+;base64,/, "");
+            imageBuffer = Buffer.from(base64Data, 'base64');
+            console.log("📦 Received photo as Base64 String");
+        }
+
+        if (!imageBuffer) {
+            console.error("❌ No image data provided in request.");
+            return res.status(400).json({ success: false, message: "No image data provided" });
+        }
 
         // Fetch employees from Supabase
         const { data: employees, error } = await supabase
@@ -2558,7 +2578,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
             const FormData = require('form-data');
 
             const form = new FormData();
-            form.append('file', req.file.buffer, {
+            form.append('file', imageBuffer, {
                 filename: 'verify.jpg',
                 contentType: 'image/jpeg'
             });

@@ -17,21 +17,21 @@ WORKDIR /app
 # Optimized installation for memory-constrained environments
 COPY requirements.txt .
 
-# 1. Install dlib with STRICT single-threaded build to prevent OOM (8GB limit)
-# 2. Install opencv-python-headless to avoid heavy GUI dependencies
+# 1. Install dlib with STRICT single-threaded build to prevent OOM
+# 2. Install opencv-python-headless
 # 3. Install remaining requirements
 RUN CMAKE_BUILD_PARALLEL_LEVEL=1 pip install --no-cache-dir dlib==19.24.1 && \
     pip install --no-cache-dir opencv-python-headless && \
     pip install --no-cache-dir -r requirements.txt
 
-# Pre-download face-recognition models to prevent runtime timeouts
+# Pre-download face-recognition models
 RUN python3 -c "import face_recognition; face_recognition.face_encodings(face_recognition.load_image_file('/app/requirements.txt'))" || true
 
 # Copy application code
 COPY . .
 
-# Expose port
-EXPOSE 8001
+# Cloud Run defaults to 8080
+EXPOSE 8080
 
-# Start application using uvicorn
-CMD ["uvicorn", "biometric_api:app", "--host", "0.0.0.0", "--port", "8001"]
+# Start application using uvicorn on port 8080
+CMD ["uvicorn", "biometric_api:app", "--host", "0.0.0.0", "--port", "8080"]

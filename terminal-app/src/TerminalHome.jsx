@@ -7,7 +7,7 @@ import { NativeBiometric } from '@capgo/capacitor-native-biometric';
 import { BleClient } from '@capacitor-community/bluetooth-le';
 
 // Production API Configuration
-const API_BASE = import.meta.env?.VITE_API_BASE_URL || '/';
+const API_BASE = import.meta.env?.VITE_API_BASE_URL || 'https://auralock-backend-50851729985.asia-south1.run.app';
 const RESET_DELAY = 5; // seconds
 
 const BLE_MAC = '58:8C:81:CC:65:29';
@@ -274,14 +274,18 @@ export default function TerminalHome() {
         canvas.toBlob(async (blob) => {
             if (!blob) return;
             try {
-                const form = new FormData();
-                form.append('file', blob, 'face.jpg');
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = async () => {
+                    const base64data = reader.result;
+                    try {
+                        const res = await axios.post(`${API_BASE}/api/biometrics/face/verify`, {
+                            image: base64data
+                        }, {
+                            headers: { 'Content-Type': 'application/json' },
+                        });
 
-                const res = await axios.post(`${API_BASE}/api/biometrics/face/verify`, form, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                });
-
-                if (res.data.success && view === 'home' && verifyMethod === 'face') {
+                        if (res.data.success && view === 'home' && verifyMethod === 'face') {
                     const isCheckout = !!(res.data.check_out || res.data.checkout);
                     const now = new Date();
                     setResult({
@@ -571,10 +575,11 @@ export default function TerminalHome() {
                                 </>
                             ) : (
                                 <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white">
-                                    <Fingerprint size={64} className="text-emerald-400 mb-4 animate-pulse" />
-                                    <div className="text-lg font-bold">Awaiting Fingerprint</div>
-                                    <div className="text-[10px] text-slate-400 mt-2 uppercase tracking-widest">Please place finger on scanner</div>
+                                    <ScanFace size={64} className="text-emerald-400 mb-4 animate-pulse" />
+                                    <div className="text-lg font-bold">Awaiting Face Scan</div>
+                                    <div className="text-[10px] text-slate-400 mt-2 uppercase tracking-widest">Position yourself in front of the camera</div>
                                 </div>
+
                             )}
                         </div>
 
@@ -591,15 +596,17 @@ export default function TerminalHome() {
                                         <div className="text-[8px] text-slate-500 font-medium">Automated recognition</div>
                                     </div>
                                 </button>
-                                <button className={`flex items-center gap-3 p-4 rounded-[1.25rem] border transition-all ${verifyMethod === 'fingerprint' ? 'bg-white border-emerald-400 shadow-lg shadow-emerald-500/10' : 'bg-white border-slate-200'}`} onClick={() => { setVerifyMethod('fingerprint'); handleFingerprintScan(); }}>
-                                    <div className={`p-2.5 rounded-xl ${verifyMethod === 'fingerprint' ? 'bg-emerald-50' : 'bg-slate-50'}`}>
-                                        <Fingerprint size={20} className={verifyMethod === 'fingerprint' ? 'text-emerald-500' : 'text-slate-400'} />
+                                {/* Fingerprint button removed as per security requirements */}
+                                <div className="flex items-center gap-3 p-4 rounded-[1.25rem] border bg-slate-50 border-slate-100 opacity-50 grayscale cursor-not-allowed">
+                                    <div className="p-2.5 rounded-xl bg-slate-100">
+                                        <Fingerprint size={20} className="text-slate-300" />
                                     </div>
                                     <div className="text-left">
-                                        <div className="text-[11px] font-black text-slate-900">Fingerprint</div>
-                                        <div className="text-[8px] text-slate-500 font-medium">Native biometric verify</div>
+                                        <div className="text-[11px] font-black text-slate-400">Fingerprint</div>
+                                        <div className="text-[8px] text-slate-400 font-medium">Disabled</div>
                                     </div>
-                                </button>
+                                </div>
+
                             </div>
                         </div>
 

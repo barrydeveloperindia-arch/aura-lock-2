@@ -1,25 +1,18 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+const supabase = require('./supabase');
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+async function check() {
+    console.log("🔍 Checking face_templates schema...");
+    // Since I can't easily run SQL rpc if not defined, I'll just try to insert a dummy row and see the error details or use a select.
+    const { data, error } = await supabase
+        .from('face_templates')
+        .select('*')
+        .limit(1);
 
-
-async function checkSchema() {
-    console.log("Checking schema for 'access_logs'...");
-    const { data: logData, error: logError } = await supabase.from('access_logs').select('*').limit(1);
-    if (logError) {
-        console.error("Access Logs Error:", logError.message);
+    if (error) {
+        console.error("❌ Error:", error.message);
     } else {
-        console.log("Access Logs Columns:", Object.keys(logData[0] || {}));
-    }
-
-    console.log("\nChecking schema for 'attendance'...");
-    const { data: attData, error: attError } = await supabase.from('attendance').select('*').limit(1);
-    if (attError) {
-        console.error("Attendance Error:", attError.message);
-    } else {
-        console.log("Attendance Columns:", Object.keys(attData[0] || {}));
+        console.log("✅ Sample Data:", JSON.stringify(data, null, 2));
     }
 }
 
-checkSchema();
+check();

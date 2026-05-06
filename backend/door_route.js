@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { unlockDoor, lockDoor, checkStatus, getDeviceInfo } = require('./doorService');
+const { unlockDoor, lockDoor, checkStatus, getDeviceInfo, rebuildCache, clearLogs } = require('./doorService');
 
-const { createClient } = require('@supabase/supabase-js');
-const supabaseUrl = process.env.SUPABASE_URL || "https://wdtizlzfsijikcejerwq.supabase.co";
-const supabase = createClient(supabaseUrl, process.env.SUPABASE_KEY);
+const supabase = require('./supabase');
 
 /**
  * @route POST /api/door/unlock
