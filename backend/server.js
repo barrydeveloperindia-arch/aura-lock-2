@@ -395,8 +395,8 @@ const safeTriggerDoorUnlock = async () => {
 // --- Routes ---
 const bleRoutes = require('./ble_route');
 const doorRoute = require('./door_route');
-app.use('/api/ble', bleRoutes);
-app.use('/api/door', doorRoute);
+app.use('/api/ble', authenticateToken, isAdmin, bleRoutes);
+app.use('/api/door', authenticateToken, isAdmin, doorRoute);
 
 // Login Endpoint
 app.post('/auth/login', authLimiter, async (req, res) => {
@@ -489,11 +489,9 @@ app.get('/api/stats', async (req, res) => {
                 .select('*', { count: 'exact', head: true })
                 .eq('status', 'Active'),
 
-            // Face-enrolled employees
-            supabase.from('employees')
-                .select('*', { count: 'exact', head: true })
-                .not('face_embedding', 'is', null)
-                .eq('status', 'Active'),
+            // Face-enrolled employees (Checking dedicated table)
+            supabase.from('face_encodings')
+                .select('id', { count: 'exact', head: true }),
 
             // Fingerprint records
             supabase.from('fingerprints')
@@ -2136,22 +2134,22 @@ app.get('/api/users', authenticateToken, isAdmin, async (req, res) => {
             query = query.eq('is_deleted', false);
         }
 
-        const { data: users, error } = await query;
+        // 1. Fetch all employees
+        const { data: users, error: empErr } = await query;
+        if (empErr) throw empErr;
 
-        if (error) {
-            console.error("❌ Get users Supabase error:", error.message, error.code, error.details);
-            throw error;
-        }
+        // 2. Fetch all face registration records to match locally
+        const { data: allEncodings } = await supabase.from('face_encodings').select('employee_id');
+        const enrolledIds = new Set(allEncodings?.map(e => e.employee_id) || []);
 
         // Transform results to include simple booleans for the frontend
         const transformedUsers = (users || []).map(u => ({
             ...u,
-            face_registered: !!(u.face_encodings?.length > 0),
+            face_registered: enrolledIds.has(u.employee_id), // Match by String ID (EMP-XX)
             fingerprint_registered: !!(u.fingerprints?.length > 0),
-            // Strip the internal objects to keep frontend data clean
             face_encodings: undefined,
             fingerprints: undefined,
-            face_embedding: undefined // Ensure legacy field is not leaked
+            face_embedding: undefined
         }));
 
         res.json(transformedUsers);
@@ -2159,8 +2157,7 @@ app.get('/api/users', authenticateToken, isAdmin, async (req, res) => {
         console.error("❌ Get users error:", error.message || error);
         res.status(500).json({
             error: "Internal Server Error",
-            message: error.message || "Failed to fetch employees",
-            hint: "Check backend logs and Supabase connectivity"
+            message: error.message || "Failed to fetch employees"
         });
     }
 });
@@ -2711,7 +2708,6 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
 })
 
 // End of Routes
-
 
 // Final fallback for SPA (Admin Dashboard)
 app.use('/admin', (req, res) => {

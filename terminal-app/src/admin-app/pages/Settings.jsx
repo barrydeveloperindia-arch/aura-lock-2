@@ -41,27 +41,24 @@ export default function Settings() {
 
     const clearLogs = async () => {
         if (!confirm('ARE YOU SURE? This will permanently delete all audit logs.')) return;
-        const targetUrl = 'http://192.168.2.117:8000/api/door/clear-logs';
         setLoading(true);
         try {
             const res = await apiService.clearLogs();
-            alert(`Logs cleared! URL: ${targetUrl}`);
-        } catch (e) { alert(`Failed to clear logs! URL: ${targetUrl}\nError: ${e.response?.status || e.message}`); }
+            alert(`Logs cleared successfully!`);
+        } catch (e) { alert(`Failed to clear logs! Error: ${e.response?.status || e.message}`); }
         finally { setLoading(false); }
     };
 
     const [adminCreds, setAdminCreds] = useState({ email: '', password: '' });
     const updateAdmin = async () => {
         if (!adminCreds.email && !adminCreds.password) return alert('Please enter new email or password.');
-        const targetUrl = 'http://192.168.2.117:8000/api/system/update-credentials';
         setLoading(true);
         try {
-            console.log('📡 Calling:', targetUrl);
             const res = await apiService.updateAdminCredentials(adminCreds.email, adminCreds.password);
-            alert(`Success! URL: ${targetUrl}\nMessage: ${res.message}`);
+            alert(`Success! Message: ${res.message}`);
             setAdminCreds({ email: '', password: '' });
         } catch (e) { 
-            alert(`Failed! URL: ${targetUrl}\nError: ${e.response?.status || e.message}`); 
+            alert(`Failed! Error: ${e.response?.status || e.message}`); 
         }
         finally { setLoading(false); }
     };
