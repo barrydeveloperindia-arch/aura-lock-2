@@ -41,3 +41,23 @@ This document details the transition from local/Render-based hosting to a high-p
 
 ---
 **Status:** ✅ Production Verified & Live in Mumbai.
+
+## 🚀 V2 Enterprise Roadmap (7-Story / 100+ Person Scale)
+
+Following the initial POC, the architecture is being refactored to support enterprise-scale multi-modal access:
+
+### 1. Event Sourcing Attendance Model
+- **Transitioning from "Rolling Check-Out" to Event-Driven:** The current `server.js` attendance logic is flawed for tracking lunch/breaks. It is being refactored to rely purely on the immutable `access_logs` table.
+- **Directional Context:** Two separate terminal apps are deployed per entry/exit point. Each is configured with a unique `device_id` (e.g., `terminal_in` and `terminal_out`), allowing the backend to perfectly pair entry and exit timestamps to calculate exact office hours.
+
+### 2. Multi-Modal Zones & RBAC
+- **Lobby/Main Doors:** High-throughput Facial Recognition via the Android terminal apps.
+- **Interior Doors & Server Rooms:** BYOD (Bring Your Own Device) NFC/BLE proximity unlocking from employee phones, plus physical ESP32 Fingerprint modules.
+- **RBAC:** Implementing a strict Role-Based Access Control matrix to define which employees can open which interior doors at specific times.
+
+### 3. Edge-Cloud Hybrid Topology
+- To mitigate Cloud Run costs and network latency for dozens of doors, the Python AI Engine (`smart-door-edge`) will be migrated to a local on-premise NUC/Server (The Building "Brain"). It will asynchronously sync logs and vectors up to Supabase to maintain global visibility without compromising door unlock speeds during local internet outages.
+
+### 4. Application Optimizations
+- **Terminal Battery Saver:** Implementing "Tap-to-Scan" to prevent the constant 2-second polling interval from draining the Android tablet's battery.
+- **Centralized Logging:** Deploying centralized logging (e.g. Datadog / Cloud Logging) to decouple and trace hardware/software events from the physical ESP32 firmware up to the Cloud.
