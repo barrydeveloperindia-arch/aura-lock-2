@@ -47,3 +47,5 @@ edge/pending_logs.json
 # Logs
 logs/
 backend/public/
+tools/
+archives/
