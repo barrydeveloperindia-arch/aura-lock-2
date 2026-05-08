@@ -37,6 +37,9 @@ These tasks untangle the monolithic structures, making the codebase maintainable
 - [ ] **ARCH-5: Configurable Terminal ID (Directional Context)**
   - **Location:** `terminal-app/src/TerminalHome.jsx`
   - **Action:** Add a settings menu to allow configuring a unique `device_id` (e.g., `terminal_in` for the outside phone and `terminal_out` for the inside phone). Currently, all devices are hardcoded as `office_terminal`, making it impossible to determine the direction of access.
+- [ ] **ARCH-6: Unified Hardware Enclosure Design (Pi Kiosk Migration)**
+  - **Location:** Physical Infrastructure
+  - **Action:** Design a commercial-grade MJF (PA12) enclosure based on **Concept 5: The "Floating Glass" In-Wall**. Instead of a costly Android phone, engineer the chassis to be recessed into the drywall and mount a cheap Raspberry Pi + 5" Touchscreen + USB Webcam module. This retains the exact React codebase (running in Chromium Kiosk Mode) while slashing hardware costs to ~$75 per door. Incorporate internal tunneling for the 12V maglock lines to a 5V buck converter.
 
 ## 🟡 Priority 2: Medium Priority Stability Improvements
 These tasks improve the reliability and logic flow of the system.

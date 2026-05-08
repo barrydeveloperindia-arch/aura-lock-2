@@ -403,29 +403,29 @@ app.post('/auth/login', authLimiter, async (req, res) => {
     const { email, password } = req.body;
     const ip = req.ip;
 
-    // --- Security: Brute-Force Check (DISABLED) ---
-    /*
+    // --- Security: Brute-Force Check ---
     const failures = loginFailures.get(ip) || { count: 0, lastTry: 0 };
     if (failures.count >= 5 && (Date.now() - failures.lastTry < 300000)) { // 5 min lockout
         return res.status(429).json({ message: 'IP temporarily locked out. Try later.' });
     }
-    */
-    try {
-        // MASTER BYPASS FOR USER LOCKOUT
-        console.log("🔓 [Login Bypass] Automatically authorizing request for:", email);
-        const user = { name: 'Super Admin', email: email || 'admin@aura.com', role: 'admin' };
-        const accessToken = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
-        return res.json({ token: accessToken, user });
 
-        /*
-        console.warn("❌ Invalid credentials attempt");
+    try {
+        if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+            console.log("✅ Admin logged in successfully:", email);
+            const user = { name: 'Super Admin', email: email, role: 'admin' };
+            const accessToken = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
+            // Reset failures on success
+            loginFailures.delete(ip);
+            return res.json({ token: accessToken, user });
+        }
+
+        console.warn("❌ Invalid credentials attempt for:", email);
         // Track failures
         failures.count++;
         failures.lastTry = Date.now();
         loginFailures.set(ip, failures);
 
         return res.status(401).json({ message: 'Invalid credentials' });
-        */
     } catch (error) {
         console.error("❌ Login error:", error);
         res.status(500).json({ error: "Internal Server Error" });
