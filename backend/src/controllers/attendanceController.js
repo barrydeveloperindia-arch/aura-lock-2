@@ -156,6 +156,7 @@ const recordAttendance = async (employeeId, method, deviceId = 'server') => {
         throw error;
     }
 };
+exports.recordAttendance = recordAttendance;
 
 // Dedicated Attendance Marking Endpoint
 // Handles both internal and external (biometric engine) calls
@@ -487,6 +488,7 @@ exports.exportPdfEmployee = async (req, res) => {
 };
 
 // Helper to resolve employee UUID for exports
+exports.resolveEmployeeUuid = resolveEmployeeUuid;
 async function resolveEmployeeUuid(idOrEid) {
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
     if (uuidRegex.test(idOrEid)) return idOrEid;
@@ -495,6 +497,7 @@ async function resolveEmployeeUuid(idOrEid) {
 }
 
 // Helper to resolve human-readable employee_id (e.g. EMP-0001)
+exports.resolveEmployeeEid = resolveEmployeeEid;
 async function resolveEmployeeEid(idOrEid) {
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
     if (!uuidRegex.test(idOrEid)) return idOrEid;

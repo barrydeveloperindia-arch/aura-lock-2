@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Fingerprint, X, CheckCircle2, LogOut, AlertTriangle, Clock, ShieldAlert, Unlock, UserPlus, Bluetooth, BluetoothConnected, BluetoothOff, Cpu, RefreshCw, AlertCircle, Search, ChevronRight, Settings, Zap, Lock, History, Info, DoorOpen } from 'lucide-react';
+import { Camera, Fingerprint, X, CheckCircle2, LogOut, AlertTriangle, Clock, ShieldAlert, Unlock, UserPlus, Bluetooth, BluetoothConnected, BluetoothOff, Cpu, RefreshCw, AlertCircle, Search, ChevronRight, Settings, Zap, Lock, History, Info, DoorOpen, ScanFace } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { NativeBiometric } from '@capgo/capacitor-native-biometric';
@@ -182,8 +182,20 @@ export default function TerminalHome() {
         initSystem();
         statusInterval = setInterval(() => { checkBiometricHealth(); }, 60000);
         
+        // Poll for remote unlock commands from the Admin Panel
+        const remoteUnlockInterval = setInterval(async () => {
+            try {
+                const res = await axios.get(`${API_BASE}/api/door/poll`, { timeout: 3000 });
+                if (res.data.unlock) {
+                    console.log('Received remote unlock signal from Admin Panel!');
+                    triggerDoorUnlock();
+                }
+            } catch (e) {}
+        }, 1500);
+        
         return () => {
             clearInterval(statusInterval);
+            clearInterval(remoteUnlockInterval);
             BleClient.stopLEScan().catch(() => {});
         };
     }, []);
@@ -274,18 +286,14 @@ export default function TerminalHome() {
         canvas.toBlob(async (blob) => {
             if (!blob) return;
             try {
-                const reader = new FileReader();
-                reader.readAsDataURL(blob);
-                reader.onloadend = async () => {
-                    const base64data = reader.result;
-                    try {
-                        const res = await axios.post(`${API_BASE}/api/biometrics/face/verify`, {
-                            image: base64data
-                        }, {
-                            headers: { 'Content-Type': 'application/json' },
-                        });
+                const formData = new FormData();
+                formData.append('file', blob, 'verify.jpg');
+                
+                const res = await axios.post(`${API_BASE}/api/biometrics/face/verify`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
 
-                        if (res.data.success && view === 'home' && verifyMethod === 'face') {
+                if (res.data.success && view === 'home' && verifyMethod === 'face') {
                     const isCheckout = !!(res.data.check_out || res.data.checkout);
                     const now = new Date();
                     setResult({
@@ -628,7 +636,16 @@ export default function TerminalHome() {
                             </div>
                         </div>
 
-                        {/* Bottom Navigation Removed as requested */}
+                        {/* Admin Manual Unlock Button */}
+                        <div className="w-full mt-2">
+                            <button 
+                                onClick={triggerDoorUnlock}
+                                className="w-full py-4 bg-slate-900 hover:bg-slate-800 rounded-[1.25rem] font-black text-white uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2"
+                            >
+                                <Unlock size={18} className="text-emerald-400" />
+                                Admin Unlock Door
+                            </button>
+                        </div>
                     </motion.div>
                 )}
 
@@ -641,7 +658,7 @@ export default function TerminalHome() {
                                 <button onClick={reset} className="p-2 hover:bg-slate-50 rounded-full transition-colors"><X size={20} /></button>
                             </div>
                             <input type="password" placeholder="Enter Admin PIN" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center text-2xl tracking-widest focus:outline-none focus:border-emerald-500/50" value={adminPin} onChange={e => setAdminPin(e.target.value)} autoFocus />
-                            <button onClick={() => { if (adminPin === '1234') { setView('admin_select'); setAdminPin(''); } else { setMessage('Invalid PIN'); setTimeout(() => setMessage(''), 2000); } }} className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-2xl font-black text-white uppercase tracking-widest transition-colors flex items-center justify-center gap-2"><Unlock size={18} /> Authenticate</button>
+                            <button onClick={() => { if (adminPin === '2026') { setView('admin_select'); setAdminPin(''); } else { setMessage('Invalid PIN'); setTimeout(() => setMessage(''), 2000); } }} className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-2xl font-black text-white uppercase tracking-widest transition-colors flex items-center justify-center gap-2"><Unlock size={18} /> Authenticate</button>
                             {message && <p className="text-red-500 text-sm font-bold">{message}</p>}
                         </div>
                     </motion.div>

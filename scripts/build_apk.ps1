@@ -17,7 +17,7 @@ $TERMINAL_DIR = Join-Path $PROJECT_ROOT "terminal-app"
 $ASSETS_BASE = Join-Path $TERMINAL_DIR "assets"
 $ASSETS_DIR = Join-Path $ASSETS_BASE "builds"
 $TIMESTAMP = Get-Date -Format "yyyyMMdd-HHmm"
-$PROD_API = "http://192.168.2.117:8000"
+$PROD_API = "http://192.168.2.153:8002"
 
 Write-Host "--- AuraLock APK Build Factory ---" -ForegroundColor Cyan
 
@@ -38,7 +38,7 @@ if ([string]::IsNullOrWhiteSpace($ApiBase)) {
     if ($Target -eq "production") {
         $ApiBase = $PROD_API
     } else {
-        $ApiBase = "http://192.168.2.117:8000"
+        $ApiBase = "http://192.168.2.153:8002"
     }
 }
 Write-Host "Using API: $ApiBase"

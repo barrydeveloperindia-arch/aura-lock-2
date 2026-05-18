@@ -47,5 +47,10 @@ edge/pending_logs.json
 # Logs
 logs/
 backend/public/
+# Backups & Archives
 tools/
 archives/
+docs/assets/*.png
+docs/assets/*.jpg
+docs/assets/*.jpeg
+

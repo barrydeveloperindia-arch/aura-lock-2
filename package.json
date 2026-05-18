@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently -n \"BACKEND,BIOMETRIC,FRONTEND,ADMIN\" -c \"bgBlue.bold,bgGreen.bold,bgMagenta.bold,bgCyan.bold\" \"npm run dev --prefix backend\" \"cd edge && start_biometric_api.bat\" \"npm run dev --prefix frontend\" \"npm run dev --prefix admin-panel\"",
-    "clean": "clean_ports.bat",
+    "build:admin": "cd admin-panel && npm run build && xcopy /E /I /Y dist ..\\backend\\public\\admin",
+    "clean": "scripts\\clean_ports.bat",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

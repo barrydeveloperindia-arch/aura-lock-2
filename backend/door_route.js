@@ -4,6 +4,8 @@ const { unlockDoor, lockDoor, checkStatus, getDeviceInfo, rebuildCache, clearLog
 
 const supabase = require('./supabase');
 
+global.remoteUnlockRequested = false;
+
 /**
  * @route POST /api/door/unlock
  * @desc Triggers the door unlock via ESP32 BLE
@@ -11,32 +13,28 @@ const supabase = require('./supabase');
 router.post('/unlock', async (req, res) => {
     console.log(`📡 [${new Date().toLocaleTimeString()}] Admin/Remote Door Unlock request received`);
     try {
-        const result = await unlockDoor();
-        if (result.success) {
-            console.log('✅ Door unlock successful');
+        // Flag the android tablet to open the door locally
+        global.remoteUnlockRequested = true;
+        
+        console.log('✅ Remote door unlock signal queued for Tablet');
 
-            // Log the remote unlock event
-            try {
-                await supabase.from('access_logs').insert({
-                    employee_id: null,
-                    status: 'success',
-                    device_id: 'admin_panel',
-                    method: 'REMOTE',
-                    metadata: { 
-                        operator: req.user?.email || 'admin',
-                        unlock_source: 'ADMIN_PANEL'
-                    }
-                });
-            } catch (logError) {
-                console.error("⚠️ Failed to record remote unlock log:", logError.message);
-            }
-
-            return res.json({ success: true, message: result.message, timestamp: new Date().toISOString() });
-        } else {
-            console.error(`❌ Door unlock failed: ${result.message}`);
-            // Return 400 instead of 500 for hardware failures to distinguish from server crashes
-            return res.status(400).json({ success: false, message: result.message, timestamp: new Date().toISOString() });
+        // Log the remote unlock event
+        try {
+            await supabase.from('access_logs').insert({
+                employee_id: null,
+                status: 'success',
+                device_id: 'admin_panel',
+                method: 'REMOTE',
+                metadata: { 
+                    operator: req.user?.email || 'admin',
+                    unlock_source: 'ADMIN_PANEL'
+                }
+            });
+        } catch (logError) {
+            console.error("⚠️ Failed to record remote unlock log:", logError.message);
         }
+
+        return res.json({ success: true, message: "Signal sent to tablet", timestamp: new Date().toISOString() });
     } catch (error) {
         console.error(`❌ Critical Door Route Error:`, error.message);
         return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
