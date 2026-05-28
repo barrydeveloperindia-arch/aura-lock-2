@@ -17,7 +17,13 @@ $TERMINAL_DIR = Join-Path $PROJECT_ROOT "terminal-app"
 $ASSETS_BASE = Join-Path $TERMINAL_DIR "assets"
 $ASSETS_DIR = Join-Path $ASSETS_BASE "builds"
 $TIMESTAMP = Get-Date -Format "yyyyMMdd-HHmm"
-$PROD_API = "http://192.168.2.117:8000"
+
+# Auto-detect active local IP to prevent address mismatches
+$detectedIP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.254.*" -and $_.InterfaceAlias -notlike "vEthernet*" } | Select-Object -First 1).IPAddress
+if (!$detectedIP) {
+    $detectedIP = "192.168.2.117"
+}
+$PROD_API = "http://$($detectedIP):8000"
 
 Write-Host "--- AuraLock APK Build Factory ---" -ForegroundColor Cyan
 

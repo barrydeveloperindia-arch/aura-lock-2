@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuraLock 2.0 - Wall Mount & Usage Interactive 3D Demonstration</title>
+    <!-- Modern Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0b0d10;
+            --panel-bg: rgba(18, 22, 30, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --accent-orange: #ff6b00;
+            --accent-blue: #00a8ff;
+            --accent-green: #00e676;
+            --text-primary: #f5f6f8;
+            --text-secondary: #909bb0;
+            --font-display: 'Outfit', sans-serif;
+            --font-sans: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Loading Screen */
+        #loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s ease;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--accent-orange);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 3D WebGL Canvas */
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* UI Overlay */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            grid-template-rows: 80px 1fr 100px;
+            padding: 24px;
+            gap: 24px;
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* Header */
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 16px;
+            padding: 0 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            border: 2.5px solid var(--accent-orange);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 800;
+            color: var(--accent-orange);
+            font-family: var(--font-display);
+        }
+
+        .logo-text h1 {
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text span {
+            color: var(--accent-orange);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .project-tag {
+            background: rgba(255, 107, 0, 0.1);
+            border: 1px solid rgba(255, 107, 0, 0.2);
+            color: var(--accent-orange);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Control Panel Sidebar */
+        .sidebar {
+            grid-column: 1;
+            grid-row: 2;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            height: calc(100vh - 228px);
+            overflow: hidden;
+        }
+
+        .steps-wrapper {
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 4px;
+        }
+
+        .steps-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+        .steps-wrapper::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.01);
+            border-radius: 3px;
+        }
+        .steps-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-primary);
+            border-left: 3px solid var(--accent-orange);
+            padding-left: 10px;
+            margin-bottom: 8px;
+        }
+
+        /* Steps list */
+        .steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .step-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .step-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+
+        .step-card.active {
+            background: rgba(255, 107, 0, 0.08);
+            border-color: rgba(255, 107, 0, 0.3);
+            box-shadow: 0 0 15px rgba(255, 107, 0, 0.1);
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .step-card.active .step-number {
+            background: var(--accent-orange);
+            border-color: var(--accent-orange);
+            color: #fff;
+        }
+
+        .step-details h3 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .step-details p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Controls Block */
+        .controls-block {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding-top: 20px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        button.primary {
+            background: var(--accent-orange);
+            border-color: var(--accent-orange);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 107, 0, 0.25);
+        }
+
+        button.primary:hover {
+            background: #ff8533;
+            box-shadow: 0 6px 20px rgba(255, 107, 0, 0.35);
+        }
+
+        /* Action HUD on center top/right */
+        .hud-overlay {
+            grid-column: 2;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: flex-start;
+            padding-top: 20px;
+        }
+
+        .hud-card {
+            background: rgba(10, 12, 16, 0.85);
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+            width: 320px;
+            animation: slideIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        @keyframes slideIn {
+            0% { transform: translateY(-20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .hud-status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-orange);
+            position: relative;
+        }
+
+        .hud-status-dot::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            border: 1px solid var(--accent-orange);
+            animation: pulse 1.5s linear infinite;
+        }
+
+        .hud-status-dot.blue { background: var(--accent-blue); }
+        .hud-status-dot.blue::after { border-color: var(--accent-blue); }
+        .hud-status-dot.green { background: var(--accent-green); }
+        .hud-status-dot.green::after { border-color: var(--accent-green); }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        .hud-info h4 {
+            font-family: var(--font-display);
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .hud-info p {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Bottom Step Navigator */
+        .step-navigator {
+            grid-column: 1 / -1;
+            grid-row: 3;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .nav-progress-bar {
+            flex-grow: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            margin: 0 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: var(--accent-orange);
+            width: 20%;
+            transition: width 0.5s ease;
+        }
+
+        .nav-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .nav-text span {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        /* Help tooltip */
+        .help-tooltip {
+            position: absolute;
+            bottom: 120px;
+            right: 24px;
+            background: rgba(10, 12, 16, 0.8);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(8px);
+        }
+
+        .help-key {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-family: monospace;
+            font-weight: 700;
+        }
+    </style>
+    
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls for interaction -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- GSAP for smooth animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+        <p style="font-family: 'Outfit'; font-weight: 600; letter-spacing: 1px;">INITIALIZING 3D ENVIRONMENT...</p>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div class="ui-layer">
+        <header class="interactive">
+            <div class="logo-section">
+                <div class="logo-icon">AL</div>
+                <div class="logo-text">
+                    <h1>AuraLock 2.0</h1>
+                    <span>Wall-Mount Terminal</span>
+                </div>
+            </div>
+            <div class="project-tag">Englabs Production Spec</div>
+        </header>
+
+        <div class="sidebar interactive">
+            <h2 class="section-title">Assembly Steps</h2>
+            <div class="steps-wrapper">
+                <div class="steps-container">
+                    <div class="step-card active" onclick="goToStep(1)">
+                        <div class="step-number">1</div>
+                        <div class="step-details">
+                            <h3>Wall Mounting</h3>
+                            <p>Secure the steel backplate chassis onto the concrete wall using 4 corner masonry screws.</p>
+                        </div>
+                    </div>
+                    <div class="step-card" onclick="goToStep(2)">
+                        <div class="step-number">2</div>
+                        <div class="step-details">
+                            <h3>Electronics Placement</h3>
+                            <p>Slot the ESP32 logic controller and buck power converter (12/24V to 5V) into their designated chassis tracks.</p>
+                        </div>
+                    </div>
+                    <div class="step-card" onclick="goToStep(3)">
+                        <div class="step-number">3</div>
+                        <div class="step-details">
+                            <h3>Dock Phone</h3>
+                            <p>Align the Nothing Phone (2) in the tray, triggering battery charging and the Glyph light status diagnostic.</p>
+                        </div>
+                    </div>
+                    <div class="step-card" onclick="goToStep(4)">
+                        <div class="step-number">4</div>
+                        <div class="step-details">
+                            <h3>Fasten Faceplate</h3>
+                            <p>Fit the organic orange faceplate and secure it using 6 side screws into M3 brass threaded inserts.</p>
+                        </div>
+                    </div>
+                    <div class="step-card" onclick="goToStep(5)">
+                        <div class="step-number">5</div>
+                        <div class="step-details">
+                            <h3>Interactive Walkthrough</h3>
+                            <p>Perform terminal scans, type validation PIN codes, and experience touch lock/unlock controls.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-block">
+                <button class="primary" id="btn-play" onclick="toggleAutoPlay()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    Auto-Play Walkthrough
+                </button>
+                <div class="btn-group">
+                    <button onclick="prevStep()">Previous</button>
+                    <button onclick="nextStep()">Next</button>
+                </div>
+                <button onclick="resetAssembly()" style="background: rgba(255, 75, 75, 0.05); border-color: rgba(255, 75, 75, 0.15); color: #ff5252;">
+                    Reset View
+                </button>
+            </div>
+        </div>
+
+        <div class="hud-overlay">
+            <div id="hud-status" class="hud-card">
+                <div class="hud-status-dot" id="status-dot"></div>
+                <div class="hud-info">
+                    <h4 id="status-title">System Status</h4>
+                    <p id="status-desc">Ready to demonstrate mounting.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="step-navigator interactive">
+            <div class="nav-text">CURRENT PHASE: <span id="nav-phase-num">1</span> / 5</div>
+            <div class="nav-progress-bar">
+                <div class="nav-progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="nav-text" id="nav-phase-title">Wall Mounting</div>
+        </div>
+    </div>
+
+    <div class="help-tooltip">
+        <span class="help-key">LMB</span> Orbit | <span class="help-key">RMB</span> Pan | <span class="help-key">Scroll</span> Zoom
+    </div>
+
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.position = 'fixed';
+            errorDiv.style.top = '0';
+            errorDiv.style.left = '0';
+            errorDiv.style.width = '100%';
+            errorDiv.style.height = '100%';
+            errorDiv.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
+            errorDiv.style.color = 'white';
+            errorDiv.style.padding = '20px';
+            errorDiv.style.zIndex = '999999';
+            errorDiv.style.fontFamily = 'monospace';
+            errorDiv.style.fontSize = '16px';
+            errorDiv.style.overflow = 'auto';
+            errorDiv.innerHTML = '<h1>JS Error Detected:</h1>' +
+                '<p><b>Message:</b> ' + msg + '</p>' +
+                '<p><b>URL:</b> ' + url + '</p>' +
+                '<p><b>Line:</b> ' + line + ' <b>Col:</b> ' + col + '</p>' +
+                '<pre>' + (error && error.stack ? error.stack : '') + '</pre>';
+            document.body.appendChild(errorDiv);
+            return false;
+        };
+
+        // --- 3D Scene Initialization ---
+        let scene, camera, renderer, controls;
+        let wall, backplate, esp32, buckConverter, phone, faceplate;
+        let wallScrews = [], faceplateScrews = [];
+        let currentStep = 1;
+        let autoPlayInterval = null;
+        let isPlaying = false;
+        
+        const loader = document.getElementById('loader');
+
+        // Textures & Materials
+        let screenTexture, screenCanvas, screenCtx;
+        let glyphsLines = [];
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            
+            // Scene & Renderer
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0b0d10);
+            scene.fog = new THREE.FogExp2(0x0b0d10, 0.0015);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            container.appendChild(renderer.domElement);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 2000);
+            camera.position.set(0, -150, 450); // Set camera facing front-ish (Y-up is standard, but in OpenSCAD Z is up. We align Three.js to Y-up)
+            
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 + 0.1; // Limit panning below ground
+            controls.minDistance = 150;
+            controls.maxDistance = 800;
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight1.position.set(150, 250, 200);
+            dirLight1.castShadow = true;
+            dirLight1.shadow.mapSize.width = 2048;
+            dirLight1.shadow.mapSize.height = 2048;
+            dirLight1.shadow.camera.near = 0.5;
+            dirLight1.shadow.camera.far = 1000;
+            const d = 150;
+            dirLight1.shadow.camera.left = -d;
+            dirLight1.shadow.camera.right = d;
+            dirLight1.shadow.camera.top = d;
+            dirLight1.shadow.camera.bottom = -d;
+            dirLight1.shadow.bias = -0.0005;
+            scene.add(dirLight1);
+
+            const pointLight = new THREE.PointLight(0xff6b00, 1.5, 300);
+            pointLight.position.set(0, 0, 50);
+            scene.add(pointLight);
+
+            buildModel();
+
+            // Window Resize
+            window.addEventListener('resize', onWindowResize);
+
+            // Hide Loader
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 500);
+            }, 1000);
+
+            animate();
+        }
+
+        // --- Procedural Geometry Builder ---
+        function buildModel() {
+            // Materials definition
+            const wallMaterial = new THREE.MeshStandardMaterial({
+                color: 0x1c212b,
+                roughness: 0.8,
+                metalness: 0.1,
+                bumpScale: 0.05
+            });
+
+            const backplateMaterial = new THREE.MeshStandardMaterial({
+                color: 0x3a3f4a,
+                roughness: 0.65,
+                metalness: 0.15,
+                flatShading: true
+            });
+
+            const faceplateMaterial = new THREE.MeshStandardMaterial({
+                color: 0xff6b00, // signature orange
+                roughness: 0.5,
+                metalness: 0.1,
+                flatShading: true
+            });
+
+            const steelMaterial = new THREE.MeshStandardMaterial({
+                color: 0xdddddd,
+                roughness: 0.2,
+                metalness: 0.8
+            });
+
+            // 1. Concrete Wall
+            const wallGeom = new THREE.BoxGeometry(600, 450, 20);
+            wall = new THREE.Mesh(wallGeom, wallMaterial);
+            wall.position.z = -10;
+            wall.receiveShadow = true;
+            scene.add(wall);
+
+            // Add grid patterns on wall for industrial feel
+            const wallGrid = new THREE.GridHelper(600, 20, 0x2d3545, 0x1f2530);
+            wallGrid.rotation.x = Math.PI / 2;
+            wallGrid.position.z = -0.1;
+            scene.add(wallGrid);
+
+            // 2. Backplate Chassis
+            // Length: 228mm, Width: 80mm, Depth: 12mm
+            const bpShape = new THREE.Shape();
+            const w = 80, l = 228, r = 10;
+            // Draw rounded rectangle
+            bpShape.moveTo(-w/2 + r, -l/2);
+            bpShape.lineTo(w/2 - r, -l/2);
+            bpShape.quadraticCurveTo(w/2, -l/2, w/2, -l/2 + r);
+            bpShape.lineTo(w/2, l/2 - r);
+            bpShape.quadraticCurveTo(w/2, l/2, w/2 - r, l/2);
+            bpShape.lineTo(-w/2 + r, l/2);
+            bpShape.quadraticCurveTo(-w/2, l/2, -w/2, l/2 - r);
+            bpShape.lineTo(-w/2, -l/2 + r);
+            bpShape.quadraticCurveTo(-w/2, -l/2, -w/2 + r, -l/2);
+
+            const bpExtrudeSettings = { depth: 10, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 1, bevelThickness: 1 };
+            const bpGeom = new THREE.ExtrudeGeometry(bpShape, bpExtrudeSettings);
+            bpGeom.center();
+            
+            backplate = new THREE.Mesh(bpGeom, backplateMaterial);
+            backplate.castShadow = true;
+            backplate.receiveShadow = true;
+            backplate.position.set(0, 0, 5); // sit on wall
+            scene.add(backplate);
+
+            // 3. Wall Screws
+            const screwGeom = new THREE.CylinderGeometry(3, 3, 2, 12);
+            const threadGeom = new THREE.CylinderGeometry(1.5, 1.5, 12, 8);
+            
+            for (let i = 0; i < 4; i++) {
+                const screwGroup = new THREE.Group();
+                const cap = new THREE.Mesh(screwGeom, steelMaterial);
+                cap.rotation.x = Math.PI / 2;
+                const thread = new THREE.Mesh(threadGeom, steelMaterial);
+                thread.position.z = -6;
+                screwGroup.add(cap);
+                screwGroup.add(thread);
+                
+                // Position at corners of backplate mount
+                const sx = (i % 2 === 0 ? 1 : -1) * 28;
+                const sy = (i < 2 ? 1 : -1) * 95;
+                screwGroup.position.set(sx, sy, 30); // start hovering
+                
+                wallScrews.push(screwGroup);
+                scene.add(screwGroup);
+            }
+
+            // 4. ESP32 Logic Board Mockup
+            const esp32Group = new THREE.Group();
+            const boardGeom = new THREE.BoxGeometry(25, 45, 1.6);
+            const boardMat = new THREE.MeshStandardMaterial({ color: 0x074e2d, roughness: 0.8 }); // Green PCB
+            const board = new THREE.Mesh(boardGeom, boardMat);
+            esp32Group.add(board);
+            // ESP32 Metal RF shield
+            const shieldGeom = new THREE.BoxGeometry(12, 16, 2.5);
+            const shieldMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 });
+            const shield = new THREE.Mesh(shieldGeom, shieldMat);
+            shield.position.set(0, 5, 2);
+            esp32Group.add(shield);
+            
+            esp32Group.position.set(-18, 55, 30); // Hovering initial
+            esp32 = esp32Group;
+            scene.add(esp32);
+
+            // 5. Buck Converter Mockup
+            const buckGroup = new THREE.Group();
+            const buckBoard = new THREE.Mesh(new THREE.BoxGeometry(16, 30, 1.6), new THREE.MeshStandardMaterial({ color: 0x004d80, roughness: 0.8 })); // Blue PCB
+            buckGroup.add(buckBoard);
+            const buckInductor = new THREE.Mesh(new THREE.BoxGeometry(8, 8, 4), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7 }));
+            buckInductor.position.set(0, 0, 2.5);
+            buckGroup.add(buckInductor);
+
+            buckGroup.position.set(18, 35, 30); // Hovering initial
+            buckConverter = buckGroup;
+            scene.add(buckConverter);
+
+            // 6. Nothing Phone (2) Mockup
+            const phoneGroup = new THREE.Group();
+            const phoneW = 76.4, phoneL = 162.1, phoneT = 8.6;
+            const phoneShape = new THREE.Shape();
+            const pr = 8;
+            phoneShape.moveTo(-phoneW/2 + pr, -phoneL/2);
+            phoneShape.lineTo(phoneW/2 - pr, -phoneL/2);
+            phoneShape.quadraticCurveTo(phoneW/2, -phoneL/2, phoneW/2, -phoneL/2 + pr);
+            phoneShape.lineTo(phoneW/2, phoneL/2 - pr);
+            phoneShape.quadraticCurveTo(phoneW/2, phoneL/2, phoneW/2 - pr, phoneL/2);
+            phoneShape.lineTo(-phoneW/2 + pr, phoneL/2);
+            phoneShape.quadraticCurveTo(-phoneW/2, phoneL/2, -phoneW/2, phoneL/2 - pr);
+            phoneShape.lineTo(-phoneW/2, -phoneL/2 + pr);
+            phoneShape.quadraticCurveTo(-phoneW/2, -phoneL/2, -phoneW/2 + pr, -phoneL/2);
+
+            const phoneGeom = new THREE.ExtrudeGeometry(phoneShape, { depth: phoneT, bevelEnabled: false });
+            phoneGeom.center();
+            const phoneBody = new THREE.Mesh(phoneGeom, new THREE.MeshStandardMaterial({ color: 0x151618, roughness: 0.4, metalness: 0.7 }));
+            phoneGroup.add(phoneBody);
+
+            // Screen Canvas Texture Setup
+            screenCanvas = document.createElement('canvas');
+            screenCanvas.width = 512;
+            screenCanvas.height = 1024;
+            screenCtx = screenCanvas.getContext('2d');
+            screenTexture = new THREE.CanvasTexture(screenCanvas);
+            
+            const screenGeom = new THREE.PlaneGeometry(phoneW - 4, phoneL - 4);
+            const screenMat = new THREE.MeshBasicMaterial({ map: screenTexture });
+            const screenMesh = new THREE.Mesh(screenGeom, screenMat);
+            screenMesh.position.z = phoneT/2 + 0.1;
+            phoneGroup.add(screenMesh);
+            
+            // Draw Initial Locked Screen
+            updateScreenCanvas("LOCKED", 0);
+
+            // Flipped Phone back details (Glyph Interface & Cameras)
+            // Camera bump
+            const camBump = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 0.8, 16), new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9 }));
+            camBump.position.set(-phoneW/2 + 14, phoneL/2 - 20, -0.4);
+            camBump.rotation.x = Math.PI / 2;
+            phoneGroup.add(camBump);
+
+            // Add LED Lines on back (drawn procedurally)
+            const glyphMat = new THREE.MeshBasicMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.0 });
+            
+            // Central charging coil loop LED line
+            const glyphCoilGeom = new THREE.RingGeometry(18, 19, 32);
+            const glyphCoil = new THREE.Mesh(glyphCoilGeom, glyphMat);
+            glyphCoil.position.set(0, -10, -0.1);
+            phoneGroup.add(glyphCoil);
+            glyphsLines.push(glyphCoil);
+
+            // Camera ring LED line
+            const glyphCamGeom = new THREE.RingGeometry(9, 10.5, 32);
+            const glyphCam = new THREE.Mesh(glyphCamGeom, glyphMat);
+            glyphCam.position.set(-phoneW/2 + 14, phoneL/2 - 20, -0.1);
+            phoneGroup.add(glyphCam);
+            glyphsLines.push(glyphCam);
+
+            phoneGroup.position.set(0, -25, 200); // Hovering high up in exploded view
+            phoneGroup.rotation.x = Math.PI; // Face the back plate/Glyphs forward first
+            phone = phoneGroup;
+            scene.add(phone);
+
+            // 7. Faceplate (Vibrant Orange Tapered Enclosure)
+            const fpGroup = new THREE.Group();
+            const fw = 88, fl = 228, fr = 12;
+
+            // Draw faceplate main shape in X-Y plane: rounded rectangle 88 x 228
+            const fpShape = new THREE.Shape();
+            fpShape.moveTo(-fw/2 + fr, -fl/2);
+            fpShape.lineTo(fw/2 - fr, -fl/2);
+            fpShape.quadraticCurveTo(fw/2, -fl/2, fw/2, -fl/2 + fr);
+            fpShape.lineTo(fw/2, fl/2 - fr);
+            fpShape.quadraticCurveTo(fw/2, fl/2, fw/2 - fr, fl/2);
+            fpShape.lineTo(-fw/2 + fr, fl/2);
+            fpShape.quadraticCurveTo(-fw/2, fl/2, -fw/2, fl/2 - fr);
+            fpShape.lineTo(-fw/2, -fl/2 + fr);
+            fpShape.quadraticCurveTo(-fw/2, -fl/2, -fw/2 + fr, -fl/2);
+
+            // Add screen cutout hole (68.5mm x 145.5mm, shifted by Y = -25)
+            const holePath = new THREE.Path();
+            const hw = 68.5, hl = 145.5, hr = 4;
+            const hy = -25; // shift to match phone pocket
+            
+            // Clockwise winding:
+            holePath.moveTo(-hw/2, hy + hl/2 - hr);
+            holePath.lineTo(-hw/2, hy - hl/2 + hr);
+            holePath.quadraticCurveTo(-hw/2, hy - hl/2, -hw/2 + hr, hy - hl/2);
+            holePath.lineTo(hw/2 - hr, hy - hl/2);
+            holePath.quadraticCurveTo(hw/2, hy - hl/2, hw/2, hy - hl/2 + hr);
+            holePath.lineTo(hw/2, hy + hl/2 - hr);
+            holePath.quadraticCurveTo(hw/2, hy + hl/2, hw/2 - hr, hy + hl/2);
+            holePath.lineTo(-hw/2 + hr, hy + hl/2);
+            holePath.quadraticCurveTo(-hw/2, hy + hl/2, -hw/2, hy + hl/2 - hr);
+            
+            fpShape.holes.push(holePath);
+
+            // Extrude faceplate flat base (14mm thick)
+            const fpExtrudeSettings = { depth: 14, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.8, bevelThickness: 0.8 };
+            const fpBaseGeom = new THREE.ExtrudeGeometry(fpShape, fpExtrudeSettings);
+            const fpBaseMesh = new THREE.Mesh(fpBaseGeom, faceplateMaterial);
+            fpGroup.add(fpBaseMesh);
+
+            // Sloped Head block (Y goes from 40 to 114, Z goes from 14 to 35)
+            const headShape = new THREE.Shape();
+            headShape.moveTo(40, 14);   // Y = 40, Z = 14
+            headShape.lineTo(114, 14);  // Y = 114, Z = 14
+            headShape.lineTo(114, 35);  // Y = 114, Z = 35
+            headShape.lineTo(64, 35);   // Y = 64, Z = 35
+            headShape.lineTo(40, 14);
+
+            const headGeom = new THREE.ExtrudeGeometry(headShape, { depth: fw - 2, bevelEnabled: true, bevelSegments: 2, bevelSize: 0.5, bevelThickness: 0.5 });
+            headGeom.center();
+            const headMesh = new THREE.Mesh(headGeom, faceplateMaterial);
+            // Rotate and position to align on top of base
+            headMesh.rotation.y = Math.PI / 2;
+            headMesh.position.set(0, 77, 24.5); // position it correctly at the top
+            fpGroup.add(headMesh);
+
+            // Englabs Logo & Name Embossing / Recessed Text on Head using Canvas Texture
+            const brandingCanvas = document.createElement('canvas');
+            brandingCanvas.width = 256;
+            brandingCanvas.height = 128;
+            const brandingCtx = brandingCanvas.getContext('2d');
+            brandingCtx.fillStyle = '#ff6b00'; // Match standard faceplate orange
+            brandingCtx.fillRect(0, 0, 256, 128);
+
+            // Draw swirl logo
+            brandingCtx.strokeStyle = '#b34a00'; // Darker orange for recessed look
+            brandingCtx.lineWidth = 6;
+            brandingCtx.beginPath();
+            brandingCtx.arc(128, 40, 16, 0, Math.PI * 1.5);
+            brandingCtx.stroke();
+            brandingCtx.beginPath();
+            brandingCtx.arc(128, 40, 8, 0, Math.PI * 2);
+            brandingCtx.stroke();
+
+            // Draw texts
+            brandingCtx.font = 'bold 20px Outfit';
+            brandingCtx.fillStyle = '#b34a00';
+            brandingCtx.textAlign = 'center';
+            brandingCtx.fillText('ENGLABS', 128, 85);
+            brandingCtx.font = 'bold 15px Outfit';
+            brandingCtx.fillText('AURA LOCK', 128, 110);
+
+            const brandingTexture = new THREE.CanvasTexture(brandingCanvas);
+            const brandingPlane = new THREE.Mesh(
+                new THREE.PlaneGeometry(fw - 8, 40),
+                new THREE.MeshBasicMaterial({ map: brandingTexture })
+            );
+            // Position branding on the flat top portion of the head block (Y = 89, Z = 35.1)
+            brandingPlane.position.set(0, 89, 35.2);
+            fpGroup.add(brandingPlane);
+
+            // Faceplate screw holes columns (aesthetic detail)
+            // 6 screw holes on sides
+            for (let i = 0; i < 6; i++) {
+                const side = (i % 2 === 0 ? 1 : -1);
+                const posy = (Math.floor(i / 2) - 1) * 80;
+                
+                const fScrewGroup = new THREE.Group();
+                const cap = new THREE.Mesh(screwGeom, steelMaterial);
+                cap.rotation.x = Math.PI/2;
+                fScrewGroup.add(cap);
+                fScrewGroup.position.set(side * 42, posy, 40); // hover
+                faceplateScrews.push(fScrewGroup);
+                scene.add(fScrewGroup);
+            }
+
+            fpGroup.position.set(0, 0, 120); // hovering in exploded view
+            faceplate = fpGroup;
+            scene.add(faceplate);
+        }
+
+        // --- Dynamic UI Canvas Texture ---
+        function updateScreenCanvas(state, progress = 0) {
+            screenCtx.fillStyle = "#0c0e12";
+            screenCtx.fillRect(0, 0, 512, 1024);
+
+            // Drawing futuristic grids
+            screenCtx.strokeStyle = "rgba(0, 168, 255, 0.15)";
+            screenCtx.lineWidth = 1;
+            for(let i=0; i<512; i+=40) {
+                screenCtx.beginPath();
+                screenCtx.moveTo(i, 0);
+                screenCtx.lineTo(i, 1024);
+                screenCtx.stroke();
+            }
+            for(let j=0; j<1024; j+=40) {
+                screenCtx.beginPath();
+                screenCtx.moveTo(0, j);
+                screenCtx.lineTo(512, j);
+                screenCtx.stroke();
+            }
+
+            // Tech border frame
+            screenCtx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+            screenCtx.lineWidth = 6;
+            screenCtx.strokeRect(20, 20, 472, 984);
+            
+            // Branding header
+            screenCtx.font = "bold 24px Outfit";
+            screenCtx.fillStyle = "#ffffff";
+            screenCtx.textAlign = "center";
+            screenCtx.fillText("AURALOCK TERMINAL", 256, 80);
+            
+            screenCtx.font = "500 16px Inter";
+            screenCtx.fillStyle = "#ff6b00";
+            screenCtx.fillText("ENGLABS SECURE NET", 256, 110);
+
+            // Render based on state
+            if (state === "LOCKED") {
+                // Lock Icon outer circle
+                screenCtx.beginPath();
+                screenCtx.arc(256, 450, 100, 0, 2 * Math.PI);
+                screenCtx.lineWidth = 3;
+                screenCtx.strokeStyle = "#ff4d4d";
+                screenCtx.stroke();
+
+                // Holographic pulse
+                screenCtx.beginPath();
+                screenCtx.arc(256, 450, 100 + Math.sin(progress * 0.1) * 8, 0, 2 * Math.PI);
+                screenCtx.strokeStyle = "rgba(255, 77, 77, 0.2)";
+                screenCtx.stroke();
+
+                // Padlock base
+                screenCtx.fillStyle = "#ff4d4d";
+                screenCtx.fillRect(206, 430, 100, 70);
+                // Padlock loop
+                screenCtx.beginPath();
+                screenCtx.arc(256, 430, 36, Math.PI, 0);
+                screenCtx.lineWidth = 12;
+                screenCtx.strokeStyle = "#ff4d4d";
+                screenCtx.stroke();
+
+                screenCtx.font = "bold 32px Outfit";
+                screenCtx.fillStyle = "#ff4d4d";
+                screenCtx.fillText("TERMINAL LOCKED", 256, 620);
+                
+                screenCtx.font = "500 18px Inter";
+                screenCtx.fillStyle = "#909bb0";
+                screenCtx.fillText("AUTHENTICATION REQUIREMENT DETECTED", 256, 670);
+                screenCtx.fillText("TAP OR SCAN QR TO INITIATE LOCK", 256, 700);
+
+            } else if (state === "SCANNING") {
+                // Scanning Laser Effect
+                const laserY = 250 + (progress % 500);
+                
+                // Draw QR Code mockup
+                screenCtx.fillStyle = "#ffffff";
+                screenCtx.fillRect(156, 350, 200, 200);
+                
+                screenCtx.fillStyle = "#000000";
+                // Add QR blocks
+                for(let x=0; x<10; x++) {
+                    for(let y=0; y<10; y++) {
+                        if ((x+y)%3===0 || (x*y)%4===1 || (x===0 && y===0) || (x===9 && y===9)) {
+                            screenCtx.fillRect(156 + (x*20), 350 + (y*20), 20, 20);
+                        }
+                    }
+                }
+
+                // Laser bar
+                screenCtx.shadowBlur = 15;
+                screenCtx.shadowColor = "#00a8ff";
+                screenCtx.fillStyle = "#00a8ff";
+                screenCtx.fillRect(100, laserY, 312, 6);
+                screenCtx.shadowBlur = 0; // reset
+
+                screenCtx.font = "bold 32px Outfit";
+                screenCtx.fillStyle = "#00a8ff";
+                screenCtx.fillText("SCANNING IDENTITY", 256, 620);
+
+                screenCtx.font = "500 18px Inter";
+                screenCtx.fillStyle = "#909bb0";
+                screenCtx.fillText("COMMUNICATING WITH MES DATABASE...", 256, 670);
+
+            } else if (state === "GRANTED") {
+                // Success Circle
+                screenCtx.beginPath();
+                screenCtx.arc(256, 450, 100, 0, 2 * Math.PI);
+                screenCtx.lineWidth = 3;
+                screenCtx.strokeStyle = "#00e676";
+                screenCtx.stroke();
+
+                // Padlock base (unlocked)
+                screenCtx.fillStyle = "#00e676";
+                screenCtx.fillRect(206, 430, 100, 70);
+                // Unlocked loop
+                screenCtx.beginPath();
+                screenCtx.arc(220, 430, 36, Math.PI, 0);
+                screenCtx.lineWidth = 12;
+                screenCtx.strokeStyle = "#00e676";
+                screenCtx.stroke();
+
+                screenCtx.font = "bold 32px Outfit";
+                screenCtx.fillStyle = "#00e676";
+                screenCtx.fillText("ACCESS GRANTED", 256, 620);
+
+                screenCtx.font = "500 18px Inter";
+                screenCtx.fillStyle = "#00e676";
+                screenCtx.fillText("ELECTROMAGNETIC RELAY DEACTIVATED", 256, 670);
+                screenCtx.fillStyle = "#909bb0";
+                screenCtx.fillText("AURALOCK IS UNLOCKED", 256, 700);
+            }
+
+            screenTexture.needsUpdate = true;
+        }
+
+        // --- Stepper Logic & Animations ---
+        const stepHUDData = {
+            1: { dot: "", title: "Mounting Backplate", desc: "Aligning chassis and fastening masonry screws." },
+            2: { dot: "blue", title: "Wiring & Electronics", desc: "Fitting ESP32 and connecting buck converter." },
+            3: { dot: "blue", title: "Glyph Verification", desc: "Phone inserted. Testing charging circuit and LEDs." },
+            4: { dot: "green", title: "Terminal Locked", desc: "Faceplate bolted with M3 screw inserts." },
+            5: { dot: "green", title: "Interactive UI Use", desc: "Terminal operational. Tap screen to unlock." }
+        };
+
+        function setHUD(step) {
+            const data = stepHUDData[step];
+            const dotEl = document.getElementById('status-dot');
+            dotEl.className = "hud-status-dot";
+            if (data.dot) dotEl.classList.add(data.dot);
+            
+            document.getElementById('status-title').innerText = data.title;
+            document.getElementById('status-desc').innerText = data.desc;
+
+            // Update Progress Nav
+            document.getElementById('nav-phase-num').innerText = step;
+            document.getElementById('nav-phase-title').innerText = data.title;
+            document.getElementById('progress-fill').style.width = (step / 5 * 100) + '%';
+
+            // Active Card highlighting
+            const cards = document.querySelectorAll('.step-card');
+            cards.forEach((card, idx) => {
+                if (idx + 1 === step) card.classList.add('active');
+                else card.classList.remove('active');
+            });
+        }
+
+        function goToStep(step) {
+            if (step === currentStep) return;
+            
+            // Stop Autoplay if clicking manual step
+            if (isPlaying && autoPlayInterval) {
+                toggleAutoPlay();
+            }
+
+            // Animate transition between components
+            gsap.killTweensOf([backplate.position, esp32.position, buckConverter.position, phone.position, phone.rotation, faceplate.position, controls.target]);
+            wallScrews.forEach(s => gsap.killTweensOf(s.position));
+            faceplateScrews.forEach(s => gsap.killTweensOf(s.position));
+
+            if (step === 1) {
+                gsap.to(camera.position, { x: 180, y: -180, z: 500, duration: 1.5 });
+                gsap.to(controls.target, { x: 0, y: 0, z: 80, duration: 1.5 });
+                
+                // Backplate onto wall, screws tighten
+                gsap.to(backplate.position, { z: 5, duration: 1 });
+                wallScrews.forEach((s, i) => {
+                    const sx = (i % 2 === 0 ? 1 : -1) * 28;
+                    const sy = (i < 2 ? 1 : -1) * 95;
+                    gsap.to(s.position, { x: sx, y: sy, z: 12, duration: 1 });
+                });
+
+                // Everything else high exploded/hidden
+                gsap.to(esp32.position, { z: 160, duration: 0.8 });
+                gsap.to(buckConverter.position, { z: 160, duration: 0.8 });
+                gsap.to(phone.position, { y: -25, z: 220, duration: 1 });
+                gsap.to(phone.rotation, { x: Math.PI, y: 0, z: 0, duration: 1 });
+                gsap.to(faceplate.position, { z: 280, duration: 1 });
+                faceplateScrews.forEach(s => gsap.to(s.position, { z: 320, duration: 1 }));
+                
+                updateScreenCanvas("LOCKED", 0);
+            } 
+            else if (step === 2) {
+                gsap.to(camera.position, { x: 120, y: 40, z: 280, duration: 1.5 });
+                gsap.to(controls.target, { x: 0, y: 30, z: 20, duration: 1.5 });
+
+                // Backplate & wall screws are in place
+                gsap.to(backplate.position, { z: 5, duration: 0.5 });
+                wallScrews.forEach((s, i) => {
+                    const sx = (i % 2 === 0 ? 1 : -1) * 28;
+                    const sy = (i < 2 ? 1 : -1) * 95;
+                    gsap.to(s.position, { x: sx, y: sy, z: 12, duration: 0.5 });
+                });
+
+                // Electronics slot in
+                gsap.to(esp32.position, { x: -18, y: 55, z: 8.5, duration: 1.2, ease: "back.out" });
+                gsap.to(buckConverter.position, { x: 18, y: 35, z: 8.5, duration: 1.2, ease: "back.out" });
+
+                // Phone/cover floating
+                gsap.to(phone.position, { y: -25, z: 180, duration: 1 });
+                gsap.to(phone.rotation, { x: Math.PI, y: 0, z: 0, duration: 1 });
+                gsap.to(faceplate.position, { z: 280, duration: 1 });
+                faceplateScrews.forEach(s => gsap.to(s.position, { z: 320, duration: 1 }));
+            }
+            else if (step === 3) {
+                gsap.to(camera.position, { x: -120, y: -40, z: 280, duration: 1.5 });
+                gsap.to(controls.target, { x: 0, y: -25, z: 20, duration: 1.5 });
+
+                // Electronics are in place
+                gsap.to(esp32.position, { z: 8.5, duration: 0.5 });
+                gsap.to(buckConverter.position, { z: 8.5, duration: 0.5 });
+
+                // Phone rotates to front and fits inside tray (Z = 12)
+                gsap.to(phone.position, { x: 0, y: -25, z: 12, duration: 1.5, ease: "power2.inOut" });
+                gsap.to(phone.rotation, { x: 0, y: 0, z: 0, duration: 1.5, ease: "power2.inOut", onComplete: () => {
+                    flashGlyphs();
+                }});
+
+                // Cover floating high
+                gsap.to(faceplate.position, { z: 280, duration: 1 });
+                faceplateScrews.forEach(s => gsap.to(s.position, { z: 320, duration: 1 }));
+            }
+            else if (step === 4) {
+                gsap.to(camera.position, { x: 120, y: -80, z: 280, duration: 1.5 });
+                gsap.to(controls.target, { x: 0, y: -10, z: 12, duration: 1.5 });
+
+                // Phone in place
+                gsap.to(phone.position, { z: 12, duration: 0.5 });
+                gsap.to(phone.rotation, { x: 0, y: 0, z: 0, duration: 0.5 });
+
+                // Cover goes down to parting line (Z = 17)
+                gsap.to(faceplate.position, { z: 17, duration: 1.2, ease: "bounce.out" });
+
+                // Faceplate screws go into inserts and screw down
+                faceplateScrews.forEach((s, i) => {
+                    const side = (i % 2 === 0 ? 1 : -1);
+                    const posy = (Math.floor(i / 2) - 1) * 80;
+                    gsap.to(s.position, { x: side * 42, y: posy, z: 20, duration: 1.5, ease: "power2.out" });
+                });
+            }
+            else if (step === 5) {
+                gsap.to(camera.position, { x: 0, y: -25, z: 170, duration: 1.5 });
+                gsap.to(controls.target, { x: 0, y: -25, z: 12, duration: 1.5 });
+                
+                // Keep everything secured
+                gsap.to(faceplate.position, { z: 17, duration: 0.5 });
+                faceplateScrews.forEach((s, i) => {
+                    const side = (i % 2 === 0 ? 1 : -1);
+                    const posy = (Math.floor(i / 2) - 1) * 80;
+                    gsap.to(s.position, { x: side * 42, y: posy, z: 20, duration: 0.5 });
+                });
+
+                // Trigger Screen Touch Interaction Simulation
+                runInteractionDemo();
+            }
+
+            currentStep = step;
+            setHUD(step);
+        }
+
+        // --- Interaction Simulation Details ---
+        let interactionTimeout = null;
+        function runInteractionDemo() {
+            if (interactionTimeout) clearTimeout(interactionTimeout);
+
+            updateScreenCanvas("LOCKED", 0);
+            
+            // Wait 2.5 seconds, then scan QR code
+            interactionTimeout = setTimeout(() => {
+                updateScreenCanvas("SCANNING", 0);
+                
+                // Animate scanner bar moving down
+                let scanProgress = 0;
+                const scanInterval = setInterval(() => {
+                    scanProgress += 8;
+                    updateScreenCanvas("SCANNING", scanProgress);
+                    if (scanProgress >= 500) {
+                        clearInterval(scanInterval);
+                        
+                        // Grant access
+                        updateScreenCanvas("GRANTED", 0);
+                    }
+                }, 30);
+
+            }, 2500);
+        }
+
+        // --- Glyph LED flash effect ---
+        function flashGlyphs() {
+            glyphsLines.forEach(g => {
+                gsap.to(g.material, { emissiveIntensity: 3.0, duration: 0.2, yoyo: true, repeat: 3, onComplete: () => {
+                    gsap.to(g.material, { emissiveIntensity: 1.0, duration: 0.5 }); // keep them dimly glowing
+                }});
+            });
+        }
+
+        // --- Control Buttons ---
+        function prevStep() {
+            let next = currentStep - 1;
+            if (next < 1) next = 1;
+            goToStep(next);
+        }
+
+        function nextStep() {
+            let next = currentStep + 1;
+            if (next > 5) next = 5;
+            goToStep(next);
+        }
+
+        function toggleAutoPlay() {
+            const btn = document.getElementById('btn-play');
+            if (isPlaying) {
+                clearInterval(autoPlayInterval);
+                isPlaying = false;
+                btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Auto-Play Walkthrough`;
+                btn.classList.remove('primary');
+            } else {
+                isPlaying = true;
+                btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> Stop Walkthrough`;
+                btn.classList.add('primary');
+                
+                autoPlayInterval = setInterval(() => {
+                    let next = currentStep + 1;
+                    if (next > 5) {
+                        next = 1;
+                    }
+                    goToStep(next);
+                }, 6000); // 6 seconds per step
+            }
+        }
+
+        function resetAssembly() {
+            if (isPlaying) toggleAutoPlay();
+            goToStep(1);
+            gsap.to(camera.position, { x: 0, y: -150, z: 450, duration: 1.5 });
+            controls.target.set(0, 0, 0);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // Render loop
+        let tick = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            tick++;
+
+            // Slight floating idle animation for screws in exploded steps
+            if (currentStep === 1) {
+                wallScrews.forEach((s, idx) => {
+                    s.position.z += Math.sin(tick * 0.05 + idx) * 0.1;
+                });
+            }
+            if (currentStep <= 3) {
+                faceplate.position.z += Math.sin(tick * 0.03) * 0.15;
+                faceplateScrews.forEach((s, idx) => {
+                    s.position.z += Math.sin(tick * 0.04 + idx) * 0.15;
+                });
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Start App
+        init3D();
+    </script>
+</body>
+</html>

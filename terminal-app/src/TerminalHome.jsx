@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Fingerprint, X, CheckCircle2, LogOut, AlertTriangle, Clock, ShieldAlert, Unlock, UserPlus, Bluetooth, BluetoothConnected, BluetoothOff, Cpu, RefreshCw, AlertCircle, Search, ChevronRight, Settings, Zap, Lock, History, Info, DoorOpen } from 'lucide-react';
+import { Camera, Fingerprint, X, CheckCircle2, LogOut, AlertTriangle, Clock, ShieldAlert, Unlock, UserPlus, Bluetooth, BluetoothConnected, BluetoothOff, Cpu, RefreshCw, AlertCircle, Search, ChevronRight, Settings, Zap, Lock, History, Info, DoorOpen, ScanFace } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { NativeBiometric } from '@capgo/capacitor-native-biometric';
@@ -217,9 +217,23 @@ export default function TerminalHome() {
         setResult(null);
         setSearchTerm('');
         setCountdown(RESET_DELAY);
+        setIsScannerActive(false);
     };
 
     // ── Face Scan Live Feed ───────────────────────────────────────────────────
+    const [isScannerActive, setIsScannerActive] = useState(false);
+
+    // Auto-timeout scanner to idle state after 15 seconds to prevent battery drain
+    useEffect(() => {
+        if (isScannerActive && view === 'home' && verifyMethod === 'face') {
+            const timeout = setTimeout(() => {
+                setIsScannerActive(false);
+                setMessage('Scanner idle (tap to wake)');
+            }, 15000);
+            return () => clearTimeout(timeout);
+        }
+    }, [isScannerActive, view, verifyMethod]);
+
     useEffect(() => {
         let interval;
         const startCamera = async () => {
@@ -231,7 +245,7 @@ export default function TerminalHome() {
                 }
                 setMessage('Scanning...');
 
-                if (view === 'home' && verifyMethod === 'face') {
+                if (view === 'home' && verifyMethod === 'face' && isScannerActive) {
                     interval = setInterval(captureAndVerify, 2000);
                 } else if (view === 'admin_scan') {
                     // admin registration handles its own capture
@@ -242,7 +256,7 @@ export default function TerminalHome() {
             }
         };
 
-        if ((view === 'home' && verifyMethod === 'face') || view === 'admin_scan') {
+        if ((view === 'home' && verifyMethod === 'face' && isScannerActive) || view === 'admin_scan') {
             startCamera();
         } else {
             if (streamRef.current) {
@@ -258,7 +272,7 @@ export default function TerminalHome() {
                 streamRef.current.getTracks().forEach(t => t.stop());
             }
         };
-    }, [view, verifyMethod]);
+    }, [view, verifyMethod, isScannerActive]);
 
     const captureAndVerify = () => {
         if (!videoRef.current || view !== 'home' || verifyMethod !== 'face' || loading) return;
@@ -286,33 +300,37 @@ export default function TerminalHome() {
                         });
 
                         if (res.data.success && view === 'home' && verifyMethod === 'face') {
-                    const isCheckout = !!(res.data.check_out || res.data.checkout);
-                    const now = new Date();
-                    setResult({
-                        name: res.data.user?.name || res.data.name || res.data.employee_name || 'Employee',
-                        time: res.data.check_in
-                            ? new Date(res.data.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-                            : now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
-                        checkoutTime: res.data.check_out
-                            ? new Date(res.data.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-                            : now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
-                        workingHours: res.data.working_hours != null ? formatWorkHours(res.data.working_hours) : null,
-                        isCheckout,
-                    });
-                    setView(isCheckout ? 'checkout' : 'checkin');
-                    triggerDoorUnlock();
-                }
-            } catch (err) {
-                if (err.response?.status === 401 || err.response?.status === 403) {
-                    setMessage(err.response.data.message || 'Face Not Identified');
-                    setTimeout(() => { if (view === 'home' && verifyMethod === 'face') setMessage('Scanning...') }, 1500);
-                } else if (err.response?.status === 503) {
-                    setMessage('Biometric Engine Offline');
-                } else if (!err.response) {
-                    setMessage('Server Offline. Cannot connect to Backend.');
-                } else {
-                    setMessage('Scanning...');
-                }
+                            const isCheckout = !!(res.data.check_out || res.data.checkout);
+                            const now = new Date();
+                            setResult({
+                                name: res.data.user?.name || res.data.name || res.data.employee_name || 'Employee',
+                                time: res.data.check_in
+                                    ? new Date(res.data.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+                                    : now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
+                                checkoutTime: res.data.check_out
+                                    ? new Date(res.data.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+                                    : now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
+                                workingHours: res.data.working_hours != null ? formatWorkHours(res.data.working_hours) : null,
+                                isCheckout,
+                            });
+                            setView(isCheckout ? 'checkout' : 'checkin');
+                            triggerDoorUnlock();
+                        }
+                    } catch (err) {
+                        if (err.response?.status === 401 || err.response?.status === 403) {
+                            setMessage(err.response.data.message || 'Face Not Identified');
+                            setTimeout(() => { if (view === 'home' && verifyMethod === 'face') setMessage('Scanning...') }, 1500);
+                        } else if (err.response?.status === 503) {
+                            setMessage('Biometric Engine Offline');
+                        } else if (!err.response) {
+                            setMessage('Server Offline. Cannot connect to Backend.');
+                        } else {
+                            setMessage('Scanning...');
+                        }
+                    }
+                };
+            } catch (blobErr) {
+                console.error("toBlob error:", blobErr);
             }
         }, 'image/jpeg', 0.8);
     };
@@ -539,47 +557,62 @@ export default function TerminalHome() {
                         {/* Main Camera Frame */}
                         <div className="relative w-full h-[42vh] bg-slate-900 rounded-[2rem] overflow-hidden mb-4 shadow-xl shrink-0">
                             <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-[8px] font-black text-white uppercase tracking-widest">CAMERA ACTIVE</span>
+                                <div className={`w-1.5 h-1.5 rounded-full ${(isScannerActive || view === 'admin_scan') ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`} />
+                                <span className="text-[8px] font-black text-white uppercase tracking-widest">
+                                    {(isScannerActive || view === 'admin_scan') ? 'CAMERA ACTIVE' : 'CAMERA STANDBY'}
+                                </span>
                             </div>
                             <button className="absolute top-4 right-4 z-10 p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-white/70">
                                 <Zap size={14} />
                             </button>
                             
                             {verifyMethod === 'face' ? (
-                                <>
-                                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
-                                    
-                                    {/* Face Overlay Brackets */}
-                                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                                        <div className="w-56 h-64 relative">
-                                            {[['top-0 left-0', 'border-t-2 border-l-2 rounded-tl-2xl'], ['top-0 right-0', 'border-t-2 border-r-2 rounded-tr-2xl'], ['bottom-0 left-0', 'border-b-2 border-l-2 rounded-bl-2xl'], ['bottom-0 right-0', 'border-b-2 border-r-2 rounded-br-2xl']].map(([pos, br], i) => (
-                                                <div key={i} className={`absolute w-10 h-10 ${pos} ${br} border-emerald-400`} />
-                                            ))}
+                                isScannerActive ? (
+                                    <>
+                                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
+                                        
+                                        {/* Face Overlay Brackets */}
+                                        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                                            <div className="w-56 h-64 relative">
+                                                {[['top-0 left-0', 'border-t-2 border-l-2 rounded-tl-2xl'], ['top-0 right-0', 'border-t-2 border-r-2 rounded-tr-2xl'], ['bottom-0 left-0', 'border-b-2 border-l-2 rounded-bl-2xl'], ['bottom-0 right-0', 'border-b-2 border-r-2 rounded-br-2xl']].map(([pos, br], i) => (
+                                                    <div key={i} className={`absolute w-10 h-10 ${pos} ${br} border-emerald-400`} />
+                                                ))}
+                                            </div>
                                         </div>
+                                        
+                                        {/* Scanning line */}
+                                        <motion.div
+                                            animate={{ y: ['0%', '100%', '0%'] }}
+                                            transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+                                            className="absolute left-0 right-0 h-[1px] bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] top-0 z-10"
+                                            style={{ top: '10%', height: '80%' }}
+                                        />
+                                        
+                                        {/* Bottom Text in Camera */}
+                                        <div className="absolute bottom-5 left-0 right-0 text-center z-10 drop-shadow-md">
+                                            <div className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-1">POSITION YOUR FACE IN THE FRAME</div>
+                                            <div className="text-sm font-bold text-white">{message || 'Scanning...'}</div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-white p-6 cursor-pointer relative" onClick={() => setIsScannerActive(true)}>
+                                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.08),transparent_70%)] pointer-events-none" />
+                                        <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 mb-4 animate-pulse">
+                                            <ScanFace size={36} className="text-emerald-400" />
+                                        </div>
+                                        <div className="text-base font-extrabold tracking-tight text-white mb-1">Scanner Suspended</div>
+                                        <p className="text-[9px] text-slate-400 uppercase tracking-widest text-center max-w-[200px] leading-relaxed">Tap to wake up camera and start recognition</p>
+                                        <button className="mt-5 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 rounded-xl font-black text-[9px] text-white uppercase tracking-widest transition-all shadow-md shadow-emerald-500/10">
+                                            Wake Up Camera
+                                        </button>
                                     </div>
-                                    
-                                    {/* Scanning line */}
-                                    <motion.div
-                                        animate={{ y: ['0%', '100%', '0%'] }}
-                                        transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
-                                        className="absolute left-0 right-0 h-[1px] bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] top-0 z-10"
-                                        style={{ top: '10%', height: '80%' }}
-                                    />
-                                    
-                                    {/* Bottom Text in Camera */}
-                                    <div className="absolute bottom-5 left-0 right-0 text-center z-10 drop-shadow-md">
-                                        <div className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-1">POSITION YOUR FACE IN THE FRAME</div>
-                                        <div className="text-sm font-bold text-white">{message || 'Scanning...'}</div>
-                                    </div>
-                                </>
+                                )
                             ) : (
                                 <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white">
                                     <ScanFace size={64} className="text-emerald-400 mb-4 animate-pulse" />
                                     <div className="text-lg font-bold">Awaiting Face Scan</div>
                                     <div className="text-[10px] text-slate-400 mt-2 uppercase tracking-widest">Position yourself in front of the camera</div>
                                 </div>
-
                             )}
                         </div>
 

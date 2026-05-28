@@ -1,7 +1,7 @@
 ﻿{
-    "api_base":  "http://192.168.2.117:8000",
+    "api_base":  "http://192.168.2.113:8000",
     "target":  "production",
-    "timestamp":  "20260425-1150",
+    "timestamp":  "20260526-1724",
     "version":  "1.0.0",
-    "filename":  "englabs-attendance-v1.0.0-20260425-1150-production.apk"
+    "filename":  "englabs-attendance-v1.0.0-20260526-1724-production.apk"
 }
