@@ -14,6 +14,7 @@ router.get('/export/pdf', authenticateToken, attendanceController.exportPdf);
 router.get('/report', attendanceController.getReport);
 router.get('/monthly-report', authenticateToken, attendanceController.getMonthlyReport);
 router.get('/analytics', authenticateToken, attendanceController.getAnalytics);
+router.get('/attendance-analytics', authenticateToken, attendanceController.getAnalytics);
 router.get('/activity', attendanceController.getActivity);
 
 module.exports = router;

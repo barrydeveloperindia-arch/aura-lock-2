@@ -24,15 +24,15 @@ const PORT = process.env.PORT || 8000;
 app.set('trust proxy', 1);
 // --- Configuration & Initialization ---
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@auralock.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '2565';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '2026';
 const JWT_SECRET = process.env.JWT_SECRET || 'auralock_super_secret_key_2026';
 
-// ── Service Discovery ──
+// â”€â”€ Service Discovery â”€â”€
 let PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'https://smart-door-edge-50851729985.asia-south1.run.app';
 
-console.log('🧬 [Biometrics] Target Engine:', PYTHON_ENGINE_URL);
-console.log('🚀 [Config] ADMIN_EMAIL:', ADMIN_EMAIL);
-console.log('🚀 [Config] JWT_SECRET:', JWT_SECRET ? 'SET' : 'MISSING');
+console.log('ðŸ§¬ [Biometrics] Target Engine:', PYTHON_ENGINE_URL);
+console.log('ðŸš€ [Config] ADMIN_EMAIL:', ADMIN_EMAIL);
+console.log('ðŸš€ [Config] JWT_SECRET:', JWT_SECRET ? 'SET' : 'MISSING');
 
 // --- Security: Rate Limiters (TEMPORARY DISABLED FOR DEBUGGING) ---
 const authLimiter = (req, res, next) => next(); 
@@ -122,17 +122,18 @@ app.get('/api/diag', async (req, res) => {
 
 // Request Logger Middleware
 app.use((req, res, next) => {
-    console.log(`📡 [${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
+    console.log(`ðŸ“¡ [${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
     if (req.method === 'POST') {
         const logBody = { ...req.body };
         if (logBody.faceEncoding) logBody.faceEncoding = "[ENCODING_DATA]";
-        console.log('📦 Body:', JSON.stringify(logBody, null, 2));
+        console.log('ðŸ“¦ Body:', JSON.stringify(logBody, null, 2));
     }
     next();
 });
 
 // --- Middleware ---
 const { authenticateToken, isAdmin } = require('./src/middleware/auth');
+const { recordAttendance, resolveEmployeeUuid, resolveEmployeeEid } = require('./src/controllers/attendanceController');
 
 
 // --- IoT Utilities ---
@@ -141,15 +142,15 @@ const { authenticateToken, isAdmin } = require('./src/middleware/auth');
  */
 const safeTriggerDoorUnlock = async () => {
     try {
-        console.log("🔓 [Trigger] Calling door unlock service...");
+        console.log("ðŸ”“ [Trigger] Calling door unlock service...");
         const result = await doorService.unlockDoor();
         if (!result.success) {
-            console.warn(`⚠️ [Trigger] Door unlock service reported failure: ${result.message}`);
+            console.warn(`âš ï¸ [Trigger] Door unlock service reported failure: ${result.message}`);
         } else {
-            console.log("✅ [Trigger] Door unlock service successful");
+            console.log("âœ… [Trigger] Door unlock service successful");
         }
     } catch (error) {
-        console.error("❌ [Trigger] Critical error calling door unlock service:", error.message);
+        console.error("âŒ [Trigger] Critical error calling door unlock service:", error.message);
     }
 };
 
@@ -157,6 +158,15 @@ const safeTriggerDoorUnlock = async () => {
 const bleRoutes = require('./ble_route');
 const doorRoute = require('./door_route');
 app.use('/api/ble', authenticateToken, isAdmin, bleRoutes);
+
+app.get('/api/door/poll', (req, res) => {
+    if (global.remoteUnlockRequested) {
+        global.remoteUnlockRequested = false;
+        return res.json({ unlock: true });
+    }
+    return res.json({ unlock: false });
+});
+
 app.use('/api/door', authenticateToken, isAdmin, doorRoute);
 
 // --- Authentication Routes ---
@@ -173,9 +183,9 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/stats', attendanceRoutes);
 
 
-// ─── Security Logs Endpoint ───────────────────────────────────────────────────
+// â”€â”€â”€ Security Logs Endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Filters: status, method, device_id, startDate, endDate, search (employee name)
-// ─── Simplified Access Logs Endpoint ─────────────────────────────────────────
+// â”€â”€â”€ Simplified Access Logs Endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/api/access-logs', authenticateToken, async (req, res) => {
     try {
         const {
@@ -219,12 +229,12 @@ app.get('/api/access-logs', authenticateToken, async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('❌ Access logs error:', error);
+        console.error('âŒ Access logs error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-// ─── Employee Access History Endpoint ─────────────────────────────────────────
+// â”€â”€â”€ Employee Access History Endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/api/access-logs/employee/:employee_id', authenticateToken, async (req, res) => {
     try {
         const { employee_id } = req.params;
@@ -252,12 +262,12 @@ app.get('/api/access-logs/employee/:employee_id', authenticateToken, async (req,
 
         res.json({ logs: logs || [], total: count || 0 });
     } catch (error) {
-        console.error('❌ Employee access logs error:', error);
+        console.error('âŒ Employee access logs error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-// ─── Employee Access Summary Endpoint ─────────────────────────────────────────
+// â”€â”€â”€ Employee Access Summary Endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/api/access-logs/employee/:employee_id/summary', authenticateToken, async (req, res) => {
     try {
         const { employee_id } = req.params;
@@ -291,12 +301,12 @@ app.get('/api/access-logs/employee/:employee_id/summary', authenticateToken, asy
             last_scan: lastScanArr?.[0]?.created_at || null
         });
     } catch (error) {
-        console.error('❌ Access summary error:', error);
+        console.error('âŒ Access summary error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-// ─── Access Logs Export Handlers ──────────────────────────────────────────────
+// â”€â”€â”€ Access Logs Export Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function handleAccessExcelExport(req, res) {
     try {
@@ -344,11 +354,11 @@ async function handleAccessExcelExport(req, res) {
         records.forEach(r => {
             ws.addRow({
                 name: r.employees?.name || 'Unknown',
-                eid: r.employees?.employee_id || '—',
+                eid: r.employees?.employee_id || 'â€”',
                 method: (r.method || r.metadata?.method || 'face').toUpperCase(),
                 ts: new Date(r.created_at).toLocaleString('en-IN'),
-                conf: r.confidence ? `${Math.round(r.confidence * 100)}%` : '—',
-                device: r.device_id || '—',
+                conf: r.confidence ? `${Math.round(r.confidence * 100)}%` : 'â€”',
+                device: r.device_id || 'â€”',
                 result: (r.status || 'failed').toUpperCase()
             });
         });
@@ -358,7 +368,7 @@ async function handleAccessExcelExport(req, res) {
         await wb.xlsx.write(res);
         res.end();
     } catch (error) {
-        console.error('❌ Access Excel Export Error:', error);
+        console.error('âŒ Access Excel Export Error:', error);
         res.status(500).json({ error: 'Export failed' });
     }
 }
@@ -425,7 +435,7 @@ async function handleAccessPdfExport(req, res) {
 
         doc.end();
     } catch (error) {
-        console.error('❌ Access PDF Export Error:', error);
+        console.error('âŒ Access PDF Export Error:', error);
         res.status(500).json({ error: 'Export failed' });
     }
 }
@@ -459,13 +469,13 @@ app.post('/api/logs/iot', async (req, res) => {
 
     // --- Security: HMAC Verification for Device logs ---
     if (signature === 'internal_request') {
-        console.log("⚡ [IoT Log] Accepting internal request from unified app.");
+        console.log("âš¡ [IoT Log] Accepting internal request from unified app.");
     } else {
         if (!signature || !timestamp) return res.sendStatus(401);
 
         // Check drift (60 sec)
         if (Math.abs(Math.floor(Date.now() / 1000) - timestamp) > 60) {
-            console.warn("⚠️ [IoT Security] Stale log timestamp rejected.");
+            console.warn("âš ï¸ [IoT Security] Stale log timestamp rejected.");
             return res.status(403).json({ error: "Stale timestamp" });
         }
 
@@ -475,16 +485,16 @@ app.post('/api/logs/iot', async (req, res) => {
         const expectedSignature = hmac.digest('hex');
 
         if (signature !== expectedSignature) {
-            console.error("❌ [IoT Security] Invalid signature from device!");
+            console.error("âŒ [IoT Security] Invalid signature from device!");
             return res.status(401).json({ error: "Invalid integrity signature" });
         }
     }
 
     try {
         if (status === 'LOW_BATTERY' || status === 'CRITICAL_BATTERY') {
-            console.warn(`🔋 [POWER ALERT] ${status}: ${message}`);
+            console.warn(`ðŸ”‹ [POWER ALERT] ${status}: ${message}`);
         } else {
-            console.log(`🔔 [IoT Event] ${method} unlock by ID #${id}: ${status}`);
+            console.log(`ðŸ”” [IoT Event] ${method} unlock by ID #${id}: ${status}`);
         }
 
         // Rate limiting for failed/unknown biometric events
@@ -514,7 +524,7 @@ app.post('/api/logs/iot', async (req, res) => {
 
         res.json({ success: true });
     } catch (error) {
-        console.error("❌ IoT Log error:", error);
+        console.error("âŒ IoT Log error:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
@@ -531,7 +541,7 @@ app.get('/api/terminal/users', async (req, res) => {
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error("❌ Terminal fetch error:", error);
+            console.error("âŒ Terminal fetch error:", error);
             return res.status(500).json({ message: "Failed to load users" });
         }
         res.json(users || []);
@@ -556,7 +566,7 @@ app.get('/api/departments', authenticateToken, async (req, res) => {
         const depts = [...new Set(data.map(d => (d.department || 'General').trim()))].sort();
         res.json(depts);
     } catch (error) {
-        console.error("❌ Get departments error:", error);
+        console.error("âŒ Get departments error:", error);
         res.status(500).json({ error: "Failed to fetch departments" });
     }
 });
@@ -597,7 +607,7 @@ app.get('/api/users', authenticateToken, isAdmin, async (req, res) => {
 
         res.json(transformedUsers);
     } catch (error) {
-        console.error("❌ Get users error:", error.message || error);
+        console.error("âŒ Get users error:", error.message || error);
         res.status(500).json({
             error: "Internal Server Error",
             message: error.message || "Failed to fetch employees"
@@ -637,21 +647,21 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
         // Handle Fingerprint registration flag from frontend
         if (rawUpdates.fingerprint_registered === true) {
             const eid = rawUpdates.employee_id || old_eid;
-            console.log(`📝 [Biometric] Marking fingerprint as registered for ${eid}`);
+            console.log(`ðŸ“ [Biometric] Marking fingerprint as registered for ${eid}`);
             try {
                 await supabase.from('fingerprints').upsert({
                     employee_id: eid,
                     template_data: 'ENROLLED_VIA_ADMIN_MOCK'
                 }, { on_conflict: 'employee_id' });
             } catch (fpErr) {
-                console.warn("⚠️ Fingerprint record upsert failed:", fpErr.message);
+                console.warn("âš ï¸ Fingerprint record upsert failed:", fpErr.message);
             }
         }
 
         // Apply employee update if there are valid fields
         let updatedUser = { ...existingUser, id };
         if (Object.keys(updates).length > 0) {
-            console.log(`📝 [Update] Applying employee update for UUID ${id}...`);
+            console.log(`ðŸ“ [Update] Applying employee update for UUID ${id}...`);
             const { data, error } = await supabase
                 .from('employees')
                 .update(updates)
@@ -660,7 +670,7 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
                 .single();
 
             if (error) {
-                console.error("❌ [Update] Employee update failed:", error.message);
+                console.error("âŒ [Update] Employee update failed:", error.message);
                 throw error;
             }
             updatedUser = data;
@@ -675,14 +685,14 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
         // Handle Biometric Cache Eviction if ID changed
         const new_eid = updatedUser.employee_id;
         if (old_eid && new_eid !== old_eid) {
-            console.log(`🔄 [Cache] Evicting old biometric cache for ID: ${old_eid}`);
+            console.log(`ðŸ”„ [Cache] Evicting old biometric cache for ID: ${old_eid}`);
             try {
                 await axios.delete(
                     `${PYTHON_ENGINE_URL}/api/biometrics/face/${encodeURIComponent(old_eid)}`,
                     { timeout: 3000 }
                 );
             } catch (ce) {
-                console.warn(`⚠️ [Cache] Old ID eviction skipped: ${ce.message}`);
+                console.warn(`âš ï¸ [Cache] Old ID eviction skipped: ${ce.message}`);
             }
         }
 
@@ -702,7 +712,7 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
             fingerprint_registered: fpCount > 0
         });
     } catch (error) {
-        console.error("❌ Update user error:", error.message || error);
+        console.error("âŒ Update user error:", error.message || error);
         res.status(500).json({ error: "Internal Server Error", message: error.message });
     }
 });
@@ -727,7 +737,7 @@ app.post('/api/users', authenticateToken, validateIdentity, async (req, res) => 
             .single();
 
         if (error) {
-            console.error("❌ Supabase Upsert Error:", error);
+            console.error("âŒ Supabase Upsert Error:", error);
             throw error;
         }
 
@@ -748,10 +758,10 @@ app.post('/api/users', authenticateToken, validateIdentity, async (req, res) => 
             }, { on_conflict: 'id' });
         }
 
-        console.log("✅ User created/updated in Supabase:", newUser.employee_id);
+        console.log("âœ… User created/updated in Supabase:", newUser.employee_id);
         res.status(201).json(newUser);
     } catch (error) {
-        console.error("❌ Create user error:", error);
+        console.error("âŒ Create user error:", error);
 
         // Detect HTML error pages (like Cloudflare 5xx)
         if (typeof error.message === 'string' && error.message.includes('<!DOCTYPE html>')) {
@@ -771,7 +781,7 @@ app.delete('/api/users/:id', authenticateToken, isAdmin, async (req, res) => {
         const { hard = 'false' } = req.query;
         const isHardDelete = hard === 'true';
 
-        console.log(`🗑️ Initializing ${isHardDelete ? 'HARD' : 'soft'} delete for subject: ${id}`);
+        console.log(`ðŸ—‘ï¸ Initializing ${isHardDelete ? 'HARD' : 'soft'} delete for subject: ${id}`);
 
         // 1. Resolve Employee UUID and EID (to maintain cache eviction)
         const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
@@ -797,7 +807,7 @@ app.delete('/api/users/:id', authenticateToken, isAdmin, async (req, res) => {
         }
 
         if (isHardDelete) {
-            console.log(`🧨 PERMANENTLY DELETING employee ${employeeEid || id} and all history...`);
+            console.log(`ðŸ§¨ PERMANENTLY DELETING employee ${employeeEid || id} and all history...`);
             
             // Delete related records in order
             // Note: face_encodings, fingerprints and rfid_tags typically use the String EID
@@ -823,7 +833,7 @@ app.delete('/api/users/:id', authenticateToken, isAdmin, async (req, res) => {
         // 2. Perform SOFT DELETE
         // We update the status and is_deleted flag instead of deleting the row.
         // This preserves foreign key relationships for attendance and access_logs.
-        console.log(`🔒 Marking employee ${employeeEid || id} as Deactivated...`);
+        console.log(`ðŸ”’ Marking employee ${employeeEid || id} as Deactivated...`);
         const { data: updatedUser, error: updateError } = await supabase
             .from('employees')
             .update({ 
@@ -836,34 +846,34 @@ app.delete('/api/users/:id', authenticateToken, isAdmin, async (req, res) => {
             .single();
 
         if (updateError) {
-            console.error("❌ Failed to soft-delete employee record:", updateError);
+            console.error("âŒ Failed to soft-delete employee record:", updateError);
             throw updateError;
         }
 
-        // ── Biometric Cache Eviction (MANDATORY for security) ────────────────
+        // â”€â”€ Biometric Cache Eviction (MANDATORY for security) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // We MUST still remove them from the Python Engine's active RAM cache
         // otherwise they could still unlock the door until the next restart.
         const evictionEmployeeId = updatedUser.employee_id || employeeEid;
-        console.log(`🧹 Evicting biometric cache for deleted user: ${evictionEmployeeId}`);
+        console.log(`ðŸ§¹ Evicting biometric cache for deleted user: ${evictionEmployeeId}`);
 
         try {
             await axios.delete(
                 `${PYTHON_ENGINE_URL}/api/biometrics/face/${encodeURIComponent(evictionEmployeeId)}`,
                 { timeout: 5000 }
             );
-            console.log(`✅ Biometric cache evicted for ${evictionEmployeeId}`);
+            console.log(`âœ… Biometric cache evicted for ${evictionEmployeeId}`);
         } catch (cacheErr) {
-            console.warn(`⚠️ Biometric engine offline during eviction: ${cacheErr.message}`);
+            console.warn(`âš ï¸ Biometric engine offline during eviction: ${cacheErr.message}`);
         }
 
         try {
             await axios.post(`${PYTHON_ENGINE_URL}/api/biometrics/cache/rebuild`, {}, { timeout: 5000 });
-            console.log('✅ Biometric cache rebuild triggered');
+            console.log('âœ… Biometric cache rebuild triggered');
         } catch (rebuildErr) {
-            console.warn(`⚠️ Cache rebuild skipped (engine offline): ${rebuildErr.message}`);
+            console.warn(`âš ï¸ Cache rebuild skipped (engine offline): ${rebuildErr.message}`);
         }
 
-        console.log(`✅ Success: Subject ${evictionEmployeeId} soft-deleted. Historical records preserved.`);
+        console.log(`âœ… Success: Subject ${evictionEmployeeId} soft-deleted. Historical records preserved.`);
         res.json({
             success: true,
             message: "User has been deactivated and removed from the dashboard. Historical records are preserved.",
@@ -871,7 +881,7 @@ app.delete('/api/users/:id', authenticateToken, isAdmin, async (req, res) => {
         });
 
     } catch (error) {
-        console.error("❌ Soft Delete Error:", error.message);
+        console.error("âŒ Soft Delete Error:", error.message);
         res.status(500).json({
             error: "Employee deactivation failed",
             details: error.message
@@ -882,7 +892,7 @@ app.delete('/api/users/:id', authenticateToken, isAdmin, async (req, res) => {
 app.post('/api/biometrics/face/register', upload.single('file'), validateIdentity, async (req, res) => {
     try {
         const { employeeId, email, name, re_enroll } = req.body;
-        console.log(`📸 Received biometric registration for: ${employeeId}`);
+        console.log(`ðŸ“¸ Received biometric registration for: ${employeeId}`);
 
         if (!employeeId) {
             return res.status(400).json({ success: false, message: "Missing employeeId" });
@@ -891,11 +901,11 @@ app.post('/api/biometrics/face/register', upload.single('file'), validateIdentit
         let imageBuffer;
         if (req.file) {
             imageBuffer = req.file.buffer;
-            console.log("📦 Received registration photo as Multipart File");
+            console.log("ðŸ“¦ Received registration photo as Multipart File");
         } else if (req.body.image) {
             const base64Data = req.body.image.replace(/^data:image\/\w+;base64,/, "");
             imageBuffer = Buffer.from(base64Data, 'base64');
-            console.log("📦 Received registration photo as Base64 String");
+            console.log("ðŸ“¦ Received registration photo as Base64 String");
         }
 
         if (!imageBuffer) {
@@ -915,14 +925,14 @@ app.post('/api/biometrics/face/register', upload.single('file'), validateIdentit
             if (name) form.append('name', name);
             if (re_enroll) form.append('re_enroll', String(re_enroll));
 
-            console.log("📡 Forwarding to Biometric Engine...");
+            console.log("ðŸ“¡ Forwarding to Biometric Engine...");
             const response = await axios.post(`${PYTHON_ENGINE_URL}/api/biometrics/face/register`, form, {
                 headers: form.getHeaders(),
                 timeout: 45000
             });
 
             if (response.data.success) {
-                console.log(`✅ Face successfully registered by AI Engine`);
+                console.log(`âœ… Face successfully registered by AI Engine`);
                 return res.json({
                     success: true,
                     message: response.data.message,
@@ -934,7 +944,7 @@ app.post('/api/biometrics/face/register', upload.single('file'), validateIdentit
                 return res.status(400).json({ success: false, message: response.data.message });
             }
         } catch (engineError) {
-            console.error("❌ Biometric Engine error:", engineError.message);
+            console.error("âŒ Biometric Engine error:", engineError.message);
             return res.status(503).json({
                 success: false,
                 message: "Biometric Engine error or offline.",
@@ -942,7 +952,7 @@ app.post('/api/biometrics/face/register', upload.single('file'), validateIdentit
             });
         }
     } catch (error) {
-        console.error("❌ Registration error:", error.message);
+        console.error("âŒ Registration error:", error.message);
         res.status(500).json({ success: false, message: error.message });
     }
 });
@@ -951,22 +961,23 @@ app.post('/api/biometrics/face/register', upload.single('file'), validateIdentit
 app.get('/api/biometrics/health', async (req, res) => {
     const fallbacks = [
         PYTHON_ENGINE_URL,
+        'https://smart-door-edge-50851729985.asia-south1.run.app',
         'http://smart-door-edge:8001',
         'http://localhost:8001'
     ].filter(Boolean);
 
     for (const url of fallbacks) {
         try {
-            console.log(`🔍 [Health Check] Trying: ${url}/health`);
+            console.log(`ðŸ” [Health Check] Trying: ${url}/health`);
             await axios.get(`${url}/health`, { timeout: 3000 });
             // If success, update the global URL if it was a fallback
             if (url !== PYTHON_ENGINE_URL) {
-                console.log(`✅ [Discovery] Updating PYTHON_ENGINE_URL to proven fallback: ${url}`);
+                console.log(`âœ… [Discovery] Updating PYTHON_ENGINE_URL to proven fallback: ${url}`);
                 PYTHON_ENGINE_URL = url;
             }
             return res.json({ status: 'ready', engine: 'face-recognition', url });
         } catch (err) {
-            console.warn(`⚠️ [Health Check] Failed for ${url}: ${err.message}`);
+            console.warn(`âš ï¸ [Health Check] Failed for ${url}: ${err.message}`);
         }
     }
 
@@ -979,22 +990,22 @@ app.get('/api/biometrics/health', async (req, res) => {
 
 app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'), async (req, res) => {
     try {
-        console.log("🔍 [Verification] Checking face identity...");
+        console.log("ðŸ” [Verification] Checking face identity...");
         
         // Handle both Multipart (file) and JSON (Base64 image)
         let imageBuffer;
         if (req.file) {
             imageBuffer = req.file.buffer;
-            console.log("📦 Received photo as Multipart File");
+            console.log("ðŸ“¦ Received photo as Multipart File");
         } else if (req.body.image) {
             // Extract Base64 data (strip prefix if present)
             const base64Data = req.body.image.replace(/^data:image\/\w+;base64,/, "");
             imageBuffer = Buffer.from(base64Data, 'base64');
-            console.log("📦 Received photo as Base64 String");
+            console.log("ðŸ“¦ Received photo as Base64 String");
         }
 
         if (!imageBuffer) {
-            console.error("❌ No image data provided in request.");
+            console.error("âŒ No image data provided in request.");
             return res.status(400).json({ success: false, message: "No image data provided" });
         }
 
@@ -1006,7 +1017,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
             .order('created_at', { ascending: false });
 
         if (error || !employees || employees.length === 0) {
-            console.warn("🚫 Access Denied: No employees registered in database.");
+            console.warn("ðŸš« Access Denied: No employees registered in database.");
             return res.status(401).json({
                 success: false,
                 message: "No registered identities found."
@@ -1023,7 +1034,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                 contentType: 'image/jpeg'
             });
 
-            console.log(`📡 Attempting Biometric Engine (${PYTHON_ENGINE_URL})...`);
+            console.log(`ðŸ“¡ Attempting Biometric Engine (${PYTHON_ENGINE_URL})...`);
 
             // --- WAIT FOR ENGINE READY (max 60s) ---
             let engineReady = false;
@@ -1033,13 +1044,13 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                     engineReady = true;
                     break;
                 } catch (_) {
-                    console.log(`⏳ Biometric engine not ready yet, waiting... (attempt ${attempt + 1}/12)`);
+                    console.log(`â³ Biometric engine not ready yet, waiting... (attempt ${attempt + 1}/12)`);
                     await new Promise(r => setTimeout(r, 5000));
                 }
             }
 
             if (!engineReady) {
-                console.error("❌ Biometric engine did not become ready in time.");
+                console.error("âŒ Biometric engine did not become ready in time.");
                 return res.status(503).json({
                     success: false,
                     message: "Biometric Service is still starting up. Please wait 30 seconds and try again."
@@ -1048,12 +1059,12 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
 
             const response = await axios.post(`${PYTHON_ENGINE_URL}/api/biometrics/face/verify`, form, {
                 headers: form.getHeaders(),
-                timeout: 120000 // 120s — Render Free/Starter tiers can be slow on first Cold-Start
+                timeout: 120000 // 120s â€” Render Free/Starter tiers can be slow on first Cold-Start
             });
 
             if (response.data.success) {
                 const employeeId = response.data.employee_id;
-                console.log(`✅ Face Verified: ${employeeId}`);
+                console.log(`âœ… Face Verified: ${employeeId}`);
 
 
 
@@ -1077,7 +1088,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                     }
                 });
             } else if (response.data.error_code === 'AMBIGUOUS_MATCH') {
-                console.warn(`⚠️ Ambiguous Match for hint: ${response.data.id_hint}. Requesting Fingerprint fallback.`);
+                console.warn(`âš ï¸ Ambiguous Match for hint: ${response.data.id_hint}. Requesting Fingerprint fallback.`);
 
                 try {
                     await supabase.from('access_logs').insert({
@@ -1087,7 +1098,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                         method: 'face'
                     });
                 } catch (logError) {
-                    console.error("⚠️ Failed to record ambiguous access log:", logError.message);
+                    console.error("âš ï¸ Failed to record ambiguous access log:", logError.message);
                 }
 
                 return res.status(403).json({
@@ -1097,7 +1108,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                     id_hint: response.data.id_hint
                 });
             } else {
-                console.log(`🚫 Engine Rejection: ${response.data.message}`);
+                console.log(`ðŸš« Engine Rejection: ${response.data.message}`);
                 // Log failed attempt
                 try {
                     const key = `face_null_denied`;
@@ -1116,14 +1127,14 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                         });
                         logRateLimiter.set(key, Date.now());
                     }
-                } catch (le) { console.error('⚠️ Failed to log rejection:', le.message); }
+                } catch (le) { console.error('âš ï¸ Failed to log rejection:', le.message); }
                 return res.status(401).json({
                     success: false,
                     message: response.data.message || "Access Denied."
                 });
             }
         } catch (engineError) {
-            console.error("❌ Biometric Engine error/offline:", engineError.message);
+            console.error("âŒ Biometric Engine error/offline:", engineError.message);
             // Log engine offline as failed
             try {
                 await supabase.from('access_logs').insert({
@@ -1133,7 +1144,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                     method: 'face',
                     metadata: { reason: 'Biometric engine offline', error: engineError.message }
                 });
-            } catch (le) { console.error('⚠️ Failed to log engine-offline event:', le.message); }
+            } catch (le) { console.error('âš ï¸ Failed to log engine-offline event:', le.message); }
             return res.status(503).json({
                 success: false,
                 message: "Biometric Service Unavailable. Please use manual override or contact admin."
@@ -1141,7 +1152,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
         }
 
     } catch (error) {
-        console.error("❌ Verification error:", error);
+        console.error("âŒ Verification error:", error);
         res.status(500).json({
             success: false,
             message: "System Error: Face processing failed or timed out. Please try again.",
