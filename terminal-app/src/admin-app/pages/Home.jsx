@@ -19,13 +19,16 @@ export default function Home() {
                 className="text-center mb-10 md:mb-16"
             >
                 <div className="flex items-center justify-center gap-2 mb-3">
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
-                        <ShieldCheck size={20} className="text-white md:hidden" />
-                        <ShieldCheck size={24} className="text-white hidden md:block" />
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/30">
+                        <svg className="w-6 h-6 text-white" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M50 10C27.9 10 10 27.9 10 50C10 72.1 27.9 90 50 90C72.1 90 90 72.1 90 50" stroke="currentColor" strokeWidth="12" strokeLinecap="round"/>
+                            <path d="M30 50C30 39 39 30 50 30C61 30 70 39 70 50C70 61 61 70 50 70" stroke="currentColor" strokeWidth="8" strokeLinecap="round"/>
+                            <circle cx="50" cy="50" r="10" fill="currentColor"/>
+                        </svg>
                     </div>
                 </div>
-                <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2">AuraLock <span className="text-blue-500">Secure</span></h1>
-                <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Unified Access Control</p>
+                <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2">EngLabs <span className="text-emerald-500">Attendance</span></h1>
+                <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Smart Tracking Terminal</p>
             </motion.div>
 
             {/* Main Options */}

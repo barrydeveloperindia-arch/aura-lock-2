@@ -404,8 +404,8 @@ export default function TerminalHome() {
             console.log('👆 [Biometric] Starting authentication...');
             // Robust Biometric call with fallbacks for different plugin versions
             const authParams = {
-                reason: 'Authenticate for door access',
-                title: 'AuraLock Biometric V3 (RETRY)',
+                reason: 'Authenticate for attendance tracking',
+                title: 'EngLabs Attendance Tracker',
                 subtitle: 'Scan your fingerprint',
                 negativeButtonText: 'Cancel',
             };
@@ -510,9 +510,18 @@ export default function TerminalHome() {
 
                         {/* Top Bar */}
                         <div className="flex justify-between items-center w-full mb-3">
-                            <div className="flex flex-col">
-                                <span className="font-black text-xl tracking-tight text-slate-800">AURA<span className="text-emerald-500">LOCK</span></span>
-                                <span className="text-[7px] text-slate-500 font-black uppercase tracking-widest">SMART BIOMETRIC TERMINAL</span>
+                            <div className="flex items-center gap-2.5">
+                                <div className="relative flex items-center justify-center">
+                                    <svg className="w-8 h-8 text-emerald-500 animate-pulse" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M50 10C27.9 10 10 27.9 10 50C10 72.1 27.9 90 50 90C72.1 90 90 72.1 90 50" stroke="currentColor" strokeWidth="12" strokeLinecap="round"/>
+                                        <path d="M30 50C30 39 39 30 50 30C61 30 70 39 70 50C70 61 61 70 50 70" stroke="currentColor" strokeWidth="8" strokeLinecap="round"/>
+                                        <circle cx="50" cy="50" r="10" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-black text-sm tracking-tight text-slate-800 leading-none">ENGLABS</span>
+                                    <span className="text-[7px] text-emerald-500 font-black uppercase tracking-widest mt-0.5">ATTENDANCE TRACKER</span>
+                                </div>
                             </div>
                             <div className="flex flex-col items-end">
                                 <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50/50 rounded-full">
@@ -619,7 +628,11 @@ export default function TerminalHome() {
                                         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                                         className="w-20 h-20 rounded-3xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center shadow-2xl relative mb-6"
                                     >
-                                        <ScanFace size={40} className="text-emerald-400" />
+                                        <svg className="w-10 h-10 text-emerald-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M50 10C27.9 10 10 27.9 10 50C10 72.1 27.9 90 50 90C72.1 90 90 72.1 90 50" stroke="currentColor" strokeWidth="12" strokeLinecap="round"/>
+                                            <path d="M30 50C30 39 39 30 50 30C61 30 70 39 70 50C70 61 61 70 50 70" stroke="currentColor" strokeWidth="8" strokeLinecap="round"/>
+                                            <circle cx="50" cy="50" r="10" fill="currentColor"/>
+                                        </svg>
                                         <div className="absolute inset-0 rounded-3xl border border-emerald-500/20 animate-ping" style={{ animationDuration: '3s' }} />
                                     </motion.div>
                                     

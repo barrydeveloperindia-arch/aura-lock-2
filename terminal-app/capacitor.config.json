@@ -1,6 +1,6 @@
 {
     "appId": "com.auralock.terminal.v3",
-    "appName": "AuraLock V2",
+    "appName": "EngLabs Attendance Tracker",
     "webDir": "dist",
     "server": {
         "androidScheme": "http",
@@ -9,7 +9,7 @@
     "android": {
         "allowMixedContent": true,
         "backgroundColor": "#0a0f1e",
-        "overrideUserAgent": "AuraLock-Terminal/1.0"
+        "overrideUserAgent": "EngLabs-Attendance-Tracker/1.0"
     },
     "plugins": {
         "NativeBiometric": {

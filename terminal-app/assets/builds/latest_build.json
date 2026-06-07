@@ -1,7 +1,7 @@
-{
+﻿{
     "api_base":  "https://auralock-backend-50851729985.asia-south1.run.app",
     "target":  "production",
-    "timestamp":  "20260607-1654",
-    "version":  "2.0.1",
-    "filename":  "englabs-attendance-v2.0.1-20260607-1654-production.apk"
+    "timestamp":  "20260607-1705",
+    "version":  "2.0.2",
+    "filename":  "englabs-attendance-v2.0.2-20260607-1705-production.apk"
 }

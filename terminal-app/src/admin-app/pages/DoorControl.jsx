@@ -20,7 +20,7 @@ export default function DoorControl() {
         lastActivity: null,
         rssi: -100
     });
-    const [deviceInfo, setDeviceInfo] = useState({ name: 'AuraLock Main Terminal', mac: '58:8C:81:CC:65:29' });
+    const [deviceInfo, setDeviceInfo] = useState({ name: 'EngLabs Attendance Terminal', mac: '58:8C:81:CC:65:29' });
     const [scanResults, setScanResults] = useState([]);
     const [isScanning, setIsScanning] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);

@@ -41,7 +41,7 @@ export const downloadFile = async (data, filename, mimeType) => {
         // Use Share API - This should open the Android "Share Sheet"
         await Share.share({
             title: filename,
-            text: `AuraLock Report: ${filename}`,
+            text: `EngLabs Attendance Report: ${filename}`,
             url: savedFile.uri,
         });
 

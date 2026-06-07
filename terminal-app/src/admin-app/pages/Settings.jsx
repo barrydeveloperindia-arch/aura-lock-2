@@ -12,7 +12,7 @@ const ICON_BOX = "w-12 h-12 rounded-2xl flex items-center justify-center mb-4 sh
 export default function Settings() {
     const [loading, setLoading] = useState(false);
     const [settings, setSettings] = useState({
-        deviceName: 'AuraLock Main Terminal',
+        deviceName: 'EngLabs Attendance Terminal',
         macAddress: '58:8C:81:CC:65:29',
         faceThreshold: 0.55,
         livenessDetection: true,

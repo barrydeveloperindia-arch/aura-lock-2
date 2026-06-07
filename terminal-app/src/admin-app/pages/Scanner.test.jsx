@@ -36,7 +36,7 @@ describe('Scanner Component (Automated Terminal)', () => {
     it('renders the automated terminal with live camera and status', async () => {
         renderWithRouter(<Scanner />);
         
-        expect(await screen.findByText(/AuraLock Terminal/i)).toBeInTheDocument();
+        expect(await screen.findByText(/EngLabs Attendance Tracker/i)).toBeInTheDocument();
         expect(await screen.findByText(/Looking for face/i)).toBeInTheDocument();
     });
 

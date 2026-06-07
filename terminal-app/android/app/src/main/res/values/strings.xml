@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">AuraLock V2</string>
-    <string name="title_activity_main">AuraLock V2</string>
+    <string name="app_name">EngLabs Attendance Tracker</string>
+    <string name="title_activity_main">EngLabs Attendance Tracker</string>
     <string name="package_name">com.auralock.terminal.v3</string>
     <string name="custom_url_scheme">com.auralock.terminal.v3</string>
 </resources>

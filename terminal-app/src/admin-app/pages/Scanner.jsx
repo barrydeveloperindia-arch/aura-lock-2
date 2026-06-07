@@ -361,7 +361,7 @@ export default function Scanner() {
                     <span className="text-xs font-bold uppercase tracking-widest">Back to Home</span>
                 </button>
                 <div className="flex flex-col items-center">
-                    <div className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-blue-500">AuraLock Terminal</div>
+                    <div className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-emerald-500">EngLabs Attendance Tracker</div>
                     <div className="text-[7px] md:text-[8px] text-slate-600 font-bold uppercase tracking-widest mt-0.5">Biometric Scanner v4.0</div>
                 </div>
                 <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
