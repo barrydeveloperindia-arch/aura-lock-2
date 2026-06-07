@@ -15,6 +15,7 @@ const validateDevice = require('./middleware/validateDevice');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit-table');
 const doorService = require('./doorService');
+const { recordAttendance } = require('./src/controllers/attendanceController');
 
 const app = express();
 const PORT = process.env.PORT || 8000;

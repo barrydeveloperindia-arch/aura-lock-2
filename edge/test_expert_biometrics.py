@@ -8,6 +8,10 @@ import io
 # Set up environment for importing the API
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Set dummy environment variables to prevent supabase_client import crash
+os.environ["SUPABASE_KEY"] = "mock_key_for_testing"
+os.environ["SUPABASE_URL"] = "https://mock.supabase.co"
+
 # 1. Deep Mocking to avoid all heavy dependencies
 mock_face_rec = MagicMock()
 sys.modules['face_recognition'] = mock_face_rec
@@ -18,6 +22,11 @@ mock_pil.open.return_value = mock_image
 mock_image.convert.return_value = mock_image
 sys.modules['PIL'] = mock_pil
 sys.modules['PIL.Image'] = mock_image
+
+# Mock supabase package before any imports load supabase_client
+mock_supabase_lib = MagicMock()
+mock_supabase_lib.create_client.return_value = MagicMock()
+sys.modules['supabase'] = mock_supabase_lib
 
 class TestBiometricExpertLogic(unittest.TestCase):
 
