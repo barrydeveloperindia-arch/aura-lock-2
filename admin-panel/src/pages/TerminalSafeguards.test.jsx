@@ -34,10 +34,20 @@ describe('Terminal Safeguards & Error Transparency', () => {
 
         // Mock video properties
         Object.defineProperty(HTMLMediaElement.prototype, 'readyState', {
-            get: () => 4
+            get: () => 4,
+            configurable: true
         });
         Object.defineProperty(HTMLMediaElement.prototype, 'paused', {
-            get: () => false
+            get: () => false,
+            configurable: true
+        });
+        Object.defineProperty(HTMLVideoElement.prototype, 'videoWidth', {
+            get: () => 640,
+            configurable: true
+        });
+        Object.defineProperty(HTMLVideoElement.prototype, 'videoHeight', {
+            get: () => 480,
+            configurable: true
         });
         vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
 
@@ -56,10 +66,10 @@ describe('Terminal Safeguards & Error Transparency', () => {
             data: { success: false, message: 'Ambiguous Match: Multiple users similar.' } 
         });
 
+        vi.useFakeTimers();
         renderWithRouter(<Scanner />);
         
-        vi.useFakeTimers();
-        // Skip mounting delays
+        // Skip mounting and camera init delays
         await act(async () => {
             await vi.advanceTimersByTimeAsync(1000); 
         });
@@ -68,11 +78,11 @@ describe('Terminal Safeguards & Error Transparency', () => {
             await vi.advanceTimersByTimeAsync(4000); 
         });
 
+        vi.useRealTimers();
+
         await waitFor(() => {
             expect(screen.getByText(/Ambiguous Match/i)).toBeInTheDocument();
         }, { timeout: 3000 });
-        
-        vi.useRealTimers();
     }, 10000);
 
     it('displays "No face detected" when backend returns specific error', async () => {
@@ -80,18 +90,23 @@ describe('Terminal Safeguards & Error Transparency', () => {
             data: { success: false, message: 'No face detected.' } 
         });
 
+        vi.useFakeTimers();
         renderWithRouter(<Scanner />);
         
-        vi.useFakeTimers();
+        // Skip mounting and camera init delays
         await act(async () => {
-            await vi.advanceTimersByTimeAsync(5000); 
+            await vi.advanceTimersByTimeAsync(1000); 
         });
+        // Skip scan interval
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(4000); 
+        });
+
+        vi.useRealTimers();
 
         await waitFor(() => {
             expect(screen.getByText(/No face detected/i)).toBeInTheDocument();
         }, { timeout: 3000 });
-        
-        vi.useRealTimers();
     }, 10000);
 
     it('handles 401 Unauthorized with backend message', async () => {
@@ -99,17 +114,22 @@ describe('Terminal Safeguards & Error Transparency', () => {
             response: { status: 401, data: { message: 'Too many requests' } } 
         });
 
+        vi.useFakeTimers();
         renderWithRouter(<Scanner />);
         
-        vi.useFakeTimers();
+        // Skip mounting and camera init delays
         await act(async () => {
-            await vi.advanceTimersByTimeAsync(5000); 
+            await vi.advanceTimersByTimeAsync(1000); 
         });
+        // Skip scan interval
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(4000); 
+        });
+
+        vi.useRealTimers();
 
         await waitFor(() => {
             expect(screen.getByText(/Too many requests/i)).toBeInTheDocument();
         }, { timeout: 3000 });
-        
-        vi.useRealTimers();
     }, 10000);
 });
