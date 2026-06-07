@@ -17,7 +17,7 @@ $TERMINAL_DIR = Join-Path $PROJECT_ROOT "terminal-app"
 $ASSETS_BASE = Join-Path $TERMINAL_DIR "assets"
 $ASSETS_DIR = Join-Path $ASSETS_BASE "builds"
 $TIMESTAMP = Get-Date -Format "yyyyMMdd-HHmm"
-$PROD_API = "http://192.168.2.153:8002"
+$PROD_API = "https://auralock-backend-50851729985.asia-south1.run.app"
 
 Write-Host "--- AuraLock APK Build Factory ---" -ForegroundColor Cyan
 
@@ -60,8 +60,25 @@ Set-Location (Join-Path $TERMINAL_DIR "android")
 
 # Update Version in build.gradle
 $gradleFile = "app/build.gradle"
+$versionParts = $Version -split '\.'
+$versionCode = 1
+if ($versionParts.Count -ge 2) {
+    $versionCode = [int]$versionParts[0] * 10000 + [int]$versionParts[1] * 100
+    if ($versionParts.Count -ge 3) {
+        $versionCode += [int]$versionParts[2]
+    }
+} else {
+    try {
+        $versionCode = [int]$Version
+    } catch {
+        $versionCode = 1
+    }
+}
 (Get-Content $gradleFile) | ForEach-Object {
-    $_ -replace 'versionName ".*"', "versionName `"$Version`""
+    $line = $_
+    $line = $line -replace 'versionName ".*"', "versionName `"$Version`""
+    $line = $line -replace 'versionCode \d+', "versionCode $versionCode"
+    $line
 } | Set-Content $gradleFile
 
 ./gradlew.bat assembleDebug

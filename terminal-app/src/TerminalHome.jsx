@@ -73,6 +73,7 @@ export default function TerminalHome() {
     const [doorState, setDoorState] = useState('locked'); // 'locked' | 'unlocked'
     const videoRef = useRef(null);
     const streamRef = useRef(null);
+    const [isScanning, setIsScanning] = useState(false);
 
     // ── Local Door BLE Controller ─────────────────────────────────────────────
     const triggerDoorUnlock = async () => {
@@ -201,6 +202,19 @@ export default function TerminalHome() {
     }, []);
 
     useEffect(() => {
+        let timeout;
+        if (view === 'home' && isScanning) {
+            timeout = setTimeout(() => {
+                setIsScanning(false);
+                setMessage('Scan timed out. Please try again.');
+            }, 15000);
+        }
+        return () => {
+            if (timeout) clearTimeout(timeout);
+        };
+    }, [isScanning, view]);
+
+    useEffect(() => {
         const fetchEmployees = async () => {
             try {
                 const res = await axios.get(`${API_BASE}/api/terminal/users`);
@@ -223,6 +237,7 @@ export default function TerminalHome() {
 
     const reset = () => {
         setView('home');
+        setIsScanning(false);
         setVerifyMethod('face');
         setLoading(false);
         setMessage('');
@@ -243,7 +258,7 @@ export default function TerminalHome() {
                 }
                 setMessage('Scanning...');
 
-                if (view === 'home' && verifyMethod === 'face') {
+                if (view === 'home' && isScanning && verifyMethod === 'face') {
                     interval = setInterval(captureAndVerify, 2000);
                 } else if (view === 'admin_scan') {
                     // admin registration handles its own capture
@@ -254,7 +269,7 @@ export default function TerminalHome() {
             }
         };
 
-        if ((view === 'home' && verifyMethod === 'face') || view === 'admin_scan') {
+        if ((view === 'home' && isScanning && verifyMethod === 'face') || view === 'admin_scan') {
             startCamera();
         } else {
             if (streamRef.current) {
@@ -270,10 +285,10 @@ export default function TerminalHome() {
                 streamRef.current.getTracks().forEach(t => t.stop());
             }
         };
-    }, [view, verifyMethod]);
+    }, [view, verifyMethod, isScanning]);
 
     const captureAndVerify = () => {
-        if (!videoRef.current || view !== 'home' || verifyMethod !== 'face' || loading) return;
+        if (!videoRef.current || view !== 'home' || !isScanning || verifyMethod !== 'face' || loading) return;
 
         const canvas = document.createElement('canvas');
         canvas.width = videoRef.current.videoWidth || 640;
@@ -546,15 +561,17 @@ export default function TerminalHome() {
 
                         {/* Main Camera Frame */}
                         <div className="relative w-full h-[42vh] bg-slate-900 rounded-[2rem] overflow-hidden mb-4 shadow-xl shrink-0">
-                            <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-[8px] font-black text-white uppercase tracking-widest">CAMERA ACTIVE</span>
-                            </div>
+                            {isScanning && (
+                                <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span className="text-[8px] font-black text-white uppercase tracking-widest">CAMERA ACTIVE</span>
+                                </div>
+                            )}
                             <button className="absolute top-4 right-4 z-10 p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-white/70">
                                 <Zap size={14} />
                             </button>
                             
-                            {verifyMethod === 'face' ? (
+                            {verifyMethod === 'face' && isScanning ? (
                                 <>
                                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
                                     
@@ -580,14 +597,58 @@ export default function TerminalHome() {
                                         <div className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-1">POSITION YOUR FACE IN THE FRAME</div>
                                         <div className="text-sm font-bold text-white">{message || 'Scanning...'}</div>
                                     </div>
+
+                                    {/* Cancel Button */}
+                                    <button 
+                                        onClick={() => setIsScanning(false)}
+                                        className="absolute bottom-12 right-4 z-10 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white/90 text-[10px] font-black uppercase tracking-wider hover:bg-black/80 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
                                 </>
                             ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white">
-                                    <ScanFace size={64} className="text-emerald-400 mb-4 animate-pulse" />
-                                    <div className="text-lg font-bold">Awaiting Face Scan</div>
-                                    <div className="text-[10px] text-slate-400 mt-2 uppercase tracking-widest">Position yourself in front of the camera</div>
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white p-6 relative">
+                                    {/* Abstract background graphics */}
+                                    <div className="absolute inset-0 opacity-10 pointer-events-none">
+                                        <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] rounded-full bg-emerald-500 blur-[100px]" />
+                                        <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] rounded-full bg-blue-500 blur-[100px]" />
+                                    </div>
+                                    
+                                    <motion.div 
+                                        animate={{ scale: [1, 1.05, 1] }}
+                                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                                        className="w-20 h-20 rounded-3xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center shadow-2xl relative mb-6"
+                                    >
+                                        <ScanFace size={40} className="text-emerald-400" />
+                                        <div className="absolute inset-0 rounded-3xl border border-emerald-500/20 animate-ping" style={{ animationDuration: '3s' }} />
+                                    </motion.div>
+                                    
+                                    <h3 className="text-lg font-black tracking-tight mb-1">System Standby</h3>
+                                    <p className="text-[10px] text-slate-400 uppercase tracking-[0.15em] mb-6 font-bold text-center">Camera off to conserve battery • Tap below to scan</p>
+                                    
+                                    <div className="grid grid-cols-2 gap-4 w-full max-w-sm relative z-10">
+                                        <button 
+                                            onClick={() => {
+                                                setIsScanning(true);
+                                                setMessage('Initializing camera...');
+                                            }}
+                                            className="py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 active:scale-95 transition-all text-white rounded-2xl font-black text-[11px] uppercase tracking-wider shadow-lg shadow-emerald-500/20 flex flex-col items-center gap-1"
+                                        >
+                                            <Zap size={14} />
+                                            Check In
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setIsScanning(true);
+                                                setMessage('Initializing camera...');
+                                            }}
+                                            className="py-3 px-4 bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 active:scale-95 transition-all text-white rounded-2xl font-black text-[11px] uppercase tracking-wider border border-slate-600/30 flex flex-col items-center gap-1"
+                                        >
+                                            <LogOut size={14} />
+                                            Check Out
+                                        </button>
+                                    </div>
                                 </div>
-
                             )}
                         </div>
 
