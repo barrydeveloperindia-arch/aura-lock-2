@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 // Capacitor imports (assumed available in mobile build environment)
 // If running in web browser for testing, these will fail or need mocks
 import { NativeBiometric } from '@capgo/capacitor-native-biometric';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 // LAN IP of the backend server — phone and PC must be on the same WiFi network.
 // In the integrated app, we prefer using the same proxy or a shared config.
