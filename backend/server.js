@@ -133,7 +133,7 @@ app.use((req, res, next) => {
 
 // --- Middleware ---
 const { authenticateToken, isAdmin } = require('./src/middleware/auth');
-const { recordAttendance, resolveEmployeeUuid, resolveEmployeeEid } = require('./src/controllers/attendanceController');
+const { resolveEmployeeUuid, resolveEmployeeEid } = require('./src/controllers/attendanceController');
 
 
 // --- IoT Utilities ---
