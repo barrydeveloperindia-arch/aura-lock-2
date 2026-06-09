@@ -26,6 +26,14 @@ This document serves as the master checklist for addressing technical debt, arch
 
 ---
 
+## 📅 June 8, 2026: Completed Tasks (EAT Rebranding & Release v2.0.3)
+- [x] **REBRAND-1: EngLabs Attendance Tracker (EAT) Rebranding** (Rebranded the application from AuraLock to EngLabs Attendance Tracker across the frontend, admin-panel, terminal app, and backend).
+- [x] **LOGO-1: Logo Bezier Curves Fix** (Resolved logo curve path regressions in Sidebar/Login UI layouts and established Vitest regression tests).
+- [x] **BOOT-1: Parallel System Startup** (Parallelized checkBle and checkBiometricHealth calls during system startup in TerminalHome.jsx to speed up terminal app boot time).
+- [x] **SPLASH-1: Android Splash Screen Fix** (Updated launch splash theme settings in styles.xml to resolve white screen flash/glitches on launch).
+- [x] **APK-2: Standardized APK Rebuild & Archiving v2.0.3** (Generated and froze v2.0.3 production build `englabs-attendance-v2.0.3-20260607-1854-production.apk` successfully).
+- [x] **LOG-1: Supabase Logs Utility** (Created `scratch/read_supabase_logs.py` tool to view latest 10 access logs directly from Supabase).
+
 ## 📅 May 25, 2026: Completed Tasks
 - [x] **BAT-1: Terminal App Camera Suspension Optimization** (Optimized battery drain by introducing a Tap-to-Wake scan mechanism and 15s auto-timeout for camera feed and face recognition polling).
 - [ ] **BAT-2: ESP32 Lock Firmware Power Optimization** (Implement deep/light sleep, wake on GPIO touch/interrupt, set CPU clock to 80MHz, and enable WiFi Modem Sleep).
