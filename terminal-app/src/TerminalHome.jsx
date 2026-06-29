@@ -226,7 +226,7 @@ export default function TerminalHome() {
 
     // ── Auto-reset countdown ──────────────────────────────────────────────────
     useEffect(() => {
-        const resultViews = ['checkin', 'checkout', 'error'];
+        const resultViews = ['error'];
         if (!resultViews.includes(view)) return;
 
         setCountdown(RESET_DELAY);
@@ -808,11 +808,13 @@ export default function TerminalHome() {
                             </motion.div>
                         </div>
 
-                        {/* Countdown */}
-                        <div className="flex items-center gap-3 mt-8">
-                            <CountdownRing seconds={countdown} color="#10b981" />
-                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Resetting in {countdown}s</span>
-                        </div>
+                        {/* Return Button */}
+                        <button
+                            onClick={reset}
+                            className="mt-8 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
+                        >
+                            Return
+                        </button>
                     </motion.div>
                 )}
 
@@ -863,10 +865,13 @@ export default function TerminalHome() {
                             </motion.div>
                         </div>
 
-                        <div className="flex items-center gap-3 mt-8">
-                            <CountdownRing seconds={countdown} color="#6366f1" />
-                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Resetting in {countdown}s</span>
-                        </div>
+                        {/* Return Button */}
+                        <button
+                            onClick={reset}
+                            className="mt-8 px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full transition-all active:scale-95 shadow-lg shadow-indigo-500/20"
+                        >
+                            Return
+                        </button>
                     </motion.div>
                 )}
 

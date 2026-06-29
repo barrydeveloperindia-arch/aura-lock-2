@@ -1071,12 +1071,17 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                 // --- TRIGGER DOOR UNLOCK ---
                 // await safeTriggerDoorUnlock(); // Handled locally by Android Tablet now!
 
-                // --- RECORD ATTENDANCE ---
+                 // --- RECORD ATTENDANCE ---
                 // We need the internal UUID for the attendance table
-                const { data: empRecord } = await supabase.from('employees').select('id').eq('employee_id', employeeId).single();
-                if (empRecord) {
-                    await recordAttendance(empRecord.id, 'face', 'terminal_01');
+                const { data: empRecord } = await supabase.from('employees').select('id, status').eq('employee_id', employeeId).single();
+                if (!empRecord || empRecord.status !== 'Active') {
+                    console.warn(`🛑 Access Denied: Verified employee ${employeeId} is disabled or inactive.`);
+                    return res.status(401).json({
+                        success: false,
+                        message: "Access Denied: Employee is disabled or inactive."
+                    });
                 }
+                await recordAttendance(empRecord.id, 'face', 'terminal_01');
 
                 return res.json({
                     success: true,

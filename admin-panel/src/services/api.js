@@ -187,6 +187,14 @@ export const apiService = {
         });
         return response.data;
     },
+
+    exportAccessLogsPDF: async (params) => {
+        const response = await api.get('/api/access-logs/export/pdf', {
+            params,
+            responseType: 'blob'
+        });
+        return response.data;
+    },
     
     getEmployeeAttendance: async (employeeId, params) => {
         const response = await api.get(`/api/attendance/employee/${employeeId}`, { params });

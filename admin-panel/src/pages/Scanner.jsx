@@ -81,7 +81,7 @@ export default function Scanner() {
 
     // ── Auto-reset countdown ──────────────────────────────────────────────────
     useEffect(() => {
-        const resultViews = ['checkin', 'checkout', 'error'];
+        const resultViews = ['error'];
         if (!resultViews.includes(view)) return;
 
         setCountdown(RESET_DELAY);
@@ -472,10 +472,12 @@ export default function Scanner() {
                                 <p className="text-slate-500 text-xl md:text-3xl font-black tabular-nums">{result?.time}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-4 bg-white/[0.02] px-6 py-3 rounded-2xl border border-white/5 grayscale">
-                            <CountdownRing seconds={countdown} color="#10b981" />
-                            <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Auto-reset: {countdown}s</span>
-                        </div>
+                        <button
+                            onClick={reset}
+                            className="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20"
+                        >
+                            Return
+                        </button>
                     </motion.div>
                 )}
 
@@ -505,10 +507,12 @@ export default function Scanner() {
                                 )}
                             </div>
                         </div>
-                        <div className="flex items-center gap-4 bg-white/[0.02] px-6 py-3 rounded-2xl border border-white/5 grayscale">
-                            <CountdownRing seconds={countdown} color="#6366f1" />
-                            <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Auto-reset: {countdown}s</span>
-                        </div>
+                        <button
+                            onClick={reset}
+                            className="px-8 py-4 bg-indigo-500 hover:bg-indigo-600 active:scale-95 transition-all text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-500/20"
+                        >
+                            Return
+                        </button>
                     </motion.div>
                 )}
 

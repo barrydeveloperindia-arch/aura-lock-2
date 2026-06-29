@@ -27,6 +27,13 @@ const recordAttendance = async (employeeId, method, deviceId = 'server') => {
             throw new Error(`Could not resolve employee UUID for identifier: ${employeeId}`);
         }
 
+        // Check if employee is Active
+        const { data: empRecord } = await supabase.from('employees').select('status').eq('id', actualUuid).single();
+        if (!empRecord || empRecord.status !== 'Active') {
+            console.error(`❌ [Attendance] Access Denied: Employee ${actualEid} is inactive (${empRecord?.status || 'Not Found'})`);
+            throw new Error(`Employee is disabled or inactive.`);
+        }
+
         console.log(`🕒 [Attendance Debug] Input: ${employeeId} | UUID: ${actualUuid} | EID: ${actualEid}`);
 
         try {

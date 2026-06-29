@@ -95,7 +95,6 @@ export default function Terminal() {
                 if (response.success) {
                     setUser(response.user);
                     setStatus('success');
-                    setTimeout(() => reset(), 3000);
                 } else {
                     setErrorMsg(response.message || 'Face not recognized');
                     setStatus('denied');
@@ -247,6 +246,12 @@ export default function Terminal() {
                                 <h2 className="text-3xl font-black text-emerald-600 tracking-tight mb-2">ACCESS GRANTED</h2>
                                 <p className="text-slate-500 text-xs mt-4 tracking-[0.2em] uppercase font-bold">Welcome Back,</p>
                                 <p className="text-slate-800 text-xl font-black mt-1">{user?.name || 'Authorized User'}</p>
+                                <button
+                                    onClick={reset}
+                                    className="mt-8 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
+                                >
+                                    Return
+                                </button>
                             </motion.div>
                         ) : (
                             <motion.div
