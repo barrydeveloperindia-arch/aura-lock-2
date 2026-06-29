@@ -1,4 +1,4 @@
-const supabase = require('./supabase');
+const supabase = require('../../supabase');
 
 async function testAddEmployee() {
     console.log("🧪 Adding Test Employee: EMP-TEST-99...");

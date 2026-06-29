@@ -3,6 +3,12 @@ SETLOCAL EnableDelayedExpansion
 
 echo ???? Checking for Python installation...
 
+:: Try local .venv with 8.3 short path to avoid unicode issues (e.g. \u200c)
+if exist "%~dp0..\.venv\Scripts\python.exe" (
+    for %%A in ("%~dp0..\.venv\Scripts\python.exe") do set PY_CMD=%%~sA
+    goto FOUND
+)
+
 :: Try common Windows User path (Python 3.13)
 if exist "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" (
     set PY_CMD="%LOCALAPPDATA%\Programs\Python\Python313\python.exe"

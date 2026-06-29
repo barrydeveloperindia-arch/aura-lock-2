@@ -1,4 +1,4 @@
-const supabase = require('./supabase');
+const supabase = require('../../supabase');
 
 async function test() {
     console.log("🧪 Testing Supabase Connection...");

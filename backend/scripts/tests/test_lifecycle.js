@@ -1,4 +1,4 @@
-const supabase = require('./supabase');
+const supabase = require('../../supabase');
 
 async function testLifecycle() {
     const testId = 'EMP-LIFECYCLE-1';
