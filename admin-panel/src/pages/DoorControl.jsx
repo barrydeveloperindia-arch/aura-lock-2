@@ -205,7 +205,7 @@ export default function DoorControl() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <button
                             onClick={() => handleAction('Unlock', apiService.unlockDoor)}
-                            disabled={doorState.loading || !doorState.isOnline || !doorState.isLocked}
+                            disabled={doorState.loading || !doorState.isLocked}
                             className="bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:grayscale p-6 md:p-8 rounded-[2rem] md:rounded-3xl flex flex-col items-center justify-center gap-4 transition-all duration-300 shadow-xl"
                         >
                             <Unlock className="w-8 h-8 md:w-10 md:h-10 text-white" />
@@ -214,7 +214,7 @@ export default function DoorControl() {
 
                         <button
                             onClick={() => handleAction('Lock', apiService.lockDoor)}
-                            disabled={doorState.loading || !doorState.isOnline || doorState.isLocked}
+                            disabled={doorState.loading || doorState.isLocked}
                             className="bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:grayscale p-6 md:p-8 rounded-[2rem] md:rounded-3xl border border-white/10 flex flex-col items-center justify-center gap-4 transition-all duration-300 shadow-xl"
                         >
                             <Lock className="w-8 h-8 md:w-10 md:h-10 text-white" />

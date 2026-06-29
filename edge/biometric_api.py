@@ -19,6 +19,36 @@ except ImportError:
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
+
+# --- Windows Unicode/Short-Path Workaround for face_recognition dlib model files ---
+if os.name == 'nt':
+    try:
+        def get_short_path(long_path):
+            import ctypes
+            from ctypes import wintypes
+            buf = ctypes.create_unicode_buffer(260)
+            func = ctypes.windll.kernel32.GetShortPathNameW
+            func.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
+            func.restype = wintypes.DWORD
+            status = func(long_path, buf, 260)
+            if status == 0 or status > 260:
+                return long_path
+            return buf.value
+
+        import face_recognition_models
+        orig_pose = face_recognition_models.pose_predictor_model_location
+        orig_pose_5 = face_recognition_models.pose_predictor_five_point_model_location
+        orig_face_rec = face_recognition_models.face_recognition_model_location
+        orig_cnn = face_recognition_models.cnn_face_detector_model_location
+
+        face_recognition_models.pose_predictor_model_location = lambda: get_short_path(orig_pose())
+        face_recognition_models.pose_predictor_five_point_model_location = lambda: get_short_path(orig_pose_5())
+        face_recognition_models.face_recognition_model_location = lambda: get_short_path(orig_face_rec())
+        face_recognition_models.cnn_face_detector_model_location = lambda: get_short_path(orig_cnn())
+        print("[INFO] Applied Windows short-path monkeypatch for face_recognition models.")
+    except Exception as e:
+        print(f"[WARNING] Failed to apply short-path monkeypatch: {e}")
+
 try:
     import face_recognition
     HAS_FACE_REC = True

@@ -56,6 +56,57 @@ export default function Reports() {
         }
     };
 
+    const [exporting, setExporting] = useState(false);
+    const [exportingPdf, setExportingPdf] = useState(false);
+
+    const handleExportExcel = async () => {
+        setExporting(true);
+        try {
+            const blob = await apiService.exportAttendanceExcel({
+                month: selectedMonth,
+                year: selectedYear
+            });
+            const fileBlob = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(fileBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `attendance_report_${selectedMonth}_${selectedYear}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Export failed:', err);
+            alert('Export failed. Please try again.');
+        } finally {
+            setExporting(false);
+        }
+    };
+
+    const handleExportPdf = async () => {
+        setExportingPdf(true);
+        try {
+            const blob = await apiService.exportAccessLogsPDF({
+                month: selectedMonth,
+                year: selectedYear
+            });
+            const fileBlob = new Blob([blob], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(fileBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `access_audit_logs_${selectedMonth}_${selectedYear}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('PDF export failed:', err);
+            alert('PDF export failed. Please try again.');
+        } finally {
+            setExportingPdf(false);
+        }
+    };
+
     const totalScans = reportData.reduce((acc, curr) => acc + curr.present, 0);
 
     return (
@@ -67,11 +118,19 @@ export default function Reports() {
                     <p className="text-slate-500 text-sm font-medium uppercase tracking-[0.2em]">Data Insights // Performance Audit</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                    <button className="flex-1 md:flex-none px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-white text-[10px] md:text-xs font-black transition-all flex items-center justify-center gap-2">
-                        <Download className="w-4 h-4" /> Export
+                    <button 
+                        onClick={handleExportExcel} 
+                        disabled={exporting}
+                        className="flex-1 md:flex-none px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-white text-[10px] md:text-xs font-black transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                        <Download className="w-4 h-4" /> {exporting ? 'Exporting...' : 'Export'}
                     </button>
-                    <button className="flex-1 md:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-white text-[10px] md:text-xs font-black transition-all flex items-center justify-center gap-2">
-                        <FileText className="w-4 h-4" /> Audit Log
+                    <button 
+                        onClick={handleExportPdf} 
+                        disabled={exportingPdf}
+                        className="flex-1 md:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-white text-[10px] md:text-xs font-black transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                        <FileText className="w-4 h-4" /> {exportingPdf ? 'Exporting...' : 'Audit Log'}
                     </button>
                 </div>
             </div>
