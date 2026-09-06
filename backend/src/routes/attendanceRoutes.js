@@ -1,10 +1,19 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const attendanceController = require('../controllers/attendanceController');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, isAdmin } = require('../middleware/auth');
 
-router.post('/mark', attendanceController.markAttendance);
+// Optional JPEG frame for non-face terminals (fingerprint / RFID); JSON bodies still work.
+const frameUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
+
+router.post('/mark', frameUpload.single('file'), attendanceController.markAttendance);
 router.get('/', authenticateToken, attendanceController.getAttendanceList);
+
+// Attendance photos: signed URL for one event, employee avatars, and admin retention sweep
+router.get('/avatars', authenticateToken, attendanceController.getEmployeeAvatars);
+router.get('/:id/photo/:kind', authenticateToken, attendanceController.getAttendancePhoto);
+router.post('/photos/cleanup', authenticateToken, isAdmin, attendanceController.cleanupAttendancePhotos);
 router.get('/employee/:employee_id', authenticateToken, attendanceController.getEmployeeHistory);
 router.get('/employee/:employee_id/summary', authenticateToken, attendanceController.getEmployeeSummary);
 router.get('/export/excel/:employee_id', authenticateToken, attendanceController.exportExcelEmployee);

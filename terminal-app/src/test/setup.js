@@ -71,3 +71,16 @@ vi.mock('@capacitor/core', () => ({
     getPlatform: vi.fn().mockReturnValue('web'),
   }
 }));
+
+// Mock LocalFaceService (singleton) — prevents TerminalHome from importing real face-api.js/idb
+vi.mock('../LocalFaceService', () => ({
+  localFaceService: {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    syncDescriptors: vi.fn().mockResolvedValue(undefined),
+    matchFace: vi.fn().mockResolvedValue({ matched: false }),
+    enrollFace: vi.fn().mockResolvedValue(null),
+    getStatus: vi.fn().mockReturnValue({ modelsLoaded: false, descriptorCount: 0, lastSync: null }),
+    storeDescriptors: vi.fn().mockResolvedValue(undefined),
+  },
+  LocalFaceService: vi.fn(),
+}));

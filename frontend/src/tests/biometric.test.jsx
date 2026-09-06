@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import CameraCaptureModal from '../components/CameraCaptureModal';
 import { apiService } from '../services/api.service';
 
@@ -9,6 +9,17 @@ vi.mock('../services/api.service', () => ({
         registerFace: vi.fn(),
     },
 }));
+
+// jsdom has no <canvas> implementation; give the component a working stand-in
+beforeAll(() => {
+    HTMLCanvasElement.prototype.getContext = () => ({ drawImage: () => {} });
+    HTMLCanvasElement.prototype.toDataURL = () => 'data:image/jpeg;base64,AAAA';
+    HTMLCanvasElement.prototype.toBlob = (cb) => cb(new Blob(['x'], { type: 'image/jpeg' }));
+    // Fake camera: the Capture button stays disabled until getUserMedia resolves
+    const fakeStream = { getTracks: () => [{ stop: () => {} }] };
+    if (!navigator.mediaDevices) Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: {} });
+    navigator.mediaDevices.getUserMedia = vi.fn().mockResolvedValue(fakeStream);
+});
 
 describe('CameraCaptureModal Component', () => {
     it('renders correctly when open', () => {
@@ -21,8 +32,13 @@ describe('CameraCaptureModal Component', () => {
         const onCaptureMock = vi.fn();
         render(<CameraCaptureModal isOpen={true} onClose={() => { }} onCapture={onCaptureMock} />);
 
-        // Capture photo
-        fireEvent.click(screen.getByText(/Capture Photo/i));
+        // Capture photo (button enables once the fake camera stream is attached)
+
+        const captureBtn = screen.getByText(/Capture Photo/i).closest('button');
+
+        await waitFor(() => expect(captureBtn).not.toBeDisabled());
+
+        fireEvent.click(captureBtn);
 
         // Check if confirm button appears
         await waitFor(() => {

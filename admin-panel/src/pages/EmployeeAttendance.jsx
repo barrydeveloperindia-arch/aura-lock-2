@@ -5,9 +5,10 @@ import {
     ChevronLeft, ChevronRight, FileText,
     Briefcase, Download, ArrowUp, ArrowDown,
     User, UserCheck, Timer, AlertTriangle, Loader2,
-    CheckCircle2, X, ArrowLeft
+    CheckCircle2, X, ArrowLeft, Camera, Mail, ShieldCheck
 } from 'lucide-react';
 import { apiService } from '../services/api';
+import AttendancePhotoModal from '../components/AttendancePhotoModal';
 import { format, startOfWeek, startOfMonth, subDays } from 'date-fns';
 
 const PAGE_SIZE = 10;
@@ -72,6 +73,9 @@ export default function EmployeeAttendance() {
 
     const [exporting, setExporting] = useState(false);
     const [exportingPdf, setExportingPdf] = useState(false);
+
+    // Photo viewer: { record, kind: 'in' | 'out' } or null
+    const [photoView, setPhotoView] = useState(null);
 
     useEffect(() => {
         fetchData();
@@ -173,25 +177,43 @@ export default function EmployeeAttendance() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
-            {/* ── Header ── */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => navigate(-1)} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-white transition-all">
+            {/* ── Profile hero: big latest-scan photo + full details ── */}
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                <div className="flex items-start gap-4 md:gap-6 min-w-0">
+                    <button onClick={() => navigate(-1)} aria-label="Back"
+                        className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-900 transition-all shrink-0 mt-1">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
+                    <div className="w-28 h-28 md:w-40 md:h-40 shrink-0 rounded-3xl overflow-hidden bg-slate-100 border border-slate-200 shadow-lg flex items-center justify-center">
+                        {(employee?.avatar_url || employee?.image_url)
+                            ? <img src={employee.avatar_url || employee.image_url} alt={employee?.name || ''} className="w-full h-full object-cover" />
+                            : <span className="text-3xl font-black text-emerald-500">{(employee?.name || '?').slice(0, 2).toUpperCase()}</span>}
+                    </div>
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-1">
-                            <h1 className="text-xl md:text-3xl font-black text-white tracking-tighter truncate">{employee?.name || 'Loading...'}</h1>
-                            <span className="px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-[9px] md:text-[10px] font-bold text-blue-400 uppercase tracking-widest shrink-0">
+                            <h1 className="text-xl md:text-3xl font-black text-slate-900 tracking-tighter truncate">{employee?.name || 'Loading...'}</h1>
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[9px] md:text-[10px] font-bold text-emerald-700 uppercase tracking-widest shrink-0 font-mono">
                                 {employee?.employee_id}
                             </span>
+                            {employee?.status && (
+                                <span className={`px-2 py-0.5 rounded-md text-[9px] md:text-[10px] font-black uppercase tracking-widest shrink-0
+                                    ${employee.status === 'Active' ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'}`}>
+                                    {employee.status}
+                                </span>
+                            )}
                         </div>
-                        <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em] truncate">
-                            {employee?.department || 'Registry'} // Attendance History
+                        <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-slate-600">
+                            <div className="flex items-center gap-2"><Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" /><dt className="sr-only">Department</dt><dd>{employee?.department || 'General'}</dd></div>
+                            <div className="flex items-center gap-2 min-w-0"><Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" /><dt className="sr-only">Email</dt><dd className="truncate">{employee?.email || '—'}</dd></div>
+                            <div className="flex items-center gap-2"><ShieldCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" /><dt className="sr-only">Role</dt><dd className="capitalize">{employee?.role || 'employee'}</dd></div>
+                            <div className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" /><dt className="sr-only">Joined</dt><dd>Since {employee?.created_at ? format(new Date(employee.created_at), 'dd MMM yyyy') : '—'}</dd></div>
+                        </dl>
+                        <p className="mt-2 text-[10px] text-slate-400 uppercase tracking-[0.2em]">
+                            {employee?.avatar_url ? 'Photo from latest terminal scan' : 'No terminal photo yet'} // Attendance history
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                     <button onClick={handleExportPdf} disabled={exportingPdf}
                         className="flex items-center gap-2 px-5 py-2.5 bg-rose-600/80 hover:bg-rose-600 disabled:opacity-60 border border-rose-500/40 rounded-xl text-white text-xs font-black transition-all">
                         {exportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} Export PDF
@@ -209,7 +231,7 @@ export default function EmployeeAttendance() {
                     { label: 'Working Days', value: summary?.present_days, icon: UserCheck, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
                     { label: 'Total Hours', value: `${summary?.total_work_hours}h`, icon: Clock, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
                     { label: 'Late Days', value: summary?.late_days, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-                    { label: 'Accuracy', value: '99.2%', icon: CheckCircle2, color: 'text-teal-400', bg: 'bg-teal-500/10 border-teal-500/20' },
+                    { label: 'On-time Days', value: summary ? Math.max(0, (summary.present_days || 0) - (summary.late_days || 0)) : '—', icon: CheckCircle2, color: 'text-teal-400', bg: 'bg-teal-500/10 border-teal-500/20' },
                 ].map(s => (
                     <div key={s.label} className={`p-4 rounded-2xl border ${s.bg} flex items-center gap-3 transition-all hover:brightness-110`}>
                         <div className={`w-9 h-9 rounded-xl bg-black/20 flex items-center justify-center ${s.color}`}>
@@ -316,21 +338,54 @@ export default function EmployeeAttendance() {
                                 </tr>
                             ) : attendance.map((rec) => (
                                 <tr key={rec.id} className="group hover:bg-white/[0.02] transition-colors">
-                                    <td className="px-4 md:px-6 py-4"><span className="text-xs font-bold text-slate-300">{fmtDate(rec.date)}</span></td>
-                                    <td className="px-4 md:px-6 py-4">
-                                        <div className="flex flex-col gap-0.5">
-                                            <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-bold text-emerald-400">
-                                                <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-emerald-500" />
-                                                {fmtTime(rec.check_in)}
-                                            </div>
-                                            <div className={`sm:hidden flex items-center gap-1 text-[9px] font-bold ${rec.check_out ? 'text-slate-500' : 'text-slate-800'}`}>
-                                                {rec.check_out ? `Out: ${fmtTime(rec.check_out)}` : 'In Session'}
+                                    <td className="px-4 md:px-6 py-3"><span className="text-xs font-bold text-slate-700">{fmtDate(rec.date)}</span></td>
+                                    <td className="px-4 md:px-6 py-3">
+                                        <div className="flex items-center gap-2.5">
+                                            {rec.photo_urls?.in ? (
+                                                <button type="button" onClick={() => setPhotoView({ record: rec, kind: 'in' })}
+                                                    title="View check-in photo" aria-label={`Check-in photo on ${fmtDate(rec.date)}`}
+                                                    className="w-12 h-12 shrink-0 rounded-lg overflow-hidden border-2 border-emerald-400 bg-black hover:scale-105 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+                                                    <img src={rec.photo_urls.in} alt="" className="w-full h-full object-cover object-top" />
+                                                </button>
+                                            ) : (
+                                                <div className="w-12 h-12 shrink-0 rounded-lg border border-dashed border-slate-200 flex items-center justify-center" title="No check-in photo">
+                                                    <Camera className="w-3.5 h-3.5 text-slate-300" />
+                                                </div>
+                                            )}
+                                            <div className="flex flex-col gap-0.5">
+                                                <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-bold text-emerald-600">
+                                                    <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-emerald-500" />
+                                                    {fmtTime(rec.check_in)}
+                                                </div>
+                                                <div className={`sm:hidden flex items-center gap-1.5 text-[9px] font-bold ${rec.check_out ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                    {rec.check_out && rec.photo_urls?.out && (
+                                                        <button type="button" onClick={() => setPhotoView({ record: rec, kind: 'out' })}
+                                                            aria-label={`Check-out photo on ${fmtDate(rec.date)}`}
+                                                            className="w-7 h-7 shrink-0 rounded-md overflow-hidden border-2 border-amber-400 bg-black">
+                                                            <img src={rec.photo_urls.out} alt="" className="w-full h-full object-cover object-top" />
+                                                        </button>
+                                                    )}
+                                                    {rec.check_out ? `Out: ${fmtTime(rec.check_out)}` : 'In Session'}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="hidden sm:table-cell px-6 py-4">
-                                        <div className={`flex items-center gap-2 text-[11px] font-bold ${rec.check_out ? 'text-slate-400' : 'text-slate-700'}`}>
-                                            <div className={`w-1.5 h-1.5 rounded-full ${rec.check_out ? 'bg-slate-500' : 'bg-slate-800'}`} />{fmtTime(rec.check_out)}
+                                    <td className="hidden sm:table-cell px-6 py-3">
+                                        <div className="flex items-center gap-2.5">
+                                            {rec.photo_urls?.out ? (
+                                                <button type="button" onClick={() => setPhotoView({ record: rec, kind: 'out' })}
+                                                    title="View check-out photo" aria-label={`Check-out photo on ${fmtDate(rec.date)}`}
+                                                    className="w-12 h-12 shrink-0 rounded-lg overflow-hidden border-2 border-amber-400 bg-black hover:scale-105 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
+                                                    <img src={rec.photo_urls.out} alt="" className="w-full h-full object-cover object-top" />
+                                                </button>
+                                            ) : (
+                                                <div className="w-12 h-12 shrink-0 rounded-lg border border-dashed border-slate-200 flex items-center justify-center" title={rec.check_out ? 'No check-out photo' : 'Not checked out'}>
+                                                    <Camera className="w-3.5 h-3.5 text-slate-300" />
+                                                </div>
+                                            )}
+                                            <div className={`flex items-center gap-2 text-[11px] font-bold ${rec.check_out ? 'text-slate-600' : 'text-slate-300'}`}>
+                                                <div className={`w-1.5 h-1.5 rounded-full ${rec.check_out ? 'bg-amber-500' : 'bg-slate-200'}`} />{fmtTime(rec.check_out)}
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="hidden lg:table-cell px-6 py-4 text-center">
@@ -359,6 +414,15 @@ export default function EmployeeAttendance() {
                     </div>
                 )}
             </div>
+
+            {photoView && (
+                <AttendancePhotoModal
+                    key={`${photoView.record.id}-${photoView.kind}`}
+                    record={{ ...photoView.record, employees: photoView.record.employees || employee }}
+                    kind={photoView.kind}
+                    onClose={() => setPhotoView(null)}
+                />
+            )}
         </div>
     );
 }

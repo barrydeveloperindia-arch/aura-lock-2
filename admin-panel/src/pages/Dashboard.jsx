@@ -306,18 +306,7 @@ export default function Dashboard() {
                                 <span className="text-sm font-black">{growth > 0 ? `+${growth}` : growth}%</span>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="mt-8 p-4 rounded-2xl bg-slate-50 border-slate-200">
-                        <div className="flex items-center gap-2 mb-3">
-                            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">System Integrity</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full w-[99%] transition-all" />
-                        </div>
-                        <p className="text-[9px] text-slate-600 mt-2 font-semibold">Network Resilience: 99.9%</p>
-                    </div>
+                    </div>
                 </div>
             </div>
 

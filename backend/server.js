@@ -15,7 +15,8 @@ const validateDevice = require('./middleware/validateDevice');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit-table');
 const doorService = require('./doorService');
-const { recordAttendance } = require('./src/controllers/attendanceController');
+const { recordAttendance, attachAttendancePhoto, locationFromBody } = require('./src/controllers/attendanceController');
+const attendancePhotos = require('./services/attendancePhotos');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -933,11 +934,14 @@ app.post('/api/biometrics/face/register', upload.single('file'), validateIdentit
 
             if (response.data.success) {
                 console.log(`âœ… Face successfully registered by AI Engine`);
+                // Enrollment frame doubles as the dashboard avatar until the first terminal scan
+                const avatarPath = await attendancePhotos.saveEmployeeAvatar(employeeId, imageBuffer);
                 return res.json({
                     success: true,
                     message: response.data.message,
                     encoding: response.data.encoding,
                     image_url: response.data.image_url,
+                    avatar_saved: !!avatarPath,
                     employeeId: employeeId
                 });
             } else {
@@ -990,6 +994,8 @@ app.get('/api/biometrics/health', async (req, res) => {
 
 app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'), async (req, res) => {
     try {
+        // Optional terminal GPS fix sent as multipart fields (lat, lng, accuracy, fix_time)
+        const scanLocation = locationFromBody(req.body);
         console.log("ðŸ” [Verification] Checking face identity...");
         
         // Handle both Multipart (file) and JSON (Base64 image)
@@ -1074,8 +1080,17 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                 // --- RECORD ATTENDANCE ---
                 // We need the internal UUID for the attendance table
                 const { data: empRecord } = await supabase.from('employees').select('id').eq('employee_id', employeeId).single();
+                let attendanceResult = null;
+                let photo = null;
                 if (empRecord) {
-                    await recordAttendance(empRecord.id, 'face', 'terminal_01');
+                    attendanceResult = await recordAttendance(empRecord.id, 'face', 'terminal_01');
+                    // Save the very frame that was verified, keyed to this attendance row (never throws).
+                    photo = await attachAttendancePhoto(attendanceResult, req.file?.buffer, {
+                        name: response.data.name,
+                        employee_id: employeeId,
+                        location: scanLocation,
+                        locationSource: 'terminal',
+                    });
                 }
 
                 return res.json({
@@ -1085,7 +1100,14 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                     user: {
                         name: response.data.name,
                         employee_id: employeeId
-                    }
+                    },
+                    // Attendance outcome so the terminal can show check-in vs check-out correctly
+                    event: attendanceResult?.event || null,
+                    check_in: attendanceResult?.check_in || null,
+                    check_out: attendanceResult?.check_out || null,
+                    working_hours: attendanceResult?.working_hours ?? null,
+                    status: attendanceResult?.status || null,
+                    photo
                 });
             } else if (response.data.error_code === 'AMBIGUOUS_MATCH') {
                 console.warn(`âš ï¸ Ambiguous Match for hint: ${response.data.id_hint}. Requesting Fingerprint fallback.`);
@@ -1184,6 +1206,8 @@ app.use((req, res, next) => {
 if (require.main === module) {
     app.listen(PORT, () => {
         console.log(`Backend running on http://localhost:${PORT}`);
+        console.log(`[Photos] Bucket "${attendancePhotos.BUCKET}", retention ${attendancePhotos.RETENTION_DAYS} days, service key ${process.env.SUPABASE_SERVICE_KEY ? 'SET' : 'MISSING'}`);
+        attendancePhotos.scheduleDailyCleanup();
     });
 }
 

@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS device_logs (
     timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- Seed default admin (Password: Admin@123)
+-- Seed default admin (password: set your own)
 INSERT INTO users (username, password) 
-VALUES ('admin', 'Admin@123')
+VALUES ('admin', 'change_me')
 ON CONFLICT (username) DO NOTHING;

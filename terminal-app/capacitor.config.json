@@ -1,6 +1,6 @@
 {
     "appId": "com.auralock.terminal.v3",
-    "appName": "EngLabs Attendance Tracker",
+    "appName": "EngLabs Attendance",
     "webDir": "dist",
     "server": {
         "androidScheme": "http",

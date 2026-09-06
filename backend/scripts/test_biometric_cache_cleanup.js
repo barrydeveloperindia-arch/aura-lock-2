@@ -52,7 +52,7 @@ function skip(label, reason) {
 async function login() {
     const res = await axios.post(`${NODE_URL}/auth/login`, {
         email: process.env.ADMIN_EMAIL || '5089shivkumar@gmail.com',
-        password: process.env.ADMIN_PASSWORD || 'Admin@123'
+        password: process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD
     });
     TOKEN = res.data.token;
     console.log('  Auth: logged in\n');

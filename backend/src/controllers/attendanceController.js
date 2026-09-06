@@ -1,6 +1,7 @@
 const supabase = require('../../supabase');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
+const attendancePhotos = require('../../services/attendancePhotos');
 
 // --- Attendance Logic ---
 /**
@@ -87,7 +88,7 @@ const recordAttendance = async (employeeId, method, deviceId = 'server') => {
                 const checkInMins = h * 60 + m;
                 const arrivalStatus = checkInMins > lateThresholdMins ? 'LATE' : 'ON_TIME';
 
-                const { error: insError } = await supabase.from('attendance').insert({
+                const { data: inserted, error: insError } = await supabase.from('attendance').insert({
                     employee_id: actualUuid,
                     date: today,
                     check_in: checkInIso,
@@ -95,11 +96,14 @@ const recordAttendance = async (employeeId, method, deviceId = 'server') => {
                     device_id: deviceId,
                     status: arrivalStatus
                     // REMOVED 'remarks' as it is missing from schema
-                });
+                }).select('id').single();
                 if (insError) throw new Error(insError.message);
 
                 return {
                     message: "Check-in recorded",
+                    event: 'check_in',
+                    attendance_id: inserted?.id || null,
+                    date: today,
                     check_in: checkInIso,
                     check_out: null,
                     working_hours: null,
@@ -115,6 +119,9 @@ const recordAttendance = async (employeeId, method, deviceId = 'server') => {
                 console.log(`🕒 [Attendance] Ignoring duplicate scan for ${actualUuid} (${Math.round(diffSeconds)}s since last activity)`);
                 return {
                     message: "Duplicate scan ignored",
+                    event: 'duplicate',
+                    attendance_id: existing.id,
+                    date: existing.date,
                     check_in: existing.check_in,
                     check_out: existing.check_out,
                     working_hours: existing.working_hours || null,
@@ -143,6 +150,9 @@ const recordAttendance = async (employeeId, method, deviceId = 'server') => {
             }
             return {
                 message: "Check-out updated",
+                event: 'check_out',
+                attendance_id: existing.id,
+                date: existing.date,
                 check_in: existing.check_in,
                 check_out: checkOutTime.toISOString(),
                 working_hours: workingHours,
@@ -158,8 +168,92 @@ const recordAttendance = async (employeeId, method, deviceId = 'server') => {
 };
 exports.recordAttendance = recordAttendance;
 
+/**
+ * Store the captured frame for a check-in / check-out event.
+ * Never throws; returns { kind, saved } for the API response, or null.
+ */
+const attachAttendancePhoto = async (attendanceResult, frameBuffer, meta = {}) => {
+    if (!frameBuffer || !attendanceResult) return null;
+    const kind = attendanceResult.event === 'check_in' ? 'in'
+        : attendanceResult.event === 'check_out' ? 'out'
+        : null;
+    if (!kind || !attendanceResult.attendance_id) return null;
+    const capturedAt = kind === 'in' ? attendanceResult.check_in : attendanceResult.check_out;
+    // Refresh the employee's dashboard avatar from the raw (unstamped) frame
+    if (meta.employee_id) {
+        await attendancePhotos.saveEmployeeAvatar(meta.employee_id, frameBuffer);
+    }
+    const saved = await attendancePhotos.saveAttendancePhoto({
+        buffer: frameBuffer,
+        attendanceId: attendanceResult.attendance_id,
+        date: attendanceResult.date,
+        kind,
+        // Burn name / id / IN-OUT / server date-time (+ terminal GPS if sent) into the frame
+        stamp: { name: meta.name, employeeId: meta.employee_id, capturedAt, location: meta.location, locationSource: meta.locationSource },
+    });
+    return { kind, saved: !!saved, stamped_at: capturedAt, location: attendancePhotos.normalizeLocation(meta.location) };
+};
+
+/** Pull an optional terminal GPS fix out of a multipart/JSON body. */
+const locationFromBody = (body = {}) => attendancePhotos.normalizeLocation({
+    lat: body.lat, lng: body.lng, accuracy: body.accuracy, fix_time: body.fix_time,
+});
+exports.locationFromBody = locationFromBody;
+exports.attachAttendancePhoto = attachAttendancePhoto;
+
+// Signed URL (1 hour) for the check-in ("in") or check-out ("out") frame of one attendance row.
+exports.getAttendancePhoto = async (req, res) => {
+    try {
+        const { id, kind } = req.params;
+        if (!attendancePhotos.isValidAttendanceId(id) || !attendancePhotos.isValidKind(kind)) {
+            return res.status(400).json({ error: 'Invalid attendance id or photo kind' });
+        }
+        const { data: row, error } = await supabase
+            .from('attendance')
+            .select('id, date, check_in, check_out, employees(name, employee_id, department)')
+            .eq('id', id)
+            .single();
+        if (error || !row) return res.status(404).json({ error: 'Attendance record not found' });
+
+        const [signed, sidecar] = await Promise.all([
+            attendancePhotos.getSignedPhotoUrl({ date: row.date, attendanceId: row.id, kind }),
+            attendancePhotos.getPhotoLocation({ date: row.date, attendanceId: row.id, kind }),
+        ]);
+        if (!signed) return res.status(404).json({ error: 'No photo stored for this event' });
+
+        res.json({
+            ...signed,
+            kind,
+            captured_at: kind === 'in' ? row.check_in : row.check_out,
+            date: row.date,
+            employee: row.employees || null,
+            // Terminal GPS fix at the moment of the scan (null if the tablet had no fix)
+            location: sidecar?.location || null,
+            location_source: sidecar?.source || null,
+        });
+    } catch (error) {
+        console.error('❌ Attendance photo error:', error.message);
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
+    }
+};
+
+// Signed avatar URLs (1 hour) for a list of employee ids: ?ids=EMP-001,EMP-002
+exports.getEmployeeAvatars = async (req, res) => {
+    const ids = String(req.query.ids || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 500);
+    const urls = await attendancePhotos.getAvatarUrls(ids);
+    res.json({ avatars: urls, expires_in: 3600 });
+};
+
+// Manual retention sweep (also runs daily in-process). Admin only.
+exports.cleanupAttendancePhotos = async (req, res) => {
+    const days = parseInt(req.body?.retention_days, 10) || attendancePhotos.RETENTION_DAYS;
+    const summary = await attendancePhotos.cleanupExpiredPhotos(days);
+    res.json({ retention_days: days, ...summary });
+};
+
 // Dedicated Attendance Marking Endpoint
-// Handles both internal and external (biometric engine) calls
+// Handles both internal and external (biometric engine) calls.
+// Accepts JSON, or multipart with an optional `file` (JPEG frame) for non-face terminals.
 exports.markAttendance = async (req, res) => {
     try {
         const { employee_id, id, method, device_id } = req.body;
@@ -175,10 +269,11 @@ exports.markAttendance = async (req, res) => {
         let finalUuid = targetId;
         const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
+        let empMeta = {};
         if (!uuidRegex.test(targetId)) {
             const { data: emp, error: empErr } = await supabase
                 .from('employees')
-                .select('id')
+                .select('id, name, employee_id')
                 .eq('employee_id', targetId)
                 .single();
 
@@ -187,12 +282,19 @@ exports.markAttendance = async (req, res) => {
                 return res.status(404).json({ error: "Employee not found or ID invalid" });
             }
             finalUuid = emp.id;
+            empMeta = { name: emp.name, employee_id: emp.employee_id };
+        } else if (req.file) {
+            const { data: emp } = await supabase.from('employees').select('name, employee_id').eq('id', targetId).single();
+            if (emp) empMeta = { name: emp.name, employee_id: emp.employee_id };
         }
 
         // 2. Record Attendance
         const attendanceResult = await recordAttendance(finalUuid, method || 'face', device_id || 'api_call');
 
-        res.json(attendanceResult);
+        // 3. Optional photo (multipart `file`) for fingerprint / RFID terminals
+        const photo = await attachAttendancePhoto(attendanceResult, req.file?.buffer, { ...empMeta, location: locationFromBody(req.body) });
+
+        res.json({ ...attendanceResult, photo });
     } catch (error) {
         console.error("❌ [Attendance Mark] Critical Error:", error.message);
         res.status(500).json({ error: "Internal Server Error", details: error.message });
@@ -218,7 +320,7 @@ exports.getEmployeeHistory = async (req, res) => {
         if (!uuidRegex.test(employee_id)) {
             const { data: emp, error: empErr } = await supabase
                 .from('employees')
-                .select('id, name, department, employee_id')
+                .select('id, name, department, employee_id, email, role, status, image_url, created_at')
                 .eq('employee_id', employee_id)
                 .single();
 
@@ -228,7 +330,7 @@ exports.getEmployeeHistory = async (req, res) => {
         } else {
             const { data: emp, error: empErr } = await supabase
                 .from('employees')
-                .select('id, name, department, employee_id')
+                .select('id, name, department, employee_id, email, role, status, image_url, created_at')
                 .eq('id', employee_id)
                 .single();
             if (empErr || !emp) return res.status(404).json({ error: "Employee not found" });
@@ -272,9 +374,21 @@ exports.getEmployeeHistory = async (req, res) => {
 
         const paginatedData = deduplicated.slice(offset, offset + pgLimit);
 
+        // Photos for this page + the employee's latest-scan avatar, two batch calls
+        const [availability, avatarUrls] = await Promise.all([
+            attendancePhotos.listPhotoAvailability(paginatedData.map(r => r.date)),
+            attendancePhotos.getAvatarUrls([employeeData.employee_id]),
+        ]);
+        const signed = await attendancePhotos.getSignedPhotoUrlsForRows(paginatedData, availability);
+        const rows = paginatedData.map(r => ({
+            ...r,
+            photos: availability.get(r.id) || { in: false, out: false },
+            photo_urls: signed.get(r.id) || { in: null, out: null },
+        }));
+
         res.json({
-            employee: employeeData,
-            data: paginatedData,
+            employee: { ...employeeData, avatar_url: avatarUrls[employeeData.employee_id] || null },
+            data: rows,
             total: deduplicated.length,
             page: parseInt(page, 10),
             limit: pgLimit
@@ -465,7 +579,18 @@ exports.getAttendanceList = async (req, res) => {
         });
 
         const paginatedData = deduplicated.slice(offset, offset + limit);
-        res.json({ data: paginatedData, total: deduplicated.length });
+
+        // Attach photo availability ({in, out}) per row without touching the schema
+        const availability = await attendancePhotos.listPhotoAvailability(paginatedData.map(r => r.date));
+        // One batch signing call for the page so rows can show IN / OUT thumbnails inline
+        const signed = await attendancePhotos.getSignedPhotoUrlsForRows(paginatedData, availability);
+        const withPhotos = paginatedData.map(r => ({
+            ...r,
+            photos: availability.get(r.id) || { in: false, out: false },
+            photo_urls: signed.get(r.id) || { in: null, out: null },
+        }));
+
+        res.json({ data: withPhotos, total: deduplicated.length });
     } catch (error) {
         console.error('❌ Get attendance error:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });

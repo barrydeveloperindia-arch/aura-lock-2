@@ -14,7 +14,7 @@ export default function Layout() {
                     <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/20">
                         <Lock className="w-4 h-4 text-white" />
                     </div>
-                    <h1 className="font-bold text-slate-900 text-xl tracking-tight">Aura<span className="text-emerald-500">Lock</span></h1>
+                    <h1 className="font-bold text-slate-900 text-xl tracking-tight">Eng<span className="text-emerald-500">labs</span></h1>
                 </div>
                 <button 
                     onClick={() => setSidebarOpen(true)} 

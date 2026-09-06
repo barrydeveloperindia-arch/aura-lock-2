@@ -7,7 +7,7 @@ from datetime import datetime
 
 # Configuration
 SUPABASE_URL = "https://wdtizlzfsijikcejerwq.supabase.co"
-SUPABASE_KEY = "sb_publishable_mMAzoDNSv_f4SHubPuVxUg_3Xr0KbzQ" # Placeholder from prompt
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 ESP32_IP = "http://192.168.1.100" # Placeholder
 ESP32_SECRET = "my_secure_token"
 

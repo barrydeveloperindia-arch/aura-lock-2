@@ -1,7 +1,15 @@
 $ErrorActionPreference = "Stop"
 
-$device_name = "OnePlus Nord 4"
-$apk_path = "C:\Users\SAM\Documents\Antigravity\aura-lock-2\terminal-app\android\app\build\outputs\apk\debug\app-debug.apk"
+$device_name = "OPPO A72 5G"
+
+$builds_dir = Join-Path $PSScriptRoot "terminal-app\assets\builds"
+$latest_apk = Get-ChildItem -Path $builds_dir -Filter *.apk | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if (-not $latest_apk) {
+    Write-Host "No APK found in $builds_dir"
+    exit 1
+}
+$apk_path = $latest_apk.FullName
+Write-Host "Selected latest APK from assets: $($latest_apk.Name)"
 
 Write-Host "Searching for MTP Device: $device_name..."
 $shell = New-Object -ComObject Shell.Application
@@ -22,7 +30,24 @@ if ($device) {
             # 4 = Do not display a progress dialog box
             # 16 = Respond with "Yes to All" for any dialog box that is displayed
             $downloadFolder.GetFolder.CopyHere($apk_path, 20)
-            Write-Host "Success! APK transferred to your phone's Download folder."
+            
+            # Wait for copy to complete (since CopyHere is asynchronous)
+            $destFileName = [System.IO.Path]::GetFileName($apk_path)
+            $destFileNameWithoutExtension = [System.IO.Path]::GetFileNameWithoutExtension($apk_path)
+            $copied = $false
+            Write-Host "Waiting for transfer to complete..."
+            for ($i = 0; $i -lt 30; $i++) {
+                Start-Sleep -Seconds 1
+                $destItem = $downloadFolder.GetFolder.Items() | Where-Object { $_.Name -eq $destFileName -or $_.Name -eq $destFileNameWithoutExtension }
+                if ($destItem) {
+                    Write-Host "Success! APK transferred to your phone's Download folder."
+                    $copied = $true
+                    break
+                }
+            }
+            if (-not $copied) {
+                Write-Host "Transfer timed out or failed."
+            }
         } else {
             Write-Host "Download folder not found on device."
         }

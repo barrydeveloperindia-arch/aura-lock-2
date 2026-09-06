@@ -30,7 +30,7 @@ This document details the transition from local/Render-based hosting to a high-p
 | `GOOGLE_API_KEY` | Google AI Studio Key for Gemini Liveness. |
 | `PYTHON_ENGINE_URL` | Permanent URL of the production Edge service. |
 | `ADMIN_EMAIL` | `5089shivkumar@gmail.com` |
-| `ADMIN_PASSWORD` | `Admin@123` |
+| `ADMIN_PASSWORD` | set in Cloud Run env (never commit) |
 | `SUPABASE_URL` | Database endpoint. |
 
 ## 🛠️ Operational Notes for Successive Agents

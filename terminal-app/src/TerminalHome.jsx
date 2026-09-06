@@ -1,14 +1,21 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Fingerprint, X, CheckCircle2, LogOut, AlertTriangle, Clock, ShieldAlert, Unlock, UserPlus, Bluetooth, BluetoothConnected, BluetoothOff, Cpu, RefreshCw, AlertCircle, Search, ChevronRight, Settings, Zap, Lock, History, Info, DoorOpen, ScanFace } from 'lucide-react';
+import { Camera, Fingerprint, X, CheckCircle2, LogOut, AlertTriangle, Clock, ShieldAlert, Unlock, UserPlus, Bluetooth, BluetoothConnected, BluetoothOff, Cpu, RefreshCw, AlertCircle, Search, ChevronRight, Settings, Zap, Lock, History, Info, DoorOpen, ScanFace, Hash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { NativeBiometric } from '@capgo/capacitor-native-biometric';
 import { BleClient } from '@capacitor-community/bluetooth-le';
+import { Geolocation } from '@capacitor/geolocation';
+import { localFaceService } from './LocalFaceService';
+import pkg from '../package.json';
 
 // Production API Configuration
 const API_BASE = import.meta.env?.VITE_API_BASE_URL || 'https://auralock-backend-50851729985.asia-south1.run.app';
 const RESET_DELAY = 5; // seconds
+const ADMIN_DOOR_PIN = '2026';
+const MAX_PIN_ATTEMPTS = 3;
+const PIN_COOLDOWN_SECONDS = 30;
+const CAPTURE_INTERVAL_MS = 800;
 
 const BLE_MAC = '58:8C:81:CC:65:29';
 const DOOR_SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
@@ -48,16 +55,10 @@ function LiveClock() {
 }
 
 export default function TerminalHome() {
-    // VERSION MARKER: 1546_FINAL
-    useEffect(() => {
-        console.log('🚀 [App] Version: 1546_FINAL');
-    }, []);
+    // VERSION MARKER: 2100_PIN_LOCALFACE
 
     const navigate = useNavigate();
-    useEffect(() => {
-        console.log('🚀 [Init] App Mounted. Time:', new Date().toISOString(), 'API_BASE:', API_BASE);
-    }, []);
-    // view: 'home' | 'checkin' | 'checkout' | 'error' | 'admin_auth' | 'admin_select' | 'admin_scan'
+    // view: 'home' | 'checkin' | 'checkout' | 'error' | 'admin_auth' | 'admin_select' | 'admin_scan' | 'admin_door_pin'
     const [view, setView] = useState('home');
     const [verifyMethod, setVerifyMethod] = useState('face'); // 'face' | 'fingerprint'
     const [loading, setLoading] = useState(false);
@@ -68,23 +69,67 @@ export default function TerminalHome() {
     const [countdown, setCountdown] = useState(RESET_DELAY);
     const [adminPin, setAdminPin] = useState('');
     const [selectedEmp, setSelectedEmp] = useState(null);
-    const [bleStatus, setBleStatus] = useState('disconnected'); // 'disconnected' | 'connecting' | 'connected' | 'error'
+    const [bleStatus, setBleStatus] = useState('disconnected');
     const [lastDoorUpdate, setLastDoorUpdate] = useState(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }));
-    const [doorState, setDoorState] = useState('locked'); // 'locked' | 'unlocked'
+    const [doorState, setDoorState] = useState('locked');
     const videoRef = useRef(null);
     const streamRef = useRef(null);
     const [isScanning, setIsScanning] = useState(false);
+    const verifyInFlightRef = useRef(false);
+
+    // ── Terminal geo-stamp ────────────────────────────────────────────────
+    // The tablet's own GPS fix, refreshed every 60 s, sent with every scan so the
+    // backend can stamp WHERE the check-in happened. Failure is silent: a scan
+    // never waits for GPS.
+    const lastFixRef = useRef(null);
+    useEffect(() => {
+        let stopped = false;
+        const refresh = async () => {
+            try {
+                const perm = await Geolocation.checkPermissions();
+                if (perm.location !== 'granted' && perm.coarseLocation !== 'granted') {
+                    const req = await Geolocation.requestPermissions();
+                    if (req.location !== 'granted' && req.coarseLocation !== 'granted') return;
+                }
+                const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 });
+                if (!stopped && pos?.coords) {
+                    lastFixRef.current = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        accuracy: Math.round(pos.coords.accuracy || 0),
+                        fix_time: new Date(pos.timestamp || Date.now()).toISOString(),
+                    };
+                }
+            } catch (_e) { /* no GPS, keep last fix */ }
+        };
+        refresh();
+        const t = setInterval(refresh, 60000);
+        return () => { stopped = true; clearInterval(t); };
+    }, []);
+    const appendLocation = (formData) => {
+        const fix = lastFixRef.current;
+        if (!fix) return;
+        formData.append('lat', String(fix.lat));
+        formData.append('lng', String(fix.lng));
+        formData.append('accuracy', String(fix.accuracy));
+        formData.append('fix_time', fix.fix_time);
+    };
+
+    // PIN Protection State
+    const [doorPinInput, setDoorPinInput] = useState('');
+    const [doorPinAttempts, setDoorPinAttempts] = useState(0);
+    const [doorPinCooldown, setDoorPinCooldown] = useState(0);
+    const [doorPinError, setDoorPinError] = useState('');
 
     // ── Local Door BLE Controller ─────────────────────────────────────────────
     const triggerDoorUnlock = async () => {
+        let shouldDisconnect = true;
         try {
             setDoorState('unlocked');
             setLastDoorUpdate(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }));
             
-            console.log('Initializing BleClient...');
-            try { await BleClient.initialize(); } catch (e) {}
+            try { await BleClient.initialize(); } catch (_e) {}
 
-            console.log(`Connecting to lock: ${BLE_MAC}`);
             await BleClient.connect(BLE_MAC);
 
             const buffer = new ArrayBuffer(2);
@@ -92,38 +137,88 @@ export default function TerminalHome() {
             viewData.setUint8(0, 'O'.charCodeAt(0));
             viewData.setUint8(1, 'N'.charCodeAt(0));
 
-            console.log('Sending direct ON GATT command to BLE door...');
             await BleClient.write(BLE_MAC, DOOR_SERVICE_UUID, DOOR_CHAR_UUID, viewData);
+
+            // Successfully wrote ON command, delegate disconnection to the timeout
+            shouldDisconnect = false;
 
             // Hold open for 5.5 seconds then auto-relock
             setTimeout(async () => {
                 try {
-                    console.log('Sending OFF GATT command to auto-lock door...');
                     const offBuffer = new ArrayBuffer(3);
                     const offView = new DataView(offBuffer);
                     offView.setUint8(0, 'O'.charCodeAt(0));
                     offView.setUint8(1, 'F'.charCodeAt(0));
                     offView.setUint8(2, 'F'.charCodeAt(0));
                     await BleClient.write(BLE_MAC, DOOR_SERVICE_UUID, DOOR_CHAR_UUID, offView);
-
-                    console.log('Relocked. Disconnecting BLE...');
-                    await BleClient.disconnect(BLE_MAC);
-                } catch (e) {
-                    console.error('Auto-lock failed:', e);
+                } catch (_e) {
+                    // Auto-lock failed silently
                 } finally {
+                    try { await BleClient.disconnect(BLE_MAC); } catch (_e) {}
                     setDoorState('locked');
                     setLastDoorUpdate(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }));
                 }
             }, 5500);
 
-        } catch (err) {
-            console.error('BLE Door Error:', err);
+        } catch (_err) {
             setTimeout(() => {
                 setDoorState('locked');
                 setLastDoorUpdate(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }));
             }, 5500);
+        } finally {
+            if (shouldDisconnect) {
+                try { await BleClient.disconnect(BLE_MAC); } catch (_e) {}
+            }
         }
     };
+
+    // ── PIN Verification Handler ──────────────────────────────────────────────
+    const handleDoorPinSubmit = useCallback(() => {
+        if (doorPinCooldown > 0) return;
+        if (doorPinInput === ADMIN_DOOR_PIN) {
+            triggerDoorUnlock();
+            setDoorPinInput('');
+            setDoorPinAttempts(0);
+            setDoorPinError('');
+            setView('home');
+        } else {
+            const newAttempts = doorPinAttempts + 1;
+            setDoorPinAttempts(newAttempts);
+            setDoorPinInput('');
+            if (newAttempts >= MAX_PIN_ATTEMPTS) {
+                setDoorPinError('Too many failed attempts. Locked for ' + PIN_COOLDOWN_SECONDS + 's');
+                setDoorPinCooldown(PIN_COOLDOWN_SECONDS);
+            } else {
+                setDoorPinError('Invalid PIN (' + (MAX_PIN_ATTEMPTS - newAttempts) + ' attempts remaining)');
+            }
+        }
+    }, [doorPinInput, doorPinAttempts, doorPinCooldown]);
+
+    const handlePinKeyPress = useCallback((key) => {
+        if (key === 'delete') {
+            setDoorPinInput(prev => prev.slice(0, -1));
+        } else if (key === 'submit') {
+            handleDoorPinSubmit();
+        } else if (doorPinInput.length < 4) {
+            setDoorPinInput(prev => prev + key);
+        }
+    }, [doorPinInput, handleDoorPinSubmit]);
+
+    // ── PIN Cooldown Timer ────────────────────────────────────────────────────
+    useEffect(() => {
+        if (doorPinCooldown <= 0) return;
+        const timer = setInterval(() => {
+            setDoorPinCooldown(prev => {
+                if (prev <= 1) {
+                    setDoorPinAttempts(0);
+                    setDoorPinError('');
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [doorPinCooldown]);
 
     const [biometricStatus, setBiometricStatus] = useState('checking'); // 'online', 'offline', 'checking'
 
@@ -131,7 +226,7 @@ export default function TerminalHome() {
         let statusInterval;
         const checkBle = async () => {
             try {
-                try { await BleClient.initialize(); } catch (ie) {}
+                try { await BleClient.initialize(); } catch (_ie) {}
 
                 const result = await BleClient.isEnabled();
                 if (!result) { setBleStatus('disabled'); return; }
@@ -145,8 +240,8 @@ export default function TerminalHome() {
                 } else {
                     await BleClient.requestLEScan(
                         { services: [DOOR_SERVICE_UUID] },
-                        (result) => {
-                            if (result.device.deviceId === BLE_MAC || result.device.name?.includes('SmartDoor')) {
+                        (scanResult) => {
+                            if (scanResult.device.deviceId === BLE_MAC || scanResult.device.name?.includes('SmartDoor')) {
                                 setBleStatus('ready');
                                 BleClient.stopLEScan();
                             }
@@ -157,7 +252,7 @@ export default function TerminalHome() {
                         setBleStatus(prev => prev === 'ready' || prev === 'connected' ? prev : 'offline');
                     }, 5000);
                 }
-            } catch (e) {
+            } catch (_e) {
                 setBleStatus('offline');
             }
         };
@@ -170,7 +265,7 @@ export default function TerminalHome() {
                 } else {
                     setBiometricStatus('offline');
                 }
-            } catch (e) {
+            } catch (_e) {
                 setBiometricStatus('offline');
             }
         };
@@ -183,19 +278,24 @@ export default function TerminalHome() {
         initSystem();
         statusInterval = setInterval(() => { checkBiometricHealth(); }, 60000);
         
+        // Initialize local face recognition
+        localFaceService.initialize();
+        localFaceService.syncDescriptors(API_BASE);
+        const syncInterval = setInterval(() => localFaceService.syncDescriptors(API_BASE), 300000);
+        
         // Poll for remote unlock commands from the Admin Panel
         const remoteUnlockInterval = setInterval(async () => {
             try {
                 const res = await axios.get(`${API_BASE}/api/door/poll`, { timeout: 3000 });
                 if (res.data.unlock) {
-                    console.log('Received remote unlock signal from Admin Panel!');
                     triggerDoorUnlock();
                 }
-            } catch (e) {}
+            } catch (_e) {}
         }, 1500);
         
         return () => {
             clearInterval(statusInterval);
+            clearInterval(syncInterval);
             clearInterval(remoteUnlockInterval);
             BleClient.stopLEScan().catch(() => {});
         };
@@ -259,12 +359,9 @@ export default function TerminalHome() {
                 setMessage('Scanning...');
 
                 if (view === 'home' && isScanning && verifyMethod === 'face') {
-                    interval = setInterval(captureAndVerify, 2000);
-                } else if (view === 'admin_scan') {
-                    // admin registration handles its own capture
+                    interval = setInterval(captureAndVerify, CAPTURE_INTERVAL_MS);
                 }
-            } catch (err) {
-                console.error(err);
+            } catch (_err) {
                 setMessage('Camera unavailable');
             }
         };
@@ -287,22 +384,69 @@ export default function TerminalHome() {
         };
     }, [view, verifyMethod, isScanning]);
 
-    const captureAndVerify = () => {
+    const captureAndVerify = async () => {
         if (!videoRef.current || view !== 'home' || !isScanning || verifyMethod !== 'face' || loading) return;
+        if (verifyInFlightRef.current) return;
+        verifyInFlightRef.current = true;
 
-        const canvas = document.createElement('canvas');
-        canvas.width = videoRef.current.videoWidth || 640;
-        canvas.height = videoRef.current.videoHeight || 480;
-        if (canvas.width === 0) return;
+        try {
+            // ── FAST PATH: Local on-device matching ──────────────────────
+            const localStatus = localFaceService.getStatus();
+            if (localStatus.modelsLoaded && localStatus.descriptorCount > 0) {
+                const localResult = await localFaceService.matchFace(videoRef.current);
+                if (localResult.matched && (localResult.confidence === 'high' || localResult.confidence === 'medium')) {
+                    // Local match — instant unlock + async attendance log
+                    triggerDoorUnlock();
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+                    try {
+                        const attendRes = await axios.post(`${API_BASE}/api/attendance/mark`, {
+                            employee_id: localResult.employee.employee_id,
+                            method: 'face_local',
+                            device_id: 'office_terminal',
+                        }, { timeout: 10000 });
+                        const aData = attendRes.data || {};
+                        const isCheckout = !!(aData.check_out);
+                        setResult({
+                            name: localResult.employee.name,
+                            time: aData.check_in ? new Date(aData.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : timeStr,
+                            checkoutTime: aData.check_out ? new Date(aData.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : timeStr,
+                            workingHours: aData.working_hours != null ? formatWorkHours(aData.working_hours) : null,
+                            isCheckout,
+                        });
+                        setView(isCheckout ? 'checkout' : 'checkin');
+                    } catch (_attendErr) {
+                        // Backend logging failed, but door is already unlocked
+                        setResult({ name: localResult.employee.name, time: timeStr, checkoutTime: timeStr, workingHours: null, isCheckout: false });
+                        setView('checkin');
+                    }
+                    return;
+                }
+            }
 
-        canvas.toBlob(async (blob) => {
+            // ── SLOW PATH: Cloud fallback ────────────────────────────────
+            const canvas = document.createElement('canvas');
+            const MAX_W = 480;
+            const srcW = videoRef.current.videoWidth || 640;
+            const srcH = videoRef.current.videoHeight || 480;
+            const scale = Math.min(1, MAX_W / srcW);
+            canvas.width = Math.round(srcW * scale);
+            canvas.height = Math.round(srcH * scale);
+            if (canvas.width === 0) return;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.6));
             if (!blob) return;
+            // Keep the same frame for the success screen (shown with date/time stamp)
+            const frameDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
             try {
                 const formData = new FormData();
                 formData.append('file', blob, 'verify.jpg');
+                appendLocation(formData);
                 
                 const res = await axios.post(`${API_BASE}/api/biometrics/face/verify`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
@@ -321,6 +465,10 @@ export default function TerminalHome() {
                             : now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
                         workingHours: res.data.working_hours != null ? formatWorkHours(res.data.working_hours) : null,
                         isCheckout,
+                        // Captured frame + server timestamp for the on-screen photo stamp
+                        photo: frameDataUrl,
+                        employeeId: res.data.user?.employee_id || res.data.employeeId || '',
+                        capturedAt: (isCheckout ? res.data.check_out : res.data.check_in) || now.toISOString(),
                     });
                     setView(isCheckout ? 'checkout' : 'checkin');
                     triggerDoorUnlock();
@@ -337,7 +485,9 @@ export default function TerminalHome() {
                     setMessage('Scanning...');
                 }
             }
-        }, 'image/jpeg', 0.8);
+        } finally {
+            verifyInFlightRef.current = false;
+        }
     };
 
     const captureAndRegister = () => {
@@ -366,6 +516,8 @@ export default function TerminalHome() {
                 });
 
                 if (res.data.success) {
+                    // Also generate local face-api.js descriptor for fast on-device matching
+                    await localFaceService.enrollFace(videoRef.current, selectedEmp);
                     setMessage('Enrollment Successful!');
                     setTimeout(() => reset(), 2500);
                 }
@@ -383,17 +535,13 @@ export default function TerminalHome() {
         try {
             setVerifyMethod('fingerprint');
             
-            // Explicitly stop all camera tracks before starting biometrics
             if (streamRef.current) {
-                console.log('📷 [Biometric] Stopping camera tracks...');
                 streamRef.current.getTracks().forEach(track => track.stop());
                 streamRef.current = null;
             }
 
-            // Wait 1s for hardware to settle completely
             await new Promise(r => setTimeout(r, 1000));
 
-            console.log('🔍 [Biometric] Checking availability...');
             const avail = await NativeBiometric.isAvailable();
             if (!avail.isAvailable) {
                 alert('Fingerprint sensor not detected.');
@@ -401,8 +549,6 @@ export default function TerminalHome() {
                 return;
             }
 
-            console.log('👆 [Biometric] Starting authentication...');
-            // Robust Biometric call with fallbacks for different plugin versions
             const authParams = {
                 reason: 'Authenticate for attendance tracking',
                 title: 'EngLabs Attendance Tracker (EAT)',
@@ -410,21 +556,13 @@ export default function TerminalHome() {
                 negativeButtonText: 'Cancel',
             };
 
-
             try {
-                console.log('👆 [Biometric] Starting authentication with verifyIdentity...');
-                // PRIMARY METHOD for @capgo/capacitor-native-biometric
                 await NativeBiometric.verifyIdentity(authParams);
-                console.log('✅ [Biometric] Verified successfully');
             } catch (authError) {
-                console.error('❌ [Biometric] Auth error:', authError);
                 alert('Fingerprint Error: ' + (authError.message || JSON.stringify(authError)));
                 setVerifyMethod('face');
                 return;
             }
-            
-            // If we reach here, verification was successful
-            console.log('✅ [Biometric] Verified successfully');
             
             if (!employees || employees.length === 0) {
                 alert('Verification Success, but no employee records found in app state. Please wait for sync.');
@@ -435,7 +573,6 @@ export default function TerminalHome() {
             try {
                 setLoading(true);
                 const emp = employees[0]; 
-                console.log('👤 [Biometric] Marking attendance for:', emp.name);
                 
                 const res = await axios.post(`${API_BASE}/api/attendance/mark`, {
                     employee_id: emp.employee_id || emp.id,
@@ -444,19 +581,17 @@ export default function TerminalHome() {
                 }, { timeout: 10000 });
                 
                 const data = res.data || {};
-                console.log('📝 [Biometric] Backend response:', JSON.stringify(data));
 
                 const isCheckout = !!(data.check_out);
                 const now = new Date();
                 
-                // Safe date formatting helper
                 const safeTime = (dateStr) => {
                     try {
                         if (!dateStr) return now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
                         const d = new Date(dateStr);
                         if (isNaN(d.getTime())) return now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
                         return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-                    } catch (e) {
+                    } catch (_e) {
                         return now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
                     }
                 };
@@ -472,13 +607,10 @@ export default function TerminalHome() {
                 setView(isCheckout ? 'checkout' : 'checkin');
                 triggerDoorUnlock();
             } catch (postErr) {
-                console.error('❌ Attendance Mark Error:', postErr);
                 alert('Server Error: ' + (postErr.message || 'Could not reach backend'));
                 setVerifyMethod('face');
             }
         } catch (err) {
-            console.error('❌ Fingerprint Error:', err);
-            // Don't alert on user cancel
             const errMsg = err.message || JSON.stringify(err);
             if (errMsg && !errMsg.toLowerCase().includes('cancel')) {
                 alert('Fingerprint Error: ' + errMsg);
@@ -518,7 +650,7 @@ export default function TerminalHome() {
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="font-black text-base tracking-tight text-[#24546e] leading-none">Eng<span className="text-[#52b39a] font-normal">labs</span></span>
-                                    <span className="text-[6px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">ATTENDANCE TRACKER (EAT)</span>
+                                    <span className="text-[6px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">ATTENDANCE v{pkg.version}</span>
                                 </div>
                             </div>
                             <div className="flex flex-col items-end">
@@ -694,15 +826,84 @@ export default function TerminalHome() {
                             </div>
                         </div>
 
-                        {/* Admin Manual Unlock Button */}
+                        {/* Admin Manual Unlock Button — PIN Protected */}
                         <div className="w-full mt-2">
                             <button 
-                                onClick={triggerDoorUnlock}
+                                onClick={() => { setView('admin_door_pin'); setDoorPinInput(''); setDoorPinError(''); }}
                                 className="w-full py-4 bg-slate-900 hover:bg-slate-800 rounded-[1.25rem] font-black text-white uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2"
                             >
                                 <Unlock size={18} className="text-emerald-400" />
                                 Admin Unlock Door
                             </button>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* ── ADMIN DOOR PIN MODAL ── */}
+                {view === 'admin_door_pin' && (
+                    <motion.div key="admin_door_pin" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-[#f8fafc] flex items-center justify-center p-6">
+                        <div className="bg-white border border-slate-200 shadow-xl p-8 rounded-3xl w-full max-w-sm flex flex-col gap-5 items-center">
+                            <div className="flex items-center justify-between w-full border-b border-slate-100 pb-4">
+                                <h2 className="text-lg font-black flex items-center gap-2"><Hash size={20} className="text-amber-500" /> Door PIN</h2>
+                                <button onClick={() => { setView('home'); setDoorPinInput(''); setDoorPinError(''); }} className="p-2 hover:bg-slate-50 rounded-full transition-colors"><X size={20} /></button>
+                            </div>
+
+                            {/* PIN Display */}
+                            <div data-testid="pin-display" className="flex gap-3 my-2">
+                                {[0,1,2,3].map(i => (
+                                    <div key={i} className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center text-2xl font-black transition-all ${
+                                        i < doorPinInput.length ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-300'
+                                    }`}>
+                                        {i < doorPinInput.length ? '●' : '○'}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Error Message */}
+                            {doorPinError && (
+                                <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-500 text-xs font-black uppercase tracking-wider text-center">
+                                    {doorPinError}
+                                </motion.p>
+                            )}
+
+                            {/* Cooldown */}
+                            {doorPinCooldown > 0 && (
+                                <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-100 rounded-full">
+                                    <Lock size={14} className="text-red-500" />
+                                    <span className="text-red-600 text-xs font-black uppercase tracking-wider">Locked {doorPinCooldown}s</span>
+                                </div>
+                            )}
+
+                            {/* Numeric Keypad */}
+                            <div className="grid grid-cols-3 gap-3 w-full">
+                                {['1','2','3','4','5','6','7','8','9'].map(key => (
+                                    <button key={key} data-testid={`pin-key-${key}`}
+                                        onClick={() => handlePinKeyPress(key)}
+                                        disabled={doorPinCooldown > 0}
+                                        className="py-4 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 disabled:opacity-40 rounded-2xl text-xl font-black text-slate-800 transition-all border border-slate-200 active:scale-95"
+                                    >{key}</button>
+                                ))}
+                                <button data-testid="pin-key-delete"
+                                    onClick={() => handlePinKeyPress('delete')}
+                                    disabled={doorPinCooldown > 0}
+                                    className="py-4 bg-slate-50 hover:bg-slate-100 disabled:opacity-40 rounded-2xl text-sm font-black text-slate-500 transition-all border border-slate-200 uppercase tracking-wider"
+                                >Del</button>
+                                <button data-testid="pin-key-0"
+                                    onClick={() => handlePinKeyPress('0')}
+                                    disabled={doorPinCooldown > 0}
+                                    className="py-4 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 disabled:opacity-40 rounded-2xl text-xl font-black text-slate-800 transition-all border border-slate-200 active:scale-95"
+                                >0</button>
+                                <button data-testid="pin-submit"
+                                    onClick={() => handlePinKeyPress('submit')}
+                                    disabled={doorPinCooldown > 0 || doorPinInput.length !== 4}
+                                    className="py-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-200 disabled:text-slate-400 rounded-2xl text-sm font-black text-white transition-all uppercase tracking-wider active:scale-95"
+                                >Go</button>
+                            </div>
+
+                            {/* Cancel Button */}
+                            <button onClick={() => { setView('home'); setDoorPinInput(''); setDoorPinError(''); }}
+                                className="w-full py-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-500 uppercase text-[10px] tracking-widest hover:bg-slate-100 transition-colors mt-1"
+                            >Cancel</button>
                         </div>
                     </motion.div>
                 )}
@@ -776,7 +977,22 @@ export default function TerminalHome() {
                         transition={{ type: 'spring', stiffness: 260, damping: 22 }}
                         className="absolute inset-0 z-50 bg-[#f8fafc] flex flex-col items-center justify-center gap-8 text-center p-6">
 
-                        {/* Pulsing ring + icon */}
+                        {/* Captured photo with stamp (face scans), else pulsing ring + icon */}
+                        {result?.photo ? (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                                className="relative w-64 max-w-[80vw] rounded-2xl overflow-hidden border-4 border-emerald-100 shadow-xl shadow-emerald-500/20 bg-black">
+                                <img src={result.photo} alt="" className="w-full h-auto block" />
+                                <div className="absolute inset-x-0 bottom-0 bg-black/70 px-3 py-2 text-left">
+                                    <div className="text-white text-sm font-bold leading-tight truncate">{result.name}{result.employeeId ? `  (${result.employeeId})` : ''}</div>
+                                    <div className="text-emerald-300 text-xs font-black tracking-wider">
+                                        CHECK IN  {new Date(result.capturedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })} IST
+                                    </div>
+                                </div>
+                                <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center shadow">
+                                    <CheckCircle2 size={18} className="text-white" />
+                                </div>
+                            </motion.div>
+                        ) : (
                         <div className="relative">
                             <motion.div
                                 animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0, 0.3] }}
@@ -787,6 +1003,7 @@ export default function TerminalHome() {
                                 <CheckCircle2 size={80} className="text-emerald-500" />
                             </div>
                         </div>
+                        )}
 
                         <div>
                             <motion.p initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
@@ -823,6 +1040,21 @@ export default function TerminalHome() {
                         transition={{ type: 'spring', stiffness: 260, damping: 22 }}
                         className="absolute inset-0 z-50 bg-[#f8fafc] flex flex-col items-center justify-center gap-8 text-center p-6">
 
+                        {result?.photo ? (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                                className="relative w-64 max-w-[80vw] rounded-2xl overflow-hidden border-4 border-indigo-100 shadow-xl shadow-indigo-500/20 bg-black">
+                                <img src={result.photo} alt="" className="w-full h-auto block" />
+                                <div className="absolute inset-x-0 bottom-0 bg-black/70 px-3 py-2 text-left">
+                                    <div className="text-white text-sm font-bold leading-tight truncate">{result.name}{result.employeeId ? `  (${result.employeeId})` : ''}</div>
+                                    <div className="text-indigo-300 text-xs font-black tracking-wider">
+                                        CHECK OUT  {new Date(result.capturedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })} IST
+                                    </div>
+                                </div>
+                                <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center shadow">
+                                    <LogOut size={16} className="text-white ml-0.5" />
+                                </div>
+                            </motion.div>
+                        ) : (
                         <div className="relative">
                             <motion.div
                                 animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0, 0.3] }}
@@ -833,6 +1065,7 @@ export default function TerminalHome() {
                                 <LogOut size={72} className="text-indigo-500 ml-2" />
                             </div>
                         </div>
+                        )}
 
                         <div>
                             <motion.p initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}

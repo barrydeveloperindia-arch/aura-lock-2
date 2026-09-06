@@ -5,9 +5,11 @@ import {
     ChevronLeft, ChevronRight, Search, FileText,
     Briefcase, Download, ArrowUpDown, ArrowUp, ArrowDown,
     Users, UserCheck, Timer, AlertTriangle, Loader2,
-    CheckCircle2, X, Filter
+    CheckCircle2, X, Filter, Camera
 } from 'lucide-react';
 import { apiService } from '../services/api';
+import AttendancePhotoModal from '../components/AttendancePhotoModal';
+import useAvatars from '../hooks/useAvatars';
 import { format, differenceInMinutes, parseISO, startOfWeek, startOfMonth } from 'date-fns';
 
 const PAGE_SIZE = 10;
@@ -115,7 +117,13 @@ export default function Attendance() {
     const [exporting, setExporting] = useState(false);
     const [exportingPdf, setExportingPdf] = useState(false);
 
-    useEffect(() => { 
+    // Photo viewer: { record, kind: 'in' | 'out' } or null
+    const [photoView, setPhotoView] = useState(null);
+
+    // Latest-scan face crops, one request per page of rows
+    const avatars = useAvatars(attendance.map(r => r.employees?.employee_id));
+
+    useEffect(() => {
         fetchEmployees();
         fetchDepartments();
     }, []);
@@ -485,8 +493,8 @@ export default function Attendance() {
                                         <td className="px-4 md:px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/20 to-slate-800 border border-white/[0.06] flex items-center justify-center text-[10px] md:text-[11px] font-black text-emerald-500 overflow-hidden">
-                                                    {rec.employees?.image_url
-                                                        ? <img src={rec.employees.image_url} alt="" className="w-full h-full object-cover" />
+                                                    {(avatars[rec.employees?.employee_id] || rec.employees?.image_url)
+                                                        ? <img src={avatars[rec.employees?.employee_id] || rec.employees.image_url} alt="" className="w-full h-full object-cover" />
                                                         : initials}
                                                 </div>
                                                 <div className="min-w-0">
@@ -517,20 +525,64 @@ export default function Attendance() {
                                             </span>
                                         </td>
 
-                                        {/* Check In */}
-                                        <td className="px-4 md:px-6 py-4">
-                                            <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-bold text-emerald-400 tabular-nums">
-                                                <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                                {fmtTime(rec.check_in)}
+                                        {/* Check In: stamped frame + time */}
+                                        <td className="px-4 md:px-6 py-3">
+                                            <div className="flex items-center gap-2.5">
+                                                {rec.photo_urls?.in ? (
+                                                    <button type="button"
+                                                        onClick={(e) => { e.stopPropagation(); setPhotoView({ record: rec, kind: 'in' }); }}
+                                                        title="View check-in photo" aria-label={`Check-in photo of ${name}`}
+                                                        className="w-11 h-11 shrink-0 rounded-lg overflow-hidden border-2 border-emerald-400 bg-black hover:scale-105 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+                                                        <img src={rec.photo_urls.in} alt="" className="w-full h-full object-cover object-top" />
+                                                    </button>
+                                                ) : (
+                                                    <div className="w-11 h-11 shrink-0 rounded-lg border border-dashed border-slate-200 flex items-center justify-center" title="No check-in photo">
+                                                        <Camera className="w-3.5 h-3.5 text-slate-300" />
+                                                    </div>
+                                                )}
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-bold text-emerald-500 tabular-nums">
+                                                        <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                                        {fmtTime(rec.check_in)}
+                                                    </div>
+                                                    {/* Phones hide the Check Out column: show OUT here instead */}
+                                                    {rec.check_out && (
+                                                        <div className="sm:hidden flex items-center gap-1.5 text-[10px] font-bold text-slate-500 tabular-nums">
+                                                            {rec.photo_urls?.out ? (
+                                                                <button type="button"
+                                                                    onClick={(e) => { e.stopPropagation(); setPhotoView({ record: rec, kind: 'out' }); }}
+                                                                    aria-label={`Check-out photo of ${name}`}
+                                                                    className="w-7 h-7 shrink-0 rounded-md overflow-hidden border-2 border-amber-400 bg-black">
+                                                                    <img src={rec.photo_urls.out} alt="" className="w-full h-full object-cover object-top" />
+                                                                </button>
+                                                            ) : <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
+                                                            Out {fmtTime(rec.check_out)}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </td>
 
-                                        {/* Check Out */}
-                                        <td className="hidden sm:table-cell px-6 py-4">
-                                            <div className={`flex items-center gap-2 text-[11px] font-bold tabular-nums
-                                                ${rec.check_out ? 'text-slate-400' : 'text-slate-700'}`}>
-                                                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${rec.check_out ? 'bg-slate-500' : 'bg-slate-800'}`} />
-                                                {fmtTime(rec.check_out)}
+                                        {/* Check Out: stamped frame + time */}
+                                        <td className="hidden sm:table-cell px-6 py-3">
+                                            <div className="flex items-center gap-2.5">
+                                                {rec.photo_urls?.out ? (
+                                                    <button type="button"
+                                                        onClick={(e) => { e.stopPropagation(); setPhotoView({ record: rec, kind: 'out' }); }}
+                                                        title="View check-out photo" aria-label={`Check-out photo of ${name}`}
+                                                        className="w-11 h-11 shrink-0 rounded-lg overflow-hidden border-2 border-amber-400 bg-black hover:scale-105 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
+                                                        <img src={rec.photo_urls.out} alt="" className="w-full h-full object-cover object-top" />
+                                                    </button>
+                                                ) : (
+                                                    <div className="w-11 h-11 shrink-0 rounded-lg border border-dashed border-slate-200 flex items-center justify-center" title={rec.check_out ? 'No check-out photo' : 'Not checked out yet'}>
+                                                        <Camera className="w-3.5 h-3.5 text-slate-300" />
+                                                    </div>
+                                                )}
+                                                <div className={`flex items-center gap-2 text-[11px] font-bold tabular-nums
+                                                    ${rec.check_out ? 'text-slate-600' : 'text-slate-300'}`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${rec.check_out ? 'bg-amber-500' : 'bg-slate-200'}`} />
+                                                    {fmtTime(rec.check_out)}
+                                                </div>
                                             </div>
                                         </td>
 
@@ -551,6 +603,7 @@ export default function Attendance() {
                                         <td className="hidden md:table-cell px-6 py-4 text-center">
                                             <MethodBadge method={rec.method} />
                                         </td>
+
                                     </tr>
                                 );
                             })}
@@ -600,6 +653,15 @@ export default function Attendance() {
                     </div>
                 </div>
             </div>
+
+            {photoView && (
+                <AttendancePhotoModal
+                    key={`${photoView.record.id}-${photoView.kind}`}
+                    record={photoView.record}
+                    kind={photoView.kind}
+                    onClose={() => setPhotoView(null)}
+                />
+            )}
         </div>
     );
 }

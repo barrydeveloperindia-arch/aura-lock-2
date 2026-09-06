@@ -52,6 +52,10 @@ npm run build
 
 # 6. Capacitor Sync
 Write-Host "Step 2: Syncing Capacitor..."
+$capConfigFile = "capacitor.config.json"
+(Get-Content $capConfigFile) | ForEach-Object {
+    $_ -replace '"appName": ".*"', '"appName": "EngLabs Attendance"'
+} | Set-Content $capConfigFile
 npx cap sync android
 
 # 7. Native Build

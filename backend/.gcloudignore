@@ -1,0 +1,16 @@
+# Files NOT uploaded to Cloud Build when deploying with `gcloud run deploy --source .`
+# Env vars are set explicitly by scripts/deploy_backend.ps1, so .env must never ship.
+.gcloudignore
+.git
+.gitignore
+.env
+.env.*
+node_modules
+npm-debug.log
+*.log
+logs
+tests
+scripts
+coverage
+*.test.js
+docker-compose*

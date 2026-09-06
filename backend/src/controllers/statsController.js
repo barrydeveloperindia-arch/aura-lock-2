@@ -71,11 +71,7 @@ exports.getStats = async (req, res) => {
             failedAttempts: 0,
             isPresent: presentToday,
             absentToday,
-            lateToday: lateToday,
-            trends: {
-                users: '+2', faces: '+1', fingerprints: '0', rfid: '+1',
-                entries: '+12%', failures: '-5%'
-            }
+            lateToday: lateToday
         });
     } catch (error) {
         console.error("❌ Stats error:", error.message || error);

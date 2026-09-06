@@ -69,7 +69,7 @@ function makeFakeJpeg() {
 
 async function login() {
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@smartdoorlock.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+    const adminPassword = process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD;
     try {
         const res = await axios.post(`${BASE_URL}/auth/login`, {
             email: adminEmail,

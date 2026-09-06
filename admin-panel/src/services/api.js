@@ -162,6 +162,20 @@ export const apiService = {
         return response.data;
     },
 
+    // Signed avatar URLs (1h) for many employees: { avatars: { 'EMP-001': url, ... } }
+    getAvatars: async (employeeIds) => {
+        const ids = [...new Set((employeeIds || []).filter(Boolean))];
+        if (ids.length === 0) return { avatars: {} };
+        const response = await api.get('/api/attendance/avatars', { params: { ids: ids.join(',') } });
+        return response.data;
+    },
+
+    // Signed URL (1h) for the check-in ('in') or check-out ('out') photo of one attendance row
+    getAttendancePhoto: async (attendanceId, kind) => {
+        const response = await api.get(`/api/attendance/${attendanceId}/photo/${kind}`);
+        return response.data;
+    },
+
     getAttendanceReport: async () => {
         const response = await api.get('/api/attendance/report');
         return response.data;

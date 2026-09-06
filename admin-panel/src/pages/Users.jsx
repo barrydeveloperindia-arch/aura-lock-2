@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { apiService } from '../services/api';
+import useAvatars from '../hooks/useAvatars';
 import {
     Search, Trash2, Edit2, UserPlus, X, Save,
     ScanFace, Fingerprint, AlertTriangle, UserX, UserCheck,
@@ -606,6 +607,9 @@ export default function Users() {
         } finally { setLoading(false); }
     };
 
+    // Latest-scan face crops for the whole list (one request, cached 50 min)
+    const avatars = useAvatars(users.map(u => u.employee_id));
+
     const patchUser = (updated) =>
         setUsers(u => u.map(x => x.id === updated.id ? { ...x, ...updated } : x));
 
@@ -787,8 +791,10 @@ export default function Users() {
                                         {/* Employee */}
                                         <td className="px-4 md:px-8 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/30 to-indigo-600/30 border border-blue-500/20 flex items-center justify-center text-[10px] md:text-xs font-black text-emerald-500">
-                                                    {initials}
+                                                <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/30 to-indigo-600/30 border border-blue-500/20 flex items-center justify-center text-[10px] md:text-xs font-black text-emerald-500 overflow-hidden">
+                                                    {(avatars[user.employee_id] || user.image_url)
+                                                        ? <img src={avatars[user.employee_id] || user.image_url} alt="" className="w-full h-full object-cover" />
+                                                        : initials}
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="text-sm font-bold text-slate-900 truncate">{user.name}</div>
