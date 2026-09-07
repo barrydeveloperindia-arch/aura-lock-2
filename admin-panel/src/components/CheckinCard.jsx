@@ -43,7 +43,9 @@ export default function CheckinCard({ row, kind, onKind, avatarUrl, onClose }) {
     const point = isIn ? row.in : row.out;
     const at = isIn ? row.check_in : row.check_out;
     const address = photo?.address || point?.address || null;
-    const where = placeLabel(point);
+    // the geocoded address already starts with the place name when the fix is inside it; only add the distance form
+    const whereRaw = placeLabel(point);
+    const where = whereRaw && !(address || '').startsWith(whereRaw) ? whereRaw : null;
     const hasIn = !!row.check_in, hasOut = !!row.check_out;
 
     return (
