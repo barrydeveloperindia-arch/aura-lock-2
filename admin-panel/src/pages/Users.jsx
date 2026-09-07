@@ -11,9 +11,9 @@ import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/
 
 // Departments in use at Englabs (matches the live employees table). Keep in sync with the DB.
 const DEPARTMENTS = [
-    'Mechanical Engineering', 'Civil Engineering', 'Architecture', 'Computer Engineer IT',
+    'Mechanical Engineering', 'Civil Engineering', 'Architecture', 'Computer Engineer IT', 'Workshop',
     'Paint', 'Sanding', 'Packing', 'Maintenance', 'House Keeping', 'Cleaning', 'Driver',
-    'Accounts', 'Management', 'CEO', 'General',
+    'Accounts', 'Management', 'CEO', 'MD', 'General',
 ];
 const EMPTY_FORM = { name: '', email: '', employee_id: '', department: 'Mechanical Engineering', role: 'employee' };
 
