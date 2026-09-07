@@ -44,6 +44,11 @@ describe('geocode.reverseGeocode', () => {
         geocode._setKnownPlacesForTests(JSON.stringify([{ name: 'EngLabs Office', lat: 0, lng: 0, radius_m: 50 }]));
         assert.equal(await geocode.reverseGeocode(0, 0), 'EngLabs Office');
         assert.equal(geocode.parseKnownPlaces('not json').length, 0);
+        geocode._setKnownPlacesForTests('EngLabs Office@30.72182,76.85247,120');
+        assert.deepEqual(geocode.nearestPlace(30.722956, 76.853971), { name: 'EngLabs Office', distance_m: 191, inside: false });
+        assert.equal(geocode.nearestPlace(30.72183, 76.85248).inside, true);
+        geocode._setKnownPlacesForTests('');
+        assert.equal(geocode.nearestPlace(30.72183, 76.85248), null);
         assert.deepEqual(geocode.parseKnownPlaces('EngLabs Office@30.72182,76.85247,120; Site B@30.7,76.8'), [
             { name: 'EngLabs Office', lat: 30.72182, lng: 76.85247, radius_m: 120 }, { name: 'Site B', lat: 30.7, lng: 76.8, radius_m: 100 }]);
     });

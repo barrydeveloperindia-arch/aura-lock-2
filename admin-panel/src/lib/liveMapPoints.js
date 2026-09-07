@@ -39,3 +39,13 @@ export function groupPoints(rows, radiusM = GROUP_RADIUS_M) {
 export function groupOf(groups, employeeId) {
     return groups.find(g => g.members.some(m => m.row.employee_id === employeeId)) || null;
 }
+
+/** "EngLabs Office" when inside a known place, "190 m from EngLabs Office" when near one, else null. */
+export function placeLabel(point) {
+    if (!point) return null;
+    if (point.place) return point.place;
+    const n = point.nearest_place;
+    if (!n) return null;
+    const d = n.distance_m >= 1000 ? `${(n.distance_m / 1000).toFixed(1)} km` : `${n.distance_m} m`;
+    return `${d} from ${n.name}`;
+}

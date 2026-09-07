@@ -44,6 +44,15 @@ function distanceM(aLat, aLng, bLat, bLng) {
     const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
     return 2 * R * Math.asin(Math.sqrt(h));
 }
+/** Nearest known place regardless of radius: { name, distance_m, inside } or null when none configured. */
+function nearestPlace(lat, lng) {
+    let best = null;
+    for (const p of knownPlaces) {
+        const d = distanceM(lat, lng, p.lat, p.lng);
+        if (!best || d < best.distance_m) best = { name: p.name, distance_m: Math.round(d), inside: d <= p.radius_m };
+    }
+    return best;
+}
 /** Name of the nearest known place containing the point, or null. */
 function knownPlace(lat, lng) {
     let best = null;
@@ -115,4 +124,4 @@ async function reverseGeocode(lat, lng) {
 function _setHttpForTests(client) { http = client || axios; cache.clear(); lastRequestAt = 0; queue = Promise.resolve(); }
 function _setKnownPlacesForTests(json) { knownPlaces = parseKnownPlaces(json); cache.clear(); }
 
-module.exports = { reverseGeocode, formatAddress, cellKey, knownPlace, parseKnownPlaces, _setHttpForTests, _setKnownPlacesForTests };
+module.exports = { reverseGeocode, formatAddress, cellKey, knownPlace, nearestPlace, parseKnownPlaces, _setHttpForTests, _setKnownPlacesForTests };

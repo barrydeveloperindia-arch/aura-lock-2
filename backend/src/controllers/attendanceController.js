@@ -260,7 +260,9 @@ exports.getAttendanceLocations = async (req, res) => {
             ['in', 'out'].filter(k => s[k]).map(k => withAddress({ date, attendanceId, kind: k, sidecar: s[k] }))));
         const point = (sidecar) => {
             const loc = attendancePhotos.normalizeLocation(sidecar?.location);
-            return loc ? { ...loc, address: sidecar.address || null, captured_at: sidecar.captured_at || null, source: sidecar.source || 'terminal' } : null;
+            if (!loc) return null;
+            const near = geocode.nearestPlace(loc.lat, loc.lng); // e.g. { name: "EngLabs Office", distance_m: 190, inside: false }
+            return { ...loc, address: sidecar.address || null, place: near && near.inside ? near.name : null, nearest_place: near, captured_at: sidecar.captured_at || null, source: sidecar.source || 'terminal' };
         };
         // One row per employee (the duplicate clean-up may not have run yet): keep the earliest check-in
         const seen = new Set();

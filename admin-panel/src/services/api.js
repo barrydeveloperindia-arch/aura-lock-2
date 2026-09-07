@@ -170,6 +170,9 @@ export const apiService = {
         return response.data;
     },
 
+    // Face engine reachability (ready / offline) for the health chips
+    getEngineHealth: async () => (await api.get('/api/biometrics/health', { timeout: 25000 })).data,
+
     // Face calibration (measure mode): labelled distance measurements, no attendance side effects
     measureFace: async (formData) => (await api.post('/api/biometrics/face/measure', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 90000 })).data,
     getCalibrationReport: async (session) => (await api.get('/api/biometrics/face/measure/report', { params: session ? { session } : {} })).data,
