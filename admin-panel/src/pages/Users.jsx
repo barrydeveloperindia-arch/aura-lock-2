@@ -9,8 +9,13 @@ import {
 } from 'lucide-react';
 import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 
-const DEPARTMENTS = ['Engineering', 'Operations', 'Security', 'Management', 'HR', 'General'];
-const EMPTY_FORM = { name: '', email: '', employee_id: '', department: 'Engineering', role: 'employee' };
+// Departments in use at Englabs (matches the live employees table). Keep in sync with the DB.
+const DEPARTMENTS = [
+    'Mechanical Engineering', 'Civil Engineering', 'Architecture', 'Computer Engineer IT',
+    'Paint', 'Sanding', 'Packing', 'Maintenance', 'House Keeping', 'Cleaning', 'Driver',
+    'Accounts', 'Management', 'CEO', 'General',
+];
+const EMPTY_FORM = { name: '', email: '', employee_id: '', department: 'Mechanical Engineering', role: 'employee' };
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function Toast({ toasts, dismiss }) {
