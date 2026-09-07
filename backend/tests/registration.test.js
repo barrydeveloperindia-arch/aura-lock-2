@@ -53,7 +53,7 @@ describe('Employee Registration API', () => {
         supabase.from().single.mockResolvedValueOnce({
             data: {
                 id: 'uuid-1234',
-                employee_id: 'E100',
+                employee_id: 'EMP-100',
                 name: 'Test Employee',
                 email: 'test@example.com',
                 role: 'employee',
@@ -66,7 +66,7 @@ describe('Employee Registration API', () => {
             .post('/api/users')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({
-                employee_id: 'E100',
+                employee_id: 'EMP-100',
                 name: 'Test Employee',
                 email: 'test@example.com',
                 role: 'employee',
@@ -74,7 +74,7 @@ describe('Employee Registration API', () => {
             });
 
         expect(res.statusCode).toBe(201);
-        expect(res.body).toHaveProperty('employee_id', 'E100');
+        expect(res.body).toHaveProperty('employee_id', 'EMP-100');
         expect(res.body).toHaveProperty('name', 'Test Employee');
     });
 

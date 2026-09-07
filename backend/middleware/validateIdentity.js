@@ -1,5 +1,5 @@
 const supabase = require('../supabase');
-const { isValidEmail, normalizeEmail } = require('../src/lib/validate');
+const { isValidEmail, normalizeEmail, isValidEmployeeId } = require('../src/lib/validate');
 
 /**
  * Middleware to enforce identity integrity.
@@ -20,6 +20,12 @@ const validateIdentity = async (req, res, next) => {
     if (Object.keys(req.body).length === 0) {
         console.warn("⚠️ [IdentityValidation] Empty body detected! Possibly Multer hasn't finished parsing?");
     }
+
+    // New staff get a company-format ID (EMP-###). Existing odd IDs are renamed by scripts/rename_employee_ids.js.
+    if (!isUpdate && finalId && !isValidEmployeeId(finalId)) {
+        return res.status(400).json({ success: false, message: 'Employee ID must look like EMP-048 (EMP- followed by three digits).' });
+    }
+    if (!isUpdate && finalId) req.body.employee_id = String(finalId).trim().toUpperCase();
 
     // Email: optional, but when given it must be a real address (name@domain.tld) and is stored lower-cased
     if (req.body.email !== undefined && req.body.email !== null && String(req.body.email).trim() !== '') {

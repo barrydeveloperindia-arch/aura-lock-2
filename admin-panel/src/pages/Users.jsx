@@ -106,7 +106,8 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
         if (e) e.preventDefault();
         if (!form.name.trim() || !form.email.trim()) { setErr('Name and email are required.'); return; }
         if (!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(form.email.trim())) { setErr('Enter a valid email address, e.g. name@gmail.com'); return; }
-        if (!String(form.employee_id || '').trim()) { setErr('Employee ID is required (e.g. EMP-037).'); return; }
+        if (!String(form.employee_id || '').trim()) { setErr('Employee ID is required (e.g. EMP-048).'); return; }
+        if (mode !== 'edit' && !/^EMP-\d{3}$/i.test(String(form.employee_id).trim())) { setErr('Employee ID must look like EMP-048 (EMP- followed by three digits).'); return; }
         setSaving(true); setErr('');
         try { 
             const savedUser = await onSave(form); 

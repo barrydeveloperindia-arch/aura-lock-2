@@ -17,4 +17,10 @@ function isValidEmail(value) {
     return v.length > 0 && v.length <= 254 && EMAIL_RE.test(v);
 }
 
-module.exports = { isValidEmail, normalizeEmail, EMAIL_RE };
+/** Company employee-ID format: EMP-001 … EMP-999 (upper-case, three digits). */
+const EMPLOYEE_ID_RE = /^EMP-\d{3}$/;
+function isValidEmployeeId(value) {
+    return typeof value === 'string' && EMPLOYEE_ID_RE.test(value.trim());
+}
+
+module.exports = { isValidEmail, normalizeEmail, EMAIL_RE, isValidEmployeeId, EMPLOYEE_ID_RE };

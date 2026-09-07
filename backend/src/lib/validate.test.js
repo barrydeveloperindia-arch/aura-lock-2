@@ -1,5 +1,12 @@
 const assert = require('node:assert/strict');
-const { isValidEmail, normalizeEmail } = require('./validate');
+const { isValidEmail, normalizeEmail, isValidEmployeeId } = require('./validate');
+
+describe('isValidEmployeeId', () => {
+    test('accepts EMP-### only (the shapes seen in live data are rejected)', () => {
+        for (const id of ['EMP-001', 'EMP-047', ' EMP-999 ']) assert.equal(isValidEmployeeId(id), true, id);
+        for (const id of ['Emp-023', 'ENG _556', 'Eng006', 'Eng-aaa', 'SKY_11', 'Amresh', 'EMP-1', 'EMP-0001', '', null]) assert.equal(isValidEmployeeId(id), false, String(id));
+    });
+});
 
 describe('isValidEmail', () => {
     test('accepts ordinary addresses', () => {
