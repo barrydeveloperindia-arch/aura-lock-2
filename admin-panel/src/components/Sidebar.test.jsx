@@ -11,7 +11,7 @@ describe('Sidebar branding', () => {
         const logo = screen.getByRole('img', { name: /englabs/i });
         expect(logo).toBeInTheDocument();
         expect(logo.getAttribute('src')).toMatch(/englabs_logo/);
-        for (const label of ['Dashboard', 'Employees', 'Attendance', 'Live Map', 'Reports', 'Access Logs', 'Door Control', 'Settings']) {
+        for (const label of ['Dashboard', 'Employees', 'Attendance', 'Live Map', 'Reports', 'Access Logs', 'Door Control', 'Face Calibration', 'Settings']) {
             expect(screen.getByRole('link', { name: label })).toBeInTheDocument();
         }
     });

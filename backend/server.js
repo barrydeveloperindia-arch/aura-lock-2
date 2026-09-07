@@ -46,6 +46,8 @@ const PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'https://auralock-bio
 console.log('[Biometrics] Target Engine:', PYTHON_ENGINE_URL);
 // Every call to the engine carries the shared key (see edge ENGINE_KEY)
 const engineHttp = axios.create({ headers: process.env.ENGINE_KEY ? { 'x-engine-key': process.env.ENGINE_KEY } : {} });
+// Face-threshold calibration (admin 'measure mode'): distances only, no logging / attendance / unlock
+app.use(require('./src/routes/calibrationRoutes')({ engineHttp, engineUrl: PYTHON_ENGINE_URL, upload }));
 console.log('ðŸš€ [Config] ADMIN_EMAIL:', ADMIN_EMAIL);
 console.log('ðŸš€ [Config] JWT_SECRET:', JWT_SECRET ? 'SET' : 'MISSING');
 

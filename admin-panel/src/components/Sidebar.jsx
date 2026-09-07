@@ -13,6 +13,7 @@ import {
     Shield,
     Key,
     MapPin,
+    ScanFace,
     X
 } from 'lucide-react';
 
@@ -24,6 +25,7 @@ const menuItems = [
     { name: 'Reports', icon: Shield, path: '/admin/reports' },
     { name: 'Access Logs', icon: ClipboardList, path: '/admin/logs' },
     { name: 'Door Control', icon: Key, path: '/admin/door-control' },
+    { name: 'Face Calibration', icon: ScanFace, path: '/admin/face-calibration' },
     { name: 'Settings', icon: Settings, path: '/admin/settings' },
 ];
 

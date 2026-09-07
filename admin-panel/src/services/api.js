@@ -170,6 +170,11 @@ export const apiService = {
         return response.data;
     },
 
+    // Face calibration (measure mode): labelled distance measurements, no attendance side effects
+    measureFace: async (formData) => (await api.post('/api/biometrics/face/measure', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 90000 })).data,
+    getCalibrationReport: async (session) => (await api.get('/api/biometrics/face/measure/report', { params: session ? { session } : {} })).data,
+    undoLastMeasurement: async (session) => (await api.delete('/api/biometrics/face/measure/last', { params: session ? { session } : {} })).data,
+
     // Live Map: today's (or one date's) check-in / check-out GPS fixes per active employee
     getAttendanceLocations: async (date) => {
         const response = await api.get('/api/attendance/locations', { params: date ? { date } : {} });

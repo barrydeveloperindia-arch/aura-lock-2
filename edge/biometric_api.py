@@ -129,6 +129,13 @@ IN_MEMORY_CACHE = []
 FACE_VECTORS = np.array([])
 FACE_METADATA = []
 
+# Match thresholds. Distances are Euclidean between the stored (unit-normalised)
+# encoding and the live dlib encoding; lower = more alike. The values are set
+# from a calibration session (admin "Face Calibration" page) via env vars, so a
+# change is a Cloud Run env update, not a rebuild.
+FACE_THRESHOLD = float(os.getenv("FACE_THRESHOLD", "0.90"))
+AMBIGUITY_GAP = float(os.getenv("AMBIGUITY_GAP", "0.10"))
+
 def refresh_in_memory_cache():
     global IN_MEMORY_CACHE, FACE_VECTORS, FACE_METADATA
     try:
@@ -419,7 +426,8 @@ async def health_check():
     # A fresh instance starts with an empty cache; until the first sync lands every
     # verify would answer "No registered users found", so report not-ready instead.
     loaded = int(FACE_VECTORS.shape[0]) if hasattr(FACE_VECTORS, "shape") and FACE_VECTORS.ndim > 0 else 0
-    body = {"status": "ready" if loaded > 0 else "warming", "engine": "face-recognition", "model": "HOG/CNN", "faces": loaded, "timestamp": datetime.utcnow().isoformat()}
+    body = {"status": "ready" if loaded > 0 else "warming", "engine": "face-recognition", "model": "HOG/CNN", "faces": loaded,
+            "threshold": FACE_THRESHOLD, "ambiguity_gap": AMBIGUITY_GAP, "timestamp": datetime.utcnow().isoformat()}
     if loaded == 0:
         return JSONResponse(status_code=503, content=body)
     return body
@@ -697,8 +705,7 @@ async def verify_face(file: UploadFile = File(...)):
         t_compare = time.time()
 
         # 4. Threshold & Ambiguity Logic
-        STRICT_THRESHOLD = 0.90 # Adapted for Facenet L2 normalized vectors
-        AMBIGUITY_GAP = 0.10
+        STRICT_THRESHOLD = FACE_THRESHOLD
 
         # --- MIRROR FALLBACK LOGIC ---
         if min_distance > STRICT_THRESHOLD:
@@ -814,6 +821,51 @@ async def verify_face(file: UploadFile = File(...)):
 
 
 # ── Biometric Cache Management ─────────────────────────────────────────────────
+
+@app.post("/api/biometrics/face/measure", dependencies=[Depends(require_engine_key)])
+async def measure_face(file: UploadFile = File(...)):
+    """
+    Calibration only: distance from the live frame to every enrolled face.
+    Same decoding and encoding path as /verify, but nothing is logged, no
+    attendance is written and no door is opened.
+    """
+    import time
+    t0 = time.time()
+    contents = await file.read()
+    try:
+        import cv2
+        nparr = np.frombuffer(contents, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if frame is None:
+            return {"success": False, "face_found": False, "message": "Invalid image format received."}
+        if max(frame.shape[:2]) > MAX_IMAGE_SIDE:
+            scale = MAX_IMAGE_SIDE / max(frame.shape[:2])
+            frame = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        frame = np.ascontiguousarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), dtype=np.uint8).copy()
+    except Exception as img_err:
+        return {"success": False, "face_found": False, "message": f"Invalid image: {img_err}"}
+    if not HAS_FACE_REC:
+        return {"success": False, "face_found": False, "message": "face_recognition is not available on this engine."}
+    encodings = await asyncio.to_thread(face_recognition.face_encodings, frame)
+    if not encodings:
+        return {"success": True, "face_found": False, "message": "No face detected.", "threshold": FACE_THRESHOLD, "encode_ms": int((time.time() - t0) * 1000)}
+    if FACE_VECTORS.size == 0:
+        return {"success": False, "face_found": True, "message": "No registered users found."}
+    distances = face_recognition.face_distance(FACE_VECTORS, encodings[0])
+    order = np.argsort(distances)
+    top = [{"employee_id": FACE_METADATA[int(i)].get("employee_id"), "name": FACE_METADATA[int(i)].get("name"), "distance": round(float(distances[int(i)]), 4)} for i in order[:5]]
+    best = top[0]
+    second = top[1] if len(top) > 1 else None
+    gap = round(second["distance"] - best["distance"], 4) if second else None
+    ambiguous = gap is not None and gap < AMBIGUITY_GAP and best["distance"] < FACE_THRESHOLD + 0.10
+    return {
+        "success": True, "face_found": True, "faces_in_frame": len(encodings),
+        "best": best, "second": second, "gap": gap, "top": top,
+        "threshold": FACE_THRESHOLD, "ambiguity_gap": AMBIGUITY_GAP,
+        "would_pass": bool(best["distance"] <= FACE_THRESHOLD and not ambiguous),
+        "ambiguous": bool(ambiguous),
+        "encode_ms": int((time.time() - t0) * 1000),
+    }
 
 @app.delete("/api/biometrics/face/{employee_id}", dependencies=[Depends(require_engine_key)])
 async def delete_face(employee_id: str):
