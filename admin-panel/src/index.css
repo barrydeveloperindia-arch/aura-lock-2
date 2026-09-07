@@ -1,13 +1,28 @@
 @import "tailwindcss";
 
+/* Englabs brand tokens — same values as the Englabs Projects web app (@theme). */
 @theme {
     --color-background: #f8fafc;
     --color-text-main: #334155;
+
+    --color-brand-navy: #0e4368;
+    --color-brand-navy-light: #165b8c;
+    --color-brand-navy-active: #0b3350;
+    --color-brand-navy-deep: #092a42;
+    --color-brand-ink: #0b1e36;
+    --color-brand-teal: #52cca3;
+    --color-brand-teal-dark: #3fb58d;
+    --color-brand-gold: #d4af37;
+    --color-brand-slate: #f8fafc;
+    --color-brand-border: #e2e8f0;
+
+    --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-display: "Outfit", "Inter", system-ui, sans-serif;
 }
 
 @layer base {
     body {
-        @apply bg-[#f8fafc] text-[#334155] antialiased selection:bg-emerald-500/30;
+        @apply bg-[#f8fafc] text-[#334155] antialiased selection:bg-brand-teal/30;
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
@@ -17,7 +32,8 @@
     h4,
     h5,
     h6 {
-        color: #0f172a;
+        color: #0b1e36;
+        font-family: 'Outfit', 'Inter', system-ui, sans-serif;
         @apply font-bold tracking-tight;
     }
 }
@@ -28,7 +44,7 @@
     }
 
     .btn-primary {
-        @apply px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50 shadow-sm shadow-emerald-500/20;
+        @apply px-4 py-2 bg-brand-navy hover:bg-brand-navy-light text-white rounded-lg font-semibold transition-all duration-200 active:scale-[0.98] disabled:opacity-50 shadow-sm shadow-brand-navy/20;
     }
 
     .btn-secondary {
@@ -36,6 +52,6 @@
     }
 
     .input-field {
-        @apply w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all font-medium placeholder:text-slate-400 shadow-sm;
+        @apply w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-slate-800 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/15 transition-all font-medium placeholder:text-slate-400 shadow-sm;
     }
 }

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Menu, Lock } from 'lucide-react';
+import { Menu } from 'lucide-react';
+import BrandLogo from './BrandLogo';
 
 export default function Layout() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -10,15 +11,13 @@ export default function Layout() {
         <div className="flex min-h-screen bg-[#f8fafc] text-slate-800 font-sans">
             {/* Mobile Header */}
             <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-lg border-b border-slate-200 flex items-center justify-between px-6 z-40 shadow-sm">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/20">
-                        <Lock className="w-4 h-4 text-white" />
-                    </div>
-                    <h1 className="font-bold text-slate-900 text-xl tracking-tight">Eng<span className="text-emerald-500">labs</span></h1>
+                <div className="flex items-center gap-3">
+                    <BrandLogo className="h-9 w-auto" />
+                    <span className="font-display font-bold text-brand-ink text-sm">Attendance Tracker</span>
                 </div>
                 <button 
                     onClick={() => setSidebarOpen(true)} 
-                    className="p-2 -mr-2 text-slate-500 hover:text-emerald-600 active:scale-95 transition-all rounded-xl hover:bg-slate-100"
+                    className="p-2 -mr-2 text-slate-500 hover:text-brand-navy active:scale-95 transition-all rounded-xl hover:bg-slate-100"
                     aria-label="Open menu"
                 >
                     <Menu className="w-6 h-6" />
