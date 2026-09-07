@@ -234,6 +234,12 @@ describe('attendancePhotos location (geo-stamp)', () => {
         assert.equal(photos.normalizeLocation({ lat: 28.6, lng: 77.2 }).accuracy_m, null);
     });
 
+    test('normalizeLocation is idempotent: a second pass keeps accuracy (live bug 7 Sep: +/- m was always null)', () => {
+        const once = photos.normalizeLocation({ lat: '30.721836', lng: '76.852475', accuracy: '12', fix_time: 't' });
+        assert.deepEqual(photos.normalizeLocation(once), once);
+        assert.equal(photos.formatStampLocation(once), 'LOC 30.72184, 76.85247  +/-12 m');
+    });
+
     test('formatStampLocation renders 5 decimals and accuracy', () => {
         assert.equal(photos.formatStampLocation({ lat: 28.613939, lng: 77.209021, accuracy: 15 }), 'LOC 28.61394, 77.20902  +/-15 m');
         assert.equal(photos.formatStampLocation(null), '');

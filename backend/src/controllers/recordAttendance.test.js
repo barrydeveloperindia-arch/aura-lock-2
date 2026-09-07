@@ -63,6 +63,16 @@ test('five simultaneous scans produce exactly one attendance row', async () => {
     expect(rows[0].date).toBe(require('../lib/attendanceTime').istDateString());
 });
 
+test('access log carries the engine confidence when given, 1.0 otherwise, and exactly one row per scan', async () => {
+    await recordAttendance('EMP-001', 'face', 'terminal_01', { confidence: 0.532976 });
+    await recordAttendance('EMP-001', 'face', 'terminal_01');
+    await recordAttendance('EMP-001', 'face', 'terminal_01', { confidence: 'junk' });
+    const logs = supabase.__state.access_logs;
+    expect(logs).toHaveLength(3);
+    expect(logs.map(l => l.confidence)).toEqual([0.533, 1.0, 1.0]);
+    expect(logs[0].metadata.method).toBe('FACE');
+});
+
 test('a later scan updates check-out on the same single row', async () => {
     const first = await recordAttendance('EMP-001', 'face', 'terminal_01');
     // pretend the check-in happened 10 minutes ago so the duplicate guard does not apply

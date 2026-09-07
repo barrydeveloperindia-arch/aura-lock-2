@@ -96,7 +96,9 @@ function normalizeLocation(raw) {
     if (!raw) return null;
     const lat = Number(raw.lat), lng = Number(raw.lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-    const accuracy = Number(raw.accuracy);
+    // Accept both the raw multipart field (accuracy) and an already-normalised
+    // object (accuracy_m) so normalising twice never drops the +/- metres.
+    const accuracy = Number(raw.accuracy ?? raw.accuracy_m);
     return {
         lat: Math.round(lat * 1e6) / 1e6,
         lng: Math.round(lng * 1e6) / 1e6,

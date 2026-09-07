@@ -752,7 +752,6 @@ async def verify_face(file: UploadFile = File(...)):
 
         if min_distance > STRICT_THRESHOLD: 
             print(f"[DENIED] Low confidence: {matched_emp['employee_id']} | Dist: {min_distance:.4f} > {STRICT_THRESHOLD}")
-            asyncio.create_task(background_log_access(matched_emp["employee_id"], "failed", max_similarity, "terminal_01"))
             return {
                 "success": False, 
                 "message": "Unrecognized face.", 
@@ -761,7 +760,6 @@ async def verify_face(file: UploadFile = File(...)):
             }
         
         if is_ambiguous:
-            asyncio.create_task(background_log_access(matched_emp["employee_id"], "failed", max_similarity, "terminal_01"))
             return {
                 "success": False,
                 "message": "Ambiguous Match: Multiple users similar.",
@@ -774,7 +772,6 @@ async def verify_face(file: UploadFile = File(...)):
         is_live, liveness_msg = await check_liveness(contents)
         if not is_live:
             print(f"[SECURITY] REJECTED: {liveness_msg} for {matched_emp['employee_id']}")
-            asyncio.create_task(background_log_access(matched_emp["employee_id"], "failed", max_similarity, "terminal_01"))
             return {
                 "success": False,
                 "message": f"Security Alert: {liveness_msg}",
@@ -784,8 +781,9 @@ async def verify_face(file: UploadFile = File(...)):
 
         # Success: Verified
         print(f"[VERIFIED] {matched_emp['employee_id']} | Sim: {max_similarity:.4f} | Liveness: {liveness_msg}")
-        asyncio.create_task(mark_attendance_async(matched_emp["employee_id"]))
-        asyncio.create_task(background_log_access(matched_emp["employee_id"], "success", max_similarity, "terminal_01"))
+        # Attendance + access_logs are written once, by the Node backend that called us
+        # (it has the photo, GPS and employee status). Logging here too produced two
+        # rows per scan, one with confidence 1.0 and one with the real similarity.
 
         t_end = time.time()
         

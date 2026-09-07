@@ -21,10 +21,16 @@ async function withEmployeeLock(key, fn) {
  * Records check-in or check-out for an employee.
  * Returns an object with status message and attendance detail.
  */
-const recordAttendance = (employeeId, method, deviceId = 'server') =>
-    withEmployeeLock(String(employeeId).trim().toLowerCase(), () => recordAttendanceUnlocked(employeeId, method, deviceId));
+const recordAttendance = (employeeId, method, deviceId = 'server', opts = {}) =>
+    withEmployeeLock(String(employeeId).trim().toLowerCase(), () => recordAttendanceUnlocked(employeeId, method, deviceId, false, opts));
 
-const recordAttendanceUnlocked = async (employeeId, method, deviceId = 'server', retried = false) => {
+/** Match confidence for the access log: the engine's similarity when known, else 1.0 (manual / trusted device). */
+const logConfidence = (opts) => {
+    const c = Number(opts?.confidence);
+    return Number.isFinite(c) && c >= 0 && c <= 1 ? Math.round(c * 10000) / 10000 : 1.0;
+};
+
+const recordAttendanceUnlocked = async (employeeId, method, deviceId = 'server', retried = false, opts = {}) => {
     try {
         // Map common synonyms to DB-allowed values
         let mappedMethod = (method || 'face').toLowerCase();
@@ -52,7 +58,7 @@ const recordAttendanceUnlocked = async (employeeId, method, deviceId = 'server',
                 status: 'success',
                 // CRITICAL: Schema check shows 'method' column is missing from access_logs. 
                 // We MUST store it in metadata for the UI to pick it up.
-                confidence: 1.0,
+                confidence: logConfidence(opts),
                 device_id: deviceId || 'terminal_01',
                 metadata: { 
                     method: mappedMethod.toUpperCase(), // UI uses this for the Badge
@@ -131,7 +137,7 @@ const recordAttendanceUnlocked = async (employeeId, method, deviceId = 'server',
                     await supabase.from('attendance').delete().in('id', extra);
                     console.warn(`[Attendance] Removed ${extra.length} duplicate row(s) for ${actualEid} on ${today}`);
                     if (keep.id !== inserted?.id && !retried) {
-                        return recordAttendanceUnlocked(employeeId, method, deviceId, true);
+                        return recordAttendanceUnlocked(employeeId, method, deviceId, true, opts);
                     }
                 }
 

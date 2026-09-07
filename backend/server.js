@@ -1096,7 +1096,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                 let attendanceResult = null;
                 let photo = null;
                 if (empRecord) {
-                    attendanceResult = await recordAttendance(empRecord.id, 'face', 'terminal_01');
+                    attendanceResult = await recordAttendance(empRecord.id, 'face', 'terminal_01', { confidence: response.data.confidence });
                     // Save the very frame that was verified, keyed to this attendance row (never throws).
                     photo = await attachAttendancePhoto(attendanceResult, req.file?.buffer, {
                         name: response.data.name,
