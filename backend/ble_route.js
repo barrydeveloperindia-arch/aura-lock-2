@@ -63,13 +63,8 @@ router.post('/lock', async (req, res) => {
     try {
         const result = await lockDoor();
         if (result.success) {
-            await supabase.from('access_logs').insert({
-                employee_id: req.user?.id || 'admin_remote',
-                status: 'success',
-                device_id: 'admin_panel',
-                method: 'remote_lock',
-                metadata: { action: 'manual_lock' }
-            });
+            const { logAccess } = require('./src/lib/db');
+            await logAccess(supabase, { employee_id: null, status: 'success', device_id: 'admin_panel', method: 'REMOTE_LOCK', metadata: { action: 'manual_lock', operator: req.user?.email || 'admin' } });
             return res.json(result);
         }
         res.status(500).json(result);

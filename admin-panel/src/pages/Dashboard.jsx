@@ -16,6 +16,7 @@ export default function Dashboard() {
     const [activityData, setActivityData] = useState([]);
     const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [systemOnline, setSystemOnline] = useState(true);
     const [doorStatus, setDoorStatus] = useState('Locked');
     const [isOnline, setIsOnline] = useState(true);
     const [lastUnlock, setLastUnlock] = useState('Never');
@@ -46,10 +47,12 @@ export default function Dashboard() {
                     apiService.getAttendanceAnalytics(),
                 ]);
                 setStatsData(stats);
+                setSystemOnline(true);
                 setActivityData(activity);
                 setAnalytics(analyticsData);
             } catch (error) {
                 console.error('Failed to fetch dashboard data:', error);
+                setSystemOnline(false);
             } finally {
                 setLoading(false);
             }
@@ -145,9 +148,9 @@ export default function Dashboard() {
                     <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-1 md:mb-2 tracking-tighter">Command Center</h1>
                     <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Operational Oversight // Englabs Attendance Tracker (EAT) v2.4</p>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest text-nowrap">System Online</span>
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${systemOnline ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20'}`}>
+                    <div className={`w-2 h-2 rounded-full ${systemOnline ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                    <span className={`text-[10px] font-black uppercase tracking-widest text-nowrap ${systemOnline ? 'text-emerald-500' : 'text-rose-500'}`}>{systemOnline ? 'System Online' : 'Backend unreachable'}</span>
                 </div>
             </div>
 

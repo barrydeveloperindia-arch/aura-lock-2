@@ -305,36 +305,28 @@ export default function Scanner() {
     const markManualAttendance = async (employee) => {
         setLoading(true);
         try {
-            const res = await axios.post(`${API_BASE}/api/logs/iot`, {
-                id: employee.employee_id || employee.id,
+            // Real attendance record (check-in / check-out), not a forged access log.
+            // The backend accepts an admin token or the terminal key on this route.
+            const token = localStorage.getItem('aura_token');
+            const res = await axios.post(`${API_BASE}/api/attendance/mark`, {
+                employee_id: employee.employee_id || employee.id,
                 method: 'fingerprint',
-                status: 'success',
-                message: 'Unlock via Terminal Touch',
-                timestamp: Math.floor(Date.now() / 1000),
-                signature: 'internal_request'
-            });
+                device_id: 'browser_scanner',
+            }, { headers: token ? { Authorization: `Bearer ${token}` } : {}, timeout: 15000 });
             const data = res.data || {};
-            const isCheckout = !!(data.check_out);
-            const now = new Date();
-            setResult({
-                name: employee.name,
-                time: data.check_in
-                    ? new Date(data.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-                    : now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
-                checkoutTime: data.check_out
-                    ? new Date(data.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-                    : now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
-                workingHours: data.working_hours != null ? formatWorkHours(data.working_hours) : null,
-                isCheckout,
-            });
-            setView(isCheckout ? 'checkout' : 'checkin');
+            const isCheckout = data.event === 'check_out';
+            setResult({ name: employee.name, time: new Date(isCheckout ? data.check_out : (data.check_in || Date.now())).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }), isCheckout, event: data.event });
+            setView(data.event === 'duplicate' ? 'error' : (isCheckout ? 'checkout' : 'checkin'));
+            if (data.event === 'duplicate') setMessage('Already recorded a moment ago');
         } catch (err) {
-            setMessage(err.response?.data?.error || 'Connection failure');
+            const msg = err.response?.status === 401 ? 'Sign in as admin to mark attendance manually' : (err.response?.data?.message || err.response?.data?.error || 'Could not record attendance');
+            setMessage(msg);
             setView('error');
         } finally {
             setLoading(false);
         }
     };
+
 
     // ── Helper ────────────────────────────────────────────────────────────────
     const formatWorkHours = (wh) => {
@@ -441,8 +433,7 @@ export default function Scanner() {
                                     <button key={emp.id} onClick={() => markManualAttendance(emp)} disabled={loading}
                                         className="flex items-center gap-4 p-5 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.05] rounded-[2rem] transition-all text-left group">
                                         <div className="w-14 h-14 rounded-2xl bg-slate-800/50 border border-white/[0.05] overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
-                                            <img src={emp.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}&background=334155&color=cbd5e1`}
-                                                alt="" className="w-full h-full object-cover" />
+                                            {emp.image_url ? <img src={emp.image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400 font-black text-sm">{(emp.name || '?').slice(0, 2).toUpperCase()}</div>}
                                         </div>
                                         <div className="overflow-hidden">
                                             <div className="font-bold text-lg truncate text-white/90">{emp.name}</div>

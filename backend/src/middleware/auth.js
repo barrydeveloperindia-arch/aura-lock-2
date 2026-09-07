@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const supabase = require('../../supabase');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'auralock_super_secret_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'test' ? 'test-only-secret' : undefined);
+if (!JWT_SECRET) throw new Error('JWT_SECRET is not set');
 
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];

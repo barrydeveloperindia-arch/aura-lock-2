@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
-import FaceRegister from './pages/FaceRegister';
 import Users from './pages/Users';
 import Logs from './pages/Logs';
 import Settings from './pages/Settings';
@@ -28,6 +27,7 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/scanner" element={<Scanner />} />
       <Route path="/admin" element={<Login />} />
+      <Route path="/login" element={<Navigate to="/admin" replace />} />
       
       {/* Admin Panel routes under /admin prefix */}
       <Route path="/admin" element={
@@ -36,7 +36,6 @@ export default function App() {
         </ProtectedRoute>
       }>
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="register" element={<FaceRegister />} />
         <Route path="users" element={<Users />} />
         <Route path="attendance" element={<Attendance />} />
         <Route path="attendance/employee/:employee_id" element={<EmployeeAttendance />} />

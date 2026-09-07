@@ -229,7 +229,7 @@ export default function EmployeeAttendance() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                     { label: 'Working Days', value: summary?.present_days, icon: UserCheck, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
-                    { label: 'Total Hours', value: `${summary?.total_work_hours}h`, icon: Clock, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+                    { label: 'Total Hours', value: summary?.total_work_hours != null ? `${summary.total_work_hours}h` : '—', icon: Clock, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
                     { label: 'Late Days', value: summary?.late_days, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
                     { label: 'On-time Days', value: summary ? Math.max(0, (summary.present_days || 0) - (summary.late_days || 0)) : '—', icon: CheckCircle2, color: 'text-teal-400', bg: 'bg-teal-500/10 border-teal-500/20' },
                 ].map(s => (
@@ -262,7 +262,7 @@ export default function EmployeeAttendance() {
                         <select 
                             value={selectedMonth} 
                             onChange={e => {
-                                setSelectedMonth(e.target.value); 
+                                setSelectedMonth(e.target.value); setPage(1);
                                 if (activePreset === 'month') {
                                     const sm = parseInt(e.target.value);
                                     const sy = parseInt(selectedYear);
@@ -283,7 +283,7 @@ export default function EmployeeAttendance() {
                         <select 
                             value={selectedYear} 
                             onChange={e => {
-                                setSelectedYear(e.target.value);
+                                setSelectedYear(e.target.value); setPage(1);
                                 if (activePreset === 'month') {
                                     const sm = parseInt(selectedMonth);
                                     const sy = parseInt(e.target.value);
@@ -295,15 +295,15 @@ export default function EmployeeAttendance() {
                             }} 
                             className={`${inputCls} !w-auto flex-1 md:flex-none`}
                         >
-                            {[2024, 2025, 2026].map(year => (
+                            {Array.from({ length: new Date().getFullYear() - 2024 + 2 }, (_, i) => 2024 + i).map(year => (
                                 <option key={year} value={year}>{year}</option>
                             ))}
                         </select>
                     </div>
                     <div className="flex items-center gap-2 w-full md:w-auto">
-                        <input type="date" value={startDate} onChange={e => {setStartDate(e.target.value); setActivePreset('custom');}} className={inputCls} />
+                        <input type="date" value={startDate} onChange={e => {setStartDate(e.target.value); setActivePreset('custom'); setPage(1);}} className={inputCls} />
                         <span className="text-slate-700">–</span>
-                        <input type="date" value={endDate} onChange={e => {setEndDate(e.target.value); setActivePreset('custom');}} className={inputCls} />
+                        <input type="date" value={endDate} onChange={e => {setEndDate(e.target.value); setActivePreset('custom'); setPage(1);}} className={inputCls} />
                     </div>
                 </div>
             </div>

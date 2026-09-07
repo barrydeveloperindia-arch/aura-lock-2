@@ -34,4 +34,4 @@ COPY . .
 EXPOSE 8080
 
 # Start application using uvicorn on port 8080
-CMD ["uvicorn", "biometric_api:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["sh", "-c", "uvicorn biometric_api:app --host 0.0.0.0 --port ${PORT:-8080}"]

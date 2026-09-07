@@ -13,7 +13,7 @@ export default function Settings() {
         <div className="space-y-8 max-w-4xl">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-white mb-2">System Configuration</h1>
+                <h1 className="text-3xl font-bold text-slate-900 mb-2">System Configuration</h1>
                 <p className="text-slate-400 text-sm">Manage global security parameters and interface behavior settings.</p>
             </div>
 
@@ -26,7 +26,7 @@ export default function Settings() {
                                 <item.icon className="w-6 h-6" />
                             </div>
                             <div>
-                                <h3 className="text-base font-bold text-white mb-0.5">{item.label}</h3>
+                                <h3 className="text-base font-bold text-slate-900 mb-0.5">{item.label}</h3>
                                 <p className="text-xs text-slate-500 font-medium">{item.desc}</p>
                             </div>
                         </div>
@@ -47,7 +47,7 @@ export default function Settings() {
             <div className="card bg-blue-600/5 border-blue-600/10 !p-8">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <h2 className="text-lg font-bold text-white mb-1">Backup & Restore</h2>
+                        <h2 className="text-lg font-bold text-slate-900 mb-1">Backup & Restore</h2>
                         <p className="text-xs text-slate-400 font-medium max-w-md">
                             Generate a cryptic backup of your identity registry and security audit logs. Recommended every 30 days.
                         </p>

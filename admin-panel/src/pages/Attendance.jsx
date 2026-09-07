@@ -190,13 +190,9 @@ export default function Attendance() {
     const handleExport = async () => {
         setExporting(true);
         try {
-            // Derive month/year from the startDate for convenient monthly exports
-            const [yr, mo] = startDate.split('-');
             const params = {
                 startDate,
                 endDate,
-                month: mo,
-                year: yr,
                 employee_id: selectedEmployee,
                 department: selectedDept,
                 search: searchTerm,
@@ -223,12 +219,9 @@ export default function Attendance() {
     const handleExportPdf = async () => {
         setExportingPdf(true);
         try {
-            const [yr, mo] = startDate.split('-');
             const params = {
                 startDate,
                 endDate,
-                month: mo,
-                year: yr,
                 employee_id: selectedEmployee,
                 department: selectedDept,
                 search: searchTerm,
@@ -316,12 +309,12 @@ export default function Attendance() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                     { label: 'Total Records', value: totalRecords, icon: Users, color: 'text-emerald-500', bg: 'bg-blue-500/10 border-blue-500/20' },
-                    { label: 'Checked In', value: presentCount, icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-                    { label: 'On Time', value: onTimeCount, icon: CheckCircle2, color: 'text-teal-400', bg: 'bg-teal-500/10 border-teal-500/20' },
-                    { label: 'Late', value: lateCount, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+                    { label: 'Checked In (this page)', value: presentCount, icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+                    { label: 'On Time (this page)', value: onTimeCount, icon: CheckCircle2, color: 'text-teal-400', bg: 'bg-teal-500/10 border-teal-500/20' },
+                    { label: 'Late (this page)', value: lateCount, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
                 ].map(s => (
                     <div key={s.label} className={`p-4 rounded-2xl border ${s.bg} flex items-center gap-3 cursor-pointer transition-all hover:brightness-110`}
-                        onClick={() => { setSelectedStatus(s.label === 'Late' ? 'LATE' : s.label === 'On Time' ? 'ON_TIME' : ''); setPage(1); }}>
+                        onClick={() => { setSelectedStatus(s.label.startsWith('Late') ? 'LATE' : s.label.startsWith('On Time') ? 'ON_TIME' : ''); setPage(1); }}>
                         <div className={`w-9 h-9 rounded-xl bg-black/20 flex items-center justify-center ${s.color}`}>
                             <s.icon className="w-4 h-4" />
                         </div>

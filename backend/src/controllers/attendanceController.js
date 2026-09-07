@@ -2,13 +2,29 @@ const supabase = require('../../supabase');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 const attendancePhotos = require('../../services/attendancePhotos');
+const { istDateString, rowIsLate, monthRange } = require('../lib/attendanceTime');
+const { fetchAll, logAccess, likeLiteral } = require('../lib/db');
+
+// One in-flight recordAttendance per employee: several camera frames reach the
+// server within the same second and the "does today's row exist?" check used to
+// race the insert, leaving 2..200 rows for one employee-day.
+const attendanceLocks = new Map();
+async function withEmployeeLock(key, fn) {
+    while (attendanceLocks.has(key)) await attendanceLocks.get(key);
+    let release;
+    attendanceLocks.set(key, new Promise(r => { release = r; }));
+    try { return await fn(); } finally { attendanceLocks.delete(key); release(); }
+}
 
 // --- Attendance Logic ---
 /**
  * Records check-in or check-out for an employee.
  * Returns an object with status message and attendance detail.
  */
-const recordAttendance = async (employeeId, method, deviceId = 'server') => {
+const recordAttendance = (employeeId, method, deviceId = 'server') =>
+    withEmployeeLock(String(employeeId).trim().toLowerCase(), () => recordAttendanceUnlocked(employeeId, method, deviceId));
+
+const recordAttendanceUnlocked = async (employeeId, method, deviceId = 'server', retried = false) => {
     try {
         // Map common synonyms to DB-allowed values
         let mappedMethod = (method || 'face').toLowerCase();
@@ -16,7 +32,7 @@ const recordAttendance = async (employeeId, method, deviceId = 'server') => {
         else if (['phone_fingerprint', 'mobile_biometric', 'fingerprint'].includes(mappedMethod)) mappedMethod = 'fingerprint';
         else mappedMethod = 'face';
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = istDateString();
         
         // Resolve both UUID and EID for consistent logging across different tables
         // We do this up front to ensure we have the correct keys for both Access Logs and Attendance
@@ -64,6 +80,7 @@ const recordAttendance = async (employeeId, method, deviceId = 'server') => {
             .select('*')
             .eq('employee_id', actualUuid)
             .eq('date', today)
+            .order('check_in', { ascending: true })
             .limit(1);
 
 
@@ -98,6 +115,25 @@ const recordAttendance = async (employeeId, method, deviceId = 'server') => {
                     // REMOVED 'remarks' as it is missing from schema
                 }).select('id').single();
                 if (insError) throw new Error(insError.message);
+
+                // Belt and braces: if a sibling row for this employee-day slipped in
+                // (another instance, or a request that bypassed the lock), keep the
+                // oldest row and re-run so this scan becomes its check-out.
+                const { data: siblings } = await supabase
+                    .from('attendance')
+                    .select('id, created_at')
+                    .eq('employee_id', actualUuid)
+                    .eq('date', today)
+                    .order('created_at', { ascending: true });
+                if (siblings && siblings.length > 1) {
+                    const keep = siblings[0];
+                    const extra = siblings.slice(1).map(r => r.id);
+                    await supabase.from('attendance').delete().in('id', extra);
+                    console.warn(`[Attendance] Removed ${extra.length} duplicate row(s) for ${actualEid} on ${today}`);
+                    if (keep.id !== inserted?.id && !retried) {
+                        return recordAttendanceUnlocked(employeeId, method, deviceId, true);
+                    }
+                }
 
                 return {
                     message: "Check-in recorded",
@@ -246,7 +282,7 @@ exports.getEmployeeAvatars = async (req, res) => {
 
 // Manual retention sweep (also runs daily in-process). Admin only.
 exports.cleanupAttendancePhotos = async (req, res) => {
-    const days = parseInt(req.body?.retention_days, 10) || attendancePhotos.RETENTION_DAYS;
+    const days = Math.max(1, parseInt(req.body?.retention_days, 10) || attendancePhotos.RETENTION_DAYS);
     const summary = await attendancePhotos.cleanupExpiredPhotos(days);
     res.json({ retention_days: days, ...summary });
 };
@@ -273,19 +309,29 @@ exports.markAttendance = async (req, res) => {
         if (!uuidRegex.test(targetId)) {
             const { data: emp, error: empErr } = await supabase
                 .from('employees')
-                .select('id, name, employee_id')
-                .eq('employee_id', targetId)
-                .single();
+                .select('id, name, employee_id, status, is_deleted')
+                .ilike('employee_id', likeLiteral(String(targetId).trim()))
+                .limit(1)
+                .maybeSingle();
 
             if (empErr || !emp) {
                 console.error(`❌ [Attendance Mark] Could not resolve ID: ${targetId}`);
                 return res.status(404).json({ error: "Employee not found or ID invalid" });
             }
+            if (emp.is_deleted || emp.status !== 'Active') {
+                await logAccess(supabase, { employee_id: emp.employee_id, status: 'failed', device_id: device_id || 'api_call', method, metadata: { reason: 'Employee deleted or disabled' } });
+                return res.status(403).json({ success: false, error_code: 'EMPLOYEE_INACTIVE', message: 'Access disabled. Please contact the administrator.' });
+            }
             finalUuid = emp.id;
             empMeta = { name: emp.name, employee_id: emp.employee_id };
-        } else if (req.file) {
-            const { data: emp } = await supabase.from('employees').select('name, employee_id').eq('id', targetId).single();
-            if (emp) empMeta = { name: emp.name, employee_id: emp.employee_id };
+        } else {
+            const { data: emp } = await supabase.from('employees').select('name, employee_id, status, is_deleted').eq('id', targetId).maybeSingle();
+            if (!emp) return res.status(404).json({ error: "Employee not found or ID invalid" });
+            if (emp.is_deleted || emp.status !== 'Active') {
+                await logAccess(supabase, { employee_id: emp.employee_id, status: 'failed', device_id: device_id || 'api_call', method, metadata: { reason: 'Employee deleted or disabled' } });
+                return res.status(403).json({ success: false, error_code: 'EMPLOYEE_INACTIVE', message: 'Access disabled. Please contact the administrator.' });
+            }
+            empMeta = { name: emp.name, employee_id: emp.employee_id };
         }
 
         // 2. Record Attendance
@@ -347,8 +393,7 @@ exports.getEmployeeHistory = async (req, res) => {
         if (startDate) q = q.gte('date', startDate);
         if (endDate) q = q.lte('date', endDate);
 
-        const { data: rawData, error } = await q;
-        if (error) throw error;
+        const rawData = await fetchAll(() => q);
 
         // ── Deduplicate locally ──
         const dedupMap = new Map();
@@ -418,8 +463,7 @@ exports.getEmployeeSummary = async (req, res) => {
         if (startDate) q = q.gte('date', startDate);
         if (endDate) q = q.lte('date', endDate);
 
-        const { data: rawData, error } = await q;
-        if (error) throw error;
+        const rawData = await fetchAll(() => q);
 
         // ── Deduplicate locally ──
         const dedupMap = new Map();
@@ -478,7 +522,7 @@ exports.getAttendanceList = async (req, res) => {
             sortDir = 'desc',
         } = req.query;
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = istDateString();
         const fromDate = sd || date || today;
         const toDate = ed || date || today;
         const limit = parseInt(pageSize, 10) || 10;
@@ -496,8 +540,9 @@ exports.getAttendanceList = async (req, res) => {
             // For simplicity and performance, we'll fetch all active employees and exclude those with records
             const { data: allEmps, error: empErr } = await supabase
                 .from('employees')
-                .select('*')
-                .neq('status', 'Deleted');
+                .select('id, employee_id, name, department, image_url, status')
+                .eq('status', 'Active')
+                .eq('is_deleted', false);
 
             if (empErr) throw empErr;
 
@@ -600,16 +645,14 @@ exports.getAttendanceList = async (req, res) => {
 exports.exportExcelEmployee = async (req, res) => {
     const resolved = await resolveEmployeeUuid(req.params.employee_id);
     if (!resolved) return res.status(404).json({ error: "Employee not found" });
-    req.query.employee_id = resolved;
-    return handleExcelExport(req, res);
+    return handleExcelExport(req, res, { employee_uuid: resolved });
 };
 
 // ─── Employee PDF Export ────────────────────────────────────────────────────
 exports.exportPdfEmployee = async (req, res) => {
     const resolved = await resolveEmployeeUuid(req.params.employee_id);
     if (!resolved) return res.status(404).json({ error: "Employee not found" });
-    req.query.employee_id = resolved;
-    return handlePdfExport(req, res);
+    return handlePdfExport(req, res, { employee_uuid: resolved });
 };
 
 // Helper to resolve employee UUID for exports
@@ -617,8 +660,12 @@ exports.resolveEmployeeUuid = resolveEmployeeUuid;
 async function resolveEmployeeUuid(idOrEid) {
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
     if (uuidRegex.test(idOrEid)) return idOrEid;
-    const { data } = await supabase.from('employees').select('id').eq('employee_id', idOrEid).single();
-    return data ? data.id : null;
+    const eid = String(idOrEid || '').trim();
+    if (!eid) return null;
+    const exact = await supabase.from('employees').select('id').eq('employee_id', eid).limit(1).maybeSingle();
+    if (exact.data) return exact.data.id;
+    const loose = await supabase.from('employees').select('id').ilike('employee_id', likeLiteral(eid)).limit(1).maybeSingle();
+    return loose.data ? loose.data.id : null;
 }
 
 // Helper to resolve human-readable employee_id (e.g. EMP-0001)
@@ -631,21 +678,21 @@ async function resolveEmployeeEid(idOrEid) {
 }
 
 // Helper to handle Excel Export (Extracted for reuse)
-async function handleExcelExport(req, res) {
+async function handleExcelExport(req, res, opts = {}) {
     try {
         const { month, year, department, startDate: sd, endDate: ed } = req.query;
-        const employee_id = req.query.employee_id || req.params.employee_id;
+        const employee_uuid = opts.employee_uuid || null;
+        const employee_id = employee_uuid ? null : (req.query.employee_id || req.params.employee_id);
         const now = new Date();
 
-        // ── Resolve date range ──
+        // ── Resolve date range: an explicit start/end wins over month/year ──
         let fromDate, toDate;
-        if (month && year) {
-            fromDate = `${year}-${String(month).padStart(2, '0')}-01`;
-            const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-            toDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+        const mr = (!sd && !ed && month && year) ? monthRange(year, month) : null;
+        if (mr) {
+            fromDate = mr.from; toDate = mr.to;
         } else {
-            fromDate = sd || now.toISOString().split('T')[0];
-            toDate = ed || now.toISOString().split('T')[0];
+            fromDate = sd || istDateString();
+            toDate = ed || istDateString();
         }
 
         // ── Fetch data ──
@@ -656,13 +703,13 @@ async function handleExcelExport(req, res) {
             .lte('date', toDate)
             .order('date', { ascending: false });
 
-        if (employee_id) q = q.eq('employees.employee_id', employee_id);
+        if (employee_uuid) q = q.eq('employee_id', employee_uuid);
+        else if (employee_id) q = q.eq('employees.employee_id', employee_id);
         if (department) q = q.eq('employees.department', department);
         if (req.query.search) q = q.ilike('employees.name', `%${req.query.search}%`);
         if (req.query.status) q = q.eq('status', req.query.status);
 
-        const { data: records, error } = await q;
-        if (error) throw error;
+        const records = await fetchAll(() => q);
 
         // ── Build workbook ──
         const ExcelJS = require('exceljs');
@@ -841,21 +888,18 @@ exports.exportExcel = handleExcelExport;
 
 
 // ─── PDF Export Helper & Endpoint ───────────────────────────────────────────
-async function handlePdfExport(req, res) {
+async function handlePdfExport(req, res, opts = {}) {
     try {
         const { month, year, department, startDate: sd, endDate: ed } = req.query;
-        const employee_id = req.query.employee_id || req.params.employee_id;
+        const employee_uuid = opts.employee_uuid || null;
+        const employee_id = employee_uuid ? null : (req.query.employee_id || req.params.employee_id);
         const now = new Date();
 
+        // ── Resolve date range: an explicit start/end wins over month/year ──
         let fromDate, toDate;
-        if (month && year) {
-            fromDate = `${year}-${String(month).padStart(2, '0')}-01`;
-            const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-            toDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-        } else {
-            fromDate = sd || now.toISOString().split('T')[0];
-            toDate = ed || now.toISOString().split('T')[0];
-        }
+        const mr = (!sd && !ed && month && year) ? monthRange(year, month) : null;
+        if (mr) { fromDate = mr.from; toDate = mr.to; }
+        else { fromDate = sd || istDateString(); toDate = ed || istDateString(); }
 
         let q = supabase
             .from('attendance')
@@ -864,17 +908,19 @@ async function handlePdfExport(req, res) {
             .lte('date', toDate)
             .order('date', { ascending: false });
 
-        if (employee_id) q = q.eq('employees.employee_id', employee_id);
+        if (employee_uuid) q = q.eq('employee_id', employee_uuid);
+        else if (employee_id) q = q.eq('employees.employee_id', employee_id);
         if (department) q = q.eq('employees.department', department);
         if (req.query.search) q = q.ilike('employees.name', `%${req.query.search}%`);
         if (req.query.status) q = q.eq('status', req.query.status);
 
-        const { data: records, error } = await q;
-        if (error) throw error;
+        const records = await fetchAll(() => q);
 
         let empDetails = null;
-        if (employee_id) {
-             const { data: empData } = await supabase.from('employees').select('*').eq('employee_id', employee_id).single();
+        if (employee_uuid || employee_id) {
+             const { data: empData } = employee_uuid
+                 ? await supabase.from('employees').select('id, employee_id, name, department, email').eq('id', employee_uuid).maybeSingle()
+                 : await supabase.from('employees').select('id, employee_id, name, department, email').eq('employee_id', employee_id).maybeSingle();
              empDetails = empData;
         } else if (records && records.length > 0) {
              empDetails = records[0].employees;
@@ -1145,9 +1191,9 @@ exports.getReport = async (req, res) => {
 
         const { data: reportData, error } = await supabase
             .from('attendance')
-            .select('date, check_in')
-            .gte('date', startDate.toISOString().split('T')[0])
-            .lte('date', endDate.toISOString().split('T')[0]);
+            .select('date, check_in, status, employee_id')
+            .gte('date', istDateString(startDate))
+            .lte('date', istDateString(endDate));
 
         if (error) throw error;
 
@@ -1166,18 +1212,17 @@ exports.getReport = async (req, res) => {
         const { count: totalEmployees } = await supabase
             .from('employees')
             .select('*', { count: 'exact', head: true })
-            .neq('status', 'Deleted');
+            .eq('status', 'Active')
+            .eq('is_deleted', false);
 
         if (reportData) {
             reportData.forEach(row => {
                 if (countsByDate[row.date]) {
+                    countsByDate[row.date]._seen = countsByDate[row.date]._seen || new Set();
+                    if (countsByDate[row.date]._seen.has(row.employee_id)) return; // duplicate row, same day
+                    countsByDate[row.date]._seen.add(row.employee_id);
                     countsByDate[row.date].present++;
-                    if (row.check_in) {
-                        const checkInTime = new Date(row.check_in).toTimeString().split(' ')[0];
-                        if (checkInTime > LATE_THRESHOLD) {
-                            countsByDate[row.date].late++;
-                        }
-                    }
+                    if (rowIsLate(row)) countsByDate[row.date].late++;
                 }
             });
         }
@@ -1204,25 +1249,31 @@ exports.getMonthlyReport = async (req, res) => {
             return res.status(400).json({ error: "Month and Year are required" });
         }
 
-        const startDate = new Date(year, month - 1, 1);
-        const endDate = new Date(year, month, 0); // Last day of month
-        const startDateStr = startDate.toISOString().split('T')[0];
-        const endDateStr = endDate.toISOString().split('T')[0];
+        const mr = monthRange(year, month);
+        if (!mr) return res.status(400).json({ error: "Invalid month or year" });
+        const startDateStr = mr.from;
+        const endDateStr = mr.to;
+        const startDate = new Date(startDateStr + 'T00:00:00Z');
+        const endDate = new Date(endDateStr + 'T00:00:00Z');
 
         // 1. Fetch all active employees
         const { data: employees, error: empError } = await supabase
             .from('employees')
             .select('id, name, employee_id, department')
-            .neq('status', 'Deleted');
+            .eq('status', 'Active')
+            .eq('is_deleted', false);
 
         if (empError) throw empError;
 
-        // 2. Fetch all attendance for the month
-        const { data: attendanceData, error: attError } = await supabase
-            .from('attendance')
-            .select('employee_id, date, check_in, check_out')
-            .gte('date', startDateStr)
-            .lte('date', endDateStr);
+        // 2. Fetch all attendance for the month (every row, not just the first 1000)
+        let attendanceData, attError = null;
+        try {
+            attendanceData = await fetchAll(() => supabase
+                .from('attendance')
+                .select('employee_id, date, check_in, check_out, status')
+                .gte('date', startDateStr)
+                .lte('date', endDateStr));
+        } catch (e) { attError = e; }
 
         if (attError) throw attError;
 
@@ -1250,8 +1301,7 @@ exports.getMonthlyReport = async (req, res) => {
 
             empAtt.forEach(a => {
                 if (a.check_in) {
-                    const checkInTime = new Date(a.check_in).toTimeString().split(' ')[0];
-                    if (checkInTime > LATE_THRESHOLD) lateDays++;
+                    if (rowIsLate(a)) lateDays++;
 
                     if (a.check_out) {
                         const mins = (new Date(a.check_out) - new Date(a.check_in)) / (1000 * 60);
@@ -1294,8 +1344,7 @@ exports.getMonthlyReport = async (req, res) => {
 exports.getAnalytics = async (req, res) => {
     try {
         const now = new Date();
-        const today = now.toISOString().split('T')[0];
-        const LATE_THRESHOLD = '09:00:00';
+        const today = istDateString(now);
 
         // --- Daily Trend: last 15 days ---
         const fifteenDaysAgo = new Date(now);
@@ -1316,7 +1365,7 @@ exports.getAnalytics = async (req, res) => {
             { data: sixMonthAtt, error: sixMonErr },
         ] = await Promise.all([
             supabase.from('attendance')
-                .select('date, check_in, employee_id')
+                .select('date, check_in, employee_id, status')
                 .gte('date', dailyStart).lte('date', today),
             supabase.from('attendance')
                 .select('employee_id')
@@ -1326,7 +1375,8 @@ exports.getAnalytics = async (req, res) => {
                 .gte('date', prevMonthStart).lte('date', prevMonthEnd),
             supabase.from('employees')
                 .select('id, department')
-                .neq('status', 'Deleted'),
+                .eq('status', 'Active')
+                .eq('is_deleted', false),
             // Last 6 months for monthly rate chart
             supabase.from('attendance')
                 .select('date, employee_id')
@@ -1350,12 +1400,12 @@ exports.getAnalytics = async (req, res) => {
         }
         (dailyAtt || []).forEach(a => {
             if (!dailyMap[a.date]) return;
-            // Count unique employees per day as present (deduplicated inside the map)
+            // Count each employee once per day even if duplicate rows exist
+            dailyMap[a.date]._seen = dailyMap[a.date]._seen || new Set();
+            if (dailyMap[a.date]._seen.has(a.employee_id)) return;
+            dailyMap[a.date]._seen.add(a.employee_id);
             dailyMap[a.date].present++;
-            if (a.check_in) {
-                const t = new Date(a.check_in).toTimeString().split(' ')[0];
-                if (t > LATE_THRESHOLD) dailyMap[a.date].late++;
-            }
+            if (rowIsLate(a)) dailyMap[a.date].late++;
         });
         const dailyTrend = Object.values(dailyMap);
 

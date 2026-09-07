@@ -183,7 +183,7 @@ export default function EmployeeAccess() {
                     </button>
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-1">
-                            <h1 className="text-xl md:text-3xl font-black text-white tracking-tighter truncate">{employee?.name || 'Loading...'}</h1>
+                            <h1 className="text-xl md:text-3xl font-black text-slate-900 tracking-tighter truncate">{employee?.name || 'Loading...'}</h1>
                             <span className="px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-[9px] md:text-[10px] font-bold text-blue-400 uppercase tracking-widest shrink-0">
                                 {employee?.employee_id}
                             </span>
@@ -242,7 +242,7 @@ export default function EmployeeAccess() {
                         <select 
                             value={selectedMonth} 
                             onChange={e => {
-                                setSelectedMonth(e.target.value); 
+                                setSelectedMonth(e.target.value); setPage(1);
                                 if (activePreset === 'month') {
                                     const sm = parseInt(e.target.value);
                                     const sy = parseInt(selectedYear);
@@ -263,7 +263,7 @@ export default function EmployeeAccess() {
                         <select 
                             value={selectedYear} 
                             onChange={e => {
-                                setSelectedYear(e.target.value);
+                                setSelectedYear(e.target.value); setPage(1);
                                 if (activePreset === 'month') {
                                     const sm = parseInt(selectedMonth);
                                     const sy = parseInt(e.target.value);
@@ -275,15 +275,15 @@ export default function EmployeeAccess() {
                             }} 
                             className={`${inputCls} !w-auto flex-1 md:flex-none`}
                         >
-                            {[2024, 2025, 2026].map(year => (
+                            {Array.from({ length: new Date().getFullYear() - 2024 + 2 }, (_, i) => 2024 + i).map(year => (
                                 <option key={year} value={year}>{year}</option>
                             ))}
                         </select>
                     </div>
                     <div className="flex items-center gap-2 w-full md:w-auto">
-                        <input type="date" value={startDate} onChange={e => {setStartDate(e.target.value); setActivePreset('custom');}} className={inputCls} />
+                        <input type="date" value={startDate} onChange={e => {setStartDate(e.target.value); setActivePreset('custom'); setPage(1);}} className={inputCls} />
                         <span className="text-slate-700">–</span>
-                        <input type="date" value={endDate} onChange={e => {setEndDate(e.target.value); setActivePreset('custom');}} className={inputCls} />
+                        <input type="date" value={endDate} onChange={e => {setEndDate(e.target.value); setActivePreset('custom'); setPage(1);}} className={inputCls} />
                     </div>
                 </div>
             </div>

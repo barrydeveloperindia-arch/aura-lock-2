@@ -25,8 +25,8 @@ api.interceptors.response.use(
             // Token expired or invalid
             localStorage.removeItem('aura_token');
             localStorage.removeItem('aura_user');
-            if (window.location.pathname !== '/login') {
-                window.location.href = '/login';
+            if (window.location.pathname !== '/admin' && window.location.pathname !== '/admin/') {
+                window.location.href = '/admin';
             }
         }
         return Promise.reject(error);
@@ -47,7 +47,7 @@ export const apiService = {
     logout: () => {
         localStorage.removeItem('aura_token');
         localStorage.removeItem('aura_user');
-        window.location.href = '/login';
+        window.location.href = '/admin';
     },
 
     // Face Registration
@@ -155,6 +155,14 @@ export const apiService = {
         const response = await api.get('/api/stats/attendance-analytics');
         return response.data;
     },
+
+    // Access logs (used by Door Control live feed)
+    getLogs: async (params) => {
+        const response = await api.get('/api/access-logs', { params });
+        return response.data;
+    },
+    connectBle: async () => (await api.post('/api/ble/connect')).data,
+    disconnectBle: async () => (await api.post('/api/ble/disconnect')).data,
 
     // Attendance
     getAttendance: async (params) => {

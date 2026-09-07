@@ -65,7 +65,7 @@ const StatPill = ({ label, value, color, icon: Icon }) => (
     <div className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] border border-white/[0.06] rounded-xl">
         <Icon className={`w-4 h-4 ${color}`} />
         <div>
-            <p className="text-[18px] font-black text-white leading-none">{value ?? '--'}</p>
+            <p className="text-[18px] font-black text-slate-900 leading-none">{value ?? '--'}</p>
             <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600">{label}</p>
         </div>
     </div>
@@ -95,7 +95,7 @@ export default function Logs() {
                 page,
                 limit: PAGE_SIZE,
                 ...(search && { search }),
-                ...(status && { status }),
+                ...(status && { result: status }),
                 ...(method && { method }),
                 ...(startDate && { startDate }),
                 ...(endDate && { endDate }),
@@ -141,7 +141,7 @@ export default function Logs() {
             {/* ── Header ── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-white mb-1 tracking-tighter">Security Audit Log</h1>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-1 tracking-tighter">Security Audit Log</h1>
                     <p className="text-slate-500 text-[10px] md:text-sm">Real-time biometric access events &mdash; every scan attempt recorded</p>
                 </div>
                 <button onClick={() => fetchLogs(true)} disabled={refreshing}
@@ -252,7 +252,7 @@ export default function Logs() {
                                 </tr>
                             ) : logs.map(log => (
                                 <tr key={log.id}
-                                    onClick={() => log.employee_id && navigate(`/access/employee/${log.employee_id}`)}
+                                    onClick={() => log.employee_id && navigate(`/admin/access/employee/${log.employee_id}`)}
                                     className={`hover:bg-white/[0.03] cursor-pointer transition-all duration-300 group active:scale-[0.995] ${log.status === 'failed' ? 'border-l-2 border-red-500/30' : log.status === 'ambiguous' ? 'border-l-2 border-amber-500/30' : 'border-l-2 border-transparent'}`}>
 
                                     {/* Subject */}
@@ -287,8 +287,8 @@ export default function Logs() {
                                         <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono">
                                             <Clock className="w-3 h-3 text-slate-600 shrink-0" />
                                             <div>
-                                                <div>{format(parseISO(log.created_at), 'dd MMM yyyy')}</div>
-                                                <div className="text-slate-600">{format(parseISO(log.created_at), 'HH:mm:ss')}</div>
+                                                <div>{log.created_at ? format(parseISO(log.created_at), 'dd MMM yyyy') : '—'}</div>
+                                                <div className="text-slate-600">{log.created_at ? format(parseISO(log.created_at), 'HH:mm:ss') : ''}</div>
                                             </div>
                                         </div>
                                     </td>

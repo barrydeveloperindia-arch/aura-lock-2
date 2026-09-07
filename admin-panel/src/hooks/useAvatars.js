@@ -10,7 +10,7 @@ import { apiService } from '../services/api';
  *   const avatars = useAvatars(rows.map(r => r.employees?.employee_id));
  *   <img src={avatars['EMP-012']} />
  */
-const cache = { fetchedAt: 0, urls: {} };
+const cache = { fetchedAt: 0, urls: {} }; // fetchedAt = time of the OLDEST url still cached
 const CACHE_MS = 50 * 60 * 1000;
 
 export default function useAvatars(employeeIds) {
@@ -32,7 +32,8 @@ export default function useAvatars(employeeIds) {
                 const next = fresh ? { ...cache.urls } : {};
                 for (const id of (fresh ? missing : ids)) next[id] = avatars?.[id] || null;
                 cache.urls = next;
-                cache.fetchedAt = Date.now();
+                // keep the oldest fetch time so a long-open tab drops the whole set before links expire
+                cache.fetchedAt = fresh && cache.fetchedAt ? cache.fetchedAt : Date.now();
                 setUrls(next);
             })
             .catch(() => { /* avatars are decoration; initials remain */ });

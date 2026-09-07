@@ -9,7 +9,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024, files: 1 } });
 const validateIdentity = require('./middleware/validateIdentity');
 const validateDevice = require('./middleware/validateDevice');
 const ExcelJS = require('exceljs');
@@ -17,16 +17,25 @@ const PDFDocument = require('pdfkit-table');
 const doorService = require('./doorService');
 const { recordAttendance, attachAttendancePhoto, locationFromBody } = require('./src/controllers/attendanceController');
 const attendancePhotos = require('./services/attendancePhotos');
+const { istDayStartUTC, istDayEndUTC, istDateString, monthRange } = require('./src/lib/attendanceTime');
+const { fetchAll, logAccess } = require('./src/lib/db');
+
+// Refuse to start production with default secrets or missing admin credentials.
+if (process.env.NODE_ENV === 'production' || process.env.K_SERVICE) {
+    const missing = ['JWT_SECRET', 'ADMIN_EMAIL', 'ADMIN_PASSWORD', 'SUPABASE_URL', 'SUPABASE_KEY'].filter(k => !process.env[k]);
+    if (missing.length) { console.error('[Config] Missing required env vars:', missing.join(', ')); process.exit(1); }
+}
 
 const app = express();
+const { authenticateToken, isAdmin } = require('./src/middleware/auth');
 const PORT = process.env.PORT || 8000;
 
 // Trust reverse proxy for rate limiter (required for Google Cloud Run)
 app.set('trust proxy', 1);
 // --- Configuration & Initialization ---
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@auralock.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '2026';
-const JWT_SECRET = process.env.JWT_SECRET || 'auralock_super_secret_key_2026';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'test' ? 'test-only-secret' : undefined);
 
 // â”€â”€ Service Discovery â”€â”€
 // Fixed for the life of the process. Never "discover" another engine: the old
@@ -34,7 +43,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'auralock_super_secret_key_2026';
 // silently switching to it made every scan fail with "No registered users found".
 const PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'https://auralock-biometric-engine-50851729985.asia-south1.run.app';
 
-console.log('ðŸ§¬ [Biometrics] Target Engine:', PYTHON_ENGINE_URL);
+console.log('[Biometrics] Target Engine:', PYTHON_ENGINE_URL);
+// Every call to the engine carries the shared key (see edge ENGINE_KEY)
+const engineHttp = axios.create({ headers: process.env.ENGINE_KEY ? { 'x-engine-key': process.env.ENGINE_KEY } : {} });
 console.log('ðŸš€ [Config] ADMIN_EMAIL:', ADMIN_EMAIL);
 console.log('ðŸš€ [Config] JWT_SECRET:', JWT_SECRET ? 'SET' : 'MISSING');
 
@@ -73,7 +84,7 @@ app.get('/', (req, res) => {
 });
 */
 
-app.get('/api/diag', async (req, res) => {
+app.get('/api/diag', authenticateToken, isAdmin, async (req, res) => {
     const dns = require('dns').promises;
     const results = {
         env: {},
@@ -129,14 +140,15 @@ app.use((req, res, next) => {
     console.log(`ðŸ“¡ [${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
     if (req.method === 'POST') {
         const logBody = { ...req.body };
-        if (logBody.faceEncoding) logBody.faceEncoding = "[ENCODING_DATA]";
-        console.log('ðŸ“¦ Body:', JSON.stringify(logBody, null, 2));
+        for (const k of ['faceEncoding', 'image', 'password', 'newPassword', 'token']) if (logBody[k]) logBody[k] = '[REDACTED]';
+        const bodyText = JSON.stringify(logBody);
+        console.log('[Body]', bodyText.length > 500 ? bodyText.slice(0, 500) + '…' : bodyText);
     }
     next();
 });
 
 // --- Middleware ---
-const { authenticateToken, isAdmin } = require('./src/middleware/auth');
+// (auth middleware is required near the top so early routes like /api/diag can use it)
 const { resolveEmployeeUuid, resolveEmployeeEid } = require('./src/controllers/attendanceController');
 
 
@@ -163,10 +175,14 @@ const bleRoutes = require('./ble_route');
 const doorRoute = require('./door_route');
 app.use('/api/ble', authenticateToken, isAdmin, bleRoutes);
 
+// The tablet polls this. A remote unlock is only honoured for 30 s so a click
+// made while the tablet was offline cannot open the door hours later.
 app.get('/api/door/poll', (req, res) => {
     if (global.remoteUnlockRequested) {
+        const age = Date.now() - (global.remoteUnlockRequestedAt || 0);
         global.remoteUnlockRequested = false;
-        return res.json({ unlock: true });
+        if (age <= 30000) return res.json({ unlock: true });
+        console.warn(`[Door] Discarded stale remote unlock (${Math.round(age / 1000)} s old)`);
     }
     return res.json({ unlock: false });
 });
@@ -206,19 +222,21 @@ app.get('/api/access-logs', authenticateToken, async (req, res) => {
         const from = (parseInt(page, 10) - 1) * pgLimit;
         const to = from + pgLimit - 1;
 
+        const search = employee_name || req.query.search;
+        // !inner makes the name filter restrict rows (a plain embed only nulls the employee object)
+        const embed = search ? 'employees!inner(name, employee_id, department, image_url)' : 'employees(name, employee_id, department, image_url)';
         let q = supabase
             .from('access_logs')
-            .select('*, employees(name, employee_id, department, image_url)', { count: 'exact' })
+            .select(`*, ${embed}`, { count: 'exact' })
             .order('created_at', { ascending: false });
 
-        if (result) q = q.eq('status', result);
+        const statusFilter = result || req.query.status;
+        if (statusFilter) q = q.eq('status', statusFilter);
+        if (req.query.method) q = q.ilike('metadata->>method', String(req.query.method));
         if (device) q = q.eq('device_id', device);
-        if (startDate) q = q.gte('created_at', `${startDate}T00:00:00.000Z`);
-        if (endDate) q = q.lte('created_at', `${endDate}T23:59:59.999Z`);
-        if (employee_name || req.query.search) {
-            const pattern = `%${employee_name || req.query.search}%`;
-            q = q.ilike('employees.name', pattern);
-        }
+        if (startDate) q = q.gte('created_at', istDayStartUTC(startDate));
+        if (endDate) q = q.lte('created_at', istDayEndUTC(endDate));
+        if (search) q = q.ilike('employees.name', `%${search}%`);
 
         const { data: logs, count, error } = await q.range(from, to);
         if (error) throw error;
@@ -312,34 +330,32 @@ app.get('/api/access-logs/employee/:employee_id/summary', authenticateToken, asy
 
 // â”€â”€â”€ Access Logs Export Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-async function handleAccessExcelExport(req, res) {
+async function handleAccessExcelExport(req, res, opts = {}) {
     try {
         const { startDate, endDate, employee_id, device, result, month, year } = req.query;
         const now = new Date();
 
         let fromDate, toDate;
-        if (month && year) {
-            fromDate = `${year}-${String(month).padStart(2, '0')}-01`;
-            const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-            toDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-        } else {
-            fromDate = startDate || now.toISOString().split('T')[0];
-            toDate = endDate || now.toISOString().split('T')[0];
-        }
+        const mr = (!startDate && !endDate && month && year) ? monthRange(year, month) : null;
+        if (mr) { fromDate = mr.from; toDate = mr.to; }
+        else { fromDate = startDate || istDateString(); toDate = endDate || istDateString(); }
+        const employeeEid = opts.employee_eid || employee_id;
 
-        let q = supabase
+        const q = supabase
             .from('access_logs')
             .select('*, employees(name, employee_id, department)')
-            .gte('created_at', `${fromDate}T00:00:00.000Z`)
-            .lte('created_at', `${toDate}T23:59:59.999Z`)
+            .gte('created_at', istDayStartUTC(fromDate))
+            .lte('created_at', istDayEndUTC(toDate))
             .order('created_at', { ascending: false });
 
-        if (employee_id) q = q.eq('employee_id', employee_id);
-        if (device) q = q.eq('device_id', device);
-        if (result) q = q.eq('status', result);
-
-        const { data: records, error } = await q;
-        if (error) throw error;
+        const build = () => {
+            let b = q;
+            if (employeeEid) b = b.eq('employee_id', employeeEid);
+            if (device) b = b.eq('device_id', device);
+            if (result) b = b.eq('status', result);
+            return b;
+        };
+        const records = await fetchAll(build);
 
         const ExcelJS = require('exceljs');
         const wb = new ExcelJS.Workbook();
@@ -377,34 +393,32 @@ async function handleAccessExcelExport(req, res) {
     }
 }
 
-async function handleAccessPdfExport(req, res) {
+async function handleAccessPdfExport(req, res, opts = {}) {
     try {
         const { startDate, endDate, employee_id, device, result, month, year } = req.query;
         const now = new Date();
 
         let fromDate, toDate;
-        if (month && year) {
-            fromDate = `${year}-${String(month).padStart(2, '0')}-01`;
-            const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-            toDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-        } else {
-            fromDate = startDate || now.toISOString().split('T')[0];
-            toDate = endDate || now.toISOString().split('T')[0];
-        }
+        const mr = (!startDate && !endDate && month && year) ? monthRange(year, month) : null;
+        if (mr) { fromDate = mr.from; toDate = mr.to; }
+        else { fromDate = startDate || istDateString(); toDate = endDate || istDateString(); }
+        const employeeEid = opts.employee_eid || employee_id;
 
-        let q = supabase
+        const q = supabase
             .from('access_logs')
             .select('*, employees(name, employee_id, department)')
-            .gte('created_at', `${fromDate}T00:00:00.000Z`)
-            .lte('created_at', `${toDate}T23:59:59.999Z`)
+            .gte('created_at', istDayStartUTC(fromDate))
+            .lte('created_at', istDayEndUTC(toDate))
             .order('created_at', { ascending: false });
 
-        if (employee_id) q = q.eq('employee_id', employee_id);
-        if (device) q = q.eq('device_id', device);
-        if (result) q = q.eq('status', result);
-
-        const { data: records, error } = await q;
-        if (error) throw error;
+        const build = () => {
+            let b = q;
+            if (employeeEid) b = b.eq('employee_id', employeeEid);
+            if (device) b = b.eq('device_id', device);
+            if (result) b = b.eq('status', result);
+            return b;
+        };
+        const records = await fetchAll(build);
 
         const doc = new PDFDocument({ size: 'A4', margin: 30 });
         res.setHeader('Content-Type', 'application/pdf');
@@ -448,22 +462,17 @@ async function handleAccessPdfExport(req, res) {
 app.get('/api/access-logs/export/excel', authenticateToken, handleAccessExcelExport);
 app.get('/api/access-logs/export/pdf', authenticateToken, handleAccessPdfExport);
 
+// access_logs.employee_id holds the human EID (EMP-001), so resolve UUIDs to it
 app.get('/api/access-logs/export/excel/:employee_id', authenticateToken, async (req, res) => {
     const resolved = await resolveEmployeeEid(req.params.employee_id);
     if (!resolved) return res.status(404).json({ error: "Employee not found" });
-    req.query.employee_id = resolved;
-    return handleAccessExcelExport(req, res);
+    return handleAccessExcelExport(req, res, { employee_eid: resolved });
 });
 
 app.get('/api/access-logs/export/pdf/:employee_id', authenticateToken, async (req, res) => {
-    // We need the raw UUID for filtering access_logs, but we might want the EID for the filename
-    req.query.employee_id = req.params.employee_id;
-    return handleAccessPdfExport(req, res);
-});
-
-app.get('/api/access-logs/export/excel/:employee_id', authenticateToken, async (req, res) => {
-    req.query.employee_id = req.params.employee_id;
-    return handleAccessExcelExport(req, res);
+    const resolved = await resolveEmployeeEid(req.params.employee_id);
+    if (!resolved) return res.status(404).json({ error: "Employee not found" });
+    return handleAccessPdfExport(req, res, { employee_eid: resolved });
 });
 
 // IoT Activity Log Endpoint (Internal)
@@ -471,10 +480,9 @@ app.post('/api/logs/iot', async (req, res) => {
     const { method, id, status, message, signature, timestamp } = req.body;
     const secret = process.env.ESP32_SECRET;
 
-    // --- Security: HMAC Verification for Device logs ---
-    if (signature === 'internal_request') {
-        console.log("âš¡ [IoT Log] Accepting internal request from unified app.");
-    } else {
+    // --- Security: HMAC Verification for Device logs (no bypass strings) ---
+    if (!secret) return res.status(503).json({ error: "Device logging not configured" });
+    {
         if (!signature || !timestamp) return res.sendStatus(401);
 
         // Check drift (60 sec)
@@ -512,19 +520,16 @@ app.post('/api/logs/iot', async (req, res) => {
         }
 
         // Record in access_logs
-        await supabase.from('access_logs').insert({
+        // access_logs.status only allows success/failed; battery alerts are 'failed' with a reason
+        const ok = await logAccess(supabase, {
             employee_id: id === 0 ? null : (id || null),
-            status: (status === 'LOW_BATTERY' || status === 'CRITICAL_BATTERY') ? 'warning' : (status || 'success'),
+            status: status === 'success' ? 'success' : 'failed',
             confidence: 1.0,
             device_id: 'esp32_hardware',
-            method: (method === 'fingerprint' ? 'FINGERPRINT' : (method || 'FACE')),
-            metadata: {
-                method,
-                message,
-                status,
-                unlock_source: 'BIOMETRIC'
-            }
+            method: method === 'fingerprint' ? 'FINGERPRINT' : (method || 'FACE'),
+            metadata: { message, device_status: status, unlock_source: 'BIOMETRIC' }
         });
+        if (!ok) return res.status(500).json({ success: false, error: "Log not stored" });
 
         res.json({ success: true });
     } catch (error) {
@@ -540,8 +545,9 @@ app.get('/api/terminal/users', async (req, res) => {
     try {
         const { data: users, error } = await supabase
             .from('employees')
-            .select('id, employee_id, name, email, department, image_url, status')
+            .select('id, employee_id, name, department, status')
             .eq('status', 'Active')
+            .eq('is_deleted', false)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -656,7 +662,7 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
                 await supabase.from('fingerprints').upsert({
                     employee_id: eid,
                     template_data: 'ENROLLED_VIA_ADMIN_MOCK'
-                }, { on_conflict: 'employee_id' });
+                }, { onConflict: 'employee_id' });
             } catch (fpErr) {
                 console.warn("âš ï¸ Fingerprint record upsert failed:", fpErr.message);
             }
@@ -736,7 +742,7 @@ app.post('/api/users', authenticateToken, validateIdentity, async (req, res) => 
                 department: department || 'General',
                 face_embedding: faceEncoding,
                 image_url
-            }, { on_conflict: 'employee_id' })
+            }, { onConflict: 'employee_id' })
             .select()
             .single();
 
@@ -750,7 +756,7 @@ app.post('/api/users', authenticateToken, validateIdentity, async (req, res) => 
             await supabase.from('rfid_tags').upsert({
                 tag_id: rfid,
                 employee_id: finalId
-            }, { on_conflict: 'tag_id' });
+            }, { onConflict: 'tag_id' });
         }
 
         // --- Persist Fingerprint if provided ---
@@ -759,7 +765,7 @@ app.post('/api/users', authenticateToken, validateIdentity, async (req, res) => 
                 id: fingerprint_id,
                 employee_id: finalId,
                 template_data: `MOCK_TEMPLATE_${fingerprint_id}` // Mock for now
-            }, { on_conflict: 'id' });
+            }, { onConflict: 'id' });
         }
 
         console.log("âœ… User created/updated in Supabase:", newUser.employee_id);
@@ -816,13 +822,19 @@ app.delete('/api/users/:id', authenticateToken, isAdmin, async (req, res) => {
             // Delete related records in order
             // Note: face_encodings, fingerprints and rfid_tags typically use the String EID
             // attendance and access_logs typically use the UUID
-            await Promise.all([
-                supabase.from('attendance').delete().eq('employee_id', employeeUuid),
-                supabase.from('access_logs').delete().eq('employee_id', employeeUuid),
-                supabase.from('face_encodings').delete().eq('employee_id', employeeEid),
-                supabase.from('fingerprints').delete().eq('employee_id', employeeEid),
-                supabase.from('rfid_tags').delete().eq('employee_id', employeeEid)
-            ]);
+            // access_logs/face/fingerprint/rfid are keyed by the EID string, attendance by the UUID.
+            const steps = [
+                ['attendance', 'employee_id', employeeUuid],
+                ['access_logs', 'employee_id', employeeEid],
+                ['face_encodings', 'employee_id', employeeEid],
+                ['fingerprints', 'employee_id', employeeEid],
+                ['rfid_tags', 'employee_id', employeeEid],
+            ];
+            for (const [table, col, val] of steps) {
+                const { error: delErr } = await supabase.from(table).delete().eq(col, val);
+                if (delErr) throw new Error(`Could not delete ${table} rows: ${delErr.message}`);
+            }
+            try { await engineHttp.post(`${PYTHON_ENGINE_URL}/api/biometrics/cache/rebuild`, {}, { timeout: 5000 }); } catch (_e) { /* engine resyncs every 60 s anyway */ }
 
             const { error: deleteError } = await supabase
                 .from('employees')
@@ -871,7 +883,7 @@ app.delete('/api/users/:id', authenticateToken, isAdmin, async (req, res) => {
         }
 
         try {
-            await axios.post(`${PYTHON_ENGINE_URL}/api/biometrics/cache/rebuild`, {}, { timeout: 5000 });
+            await engineHttp.post(`${PYTHON_ENGINE_URL}/api/biometrics/cache/rebuild`, {}, { timeout: 5000 });
             console.log('âœ… Biometric cache rebuild triggered');
         } catch (rebuildErr) {
             console.warn(`âš ï¸ Cache rebuild skipped (engine offline): ${rebuildErr.message}`);
@@ -893,7 +905,7 @@ app.delete('/api/users/:id', authenticateToken, isAdmin, async (req, res) => {
     }
 });
 // Biometric Support (Mock Fallback when Python API is offline)
-app.post('/api/biometrics/face/register', upload.single('file'), validateIdentity, async (req, res) => {
+app.post('/api/biometrics/face/register', authenticateToken, isAdmin, upload.single('file'), validateIdentity, async (req, res) => {
     try {
         const { employeeId, email, name, re_enroll } = req.body;
         console.log(`ðŸ“¸ Received biometric registration for: ${employeeId}`);
@@ -930,7 +942,7 @@ app.post('/api/biometrics/face/register', upload.single('file'), validateIdentit
             if (re_enroll) form.append('re_enroll', String(re_enroll));
 
             console.log("ðŸ“¡ Forwarding to Biometric Engine...");
-            const response = await axios.post(`${PYTHON_ENGINE_URL}/api/biometrics/face/register`, form, {
+            const response = await engineHttp.post(`${PYTHON_ENGINE_URL}/api/biometrics/face/register`, form, {
                 headers: form.getHeaders(),
                 timeout: 45000
             });
@@ -968,7 +980,7 @@ app.post('/api/biometrics/face/register', upload.single('file'), validateIdentit
 // so wait for that instead of failing over to a different service.
 app.get('/api/biometrics/health', async (req, res) => {
     try {
-        await axios.get(`${PYTHON_ENGINE_URL}/health`, { timeout: 20000 });
+        await engineHttp.get(`${PYTHON_ENGINE_URL}/health`, { timeout: 20000 });
         return res.json({ status: 'ready', engine: 'face-recognition', url: PYTHON_ENGINE_URL });
     } catch (err) {
         console.warn(`[Health Check] Engine not ready at ${PYTHON_ENGINE_URL}: ${err.message}`);
@@ -1034,7 +1046,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
             let engineReady = false;
             for (let attempt = 0; attempt < 12; attempt++) {
                 try {
-                    await axios.get(`${PYTHON_ENGINE_URL}/health`, { timeout: 5000 });
+                    await engineHttp.get(`${PYTHON_ENGINE_URL}/health`, { timeout: 5000 });
                     engineReady = true;
                     break;
                 } catch (_) {
@@ -1051,7 +1063,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                 });
             }
 
-            const response = await axios.post(`${PYTHON_ENGINE_URL}/api/biometrics/face/verify`, form, {
+            const response = await engineHttp.post(`${PYTHON_ENGINE_URL}/api/biometrics/face/verify`, form, {
                 headers: form.getHeaders(),
                 timeout: 120000 // 120s â€” Render Free/Starter tiers can be slow on first Cold-Start
             });
@@ -1073,15 +1085,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                 // disabled in the dashboard. Never record attendance or unlock for them.
                 if (!empRecord || empRecord.is_deleted || empRecord.status !== 'Active') {
                     console.warn(`[Verification] Face matched ${employeeId} but the employee is ${!empRecord ? 'missing' : empRecord.is_deleted ? 'deleted' : empRecord.status}. Denied.`);
-                    try {
-                        await supabase.from('access_logs').insert({
-                            employee_id: empRecord?.id || null,
-                            status: 'failed',
-                            device_id: 'terminal_01',
-                            method: 'face',
-                            metadata: { reason: 'Employee deleted or disabled', employee_code: employeeId, location: scanLocation }
-                        });
-                    } catch (le) { console.error('Failed to log denied scan:', le.message); }
+                    await logAccess(supabase, { employee_id: empRecord ? employeeId : null, status: 'failed', device_id: 'terminal_01', method: 'face', metadata: { reason: 'Employee deleted or disabled', employee_code: employeeId, location: scanLocation } });
                     return res.status(403).json({
                         success: false,
                         error_code: 'EMPLOYEE_INACTIVE',
@@ -1121,16 +1125,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
             } else if (response.data.error_code === 'AMBIGUOUS_MATCH') {
                 console.warn(`âš ï¸ Ambiguous Match for hint: ${response.data.id_hint}. Requesting Fingerprint fallback.`);
 
-                try {
-                    await supabase.from('access_logs').insert({
-                        employee_id: response.data.id_hint,
-                        status: 'ambiguous',
-                        device_id: 'terminal_01',
-                        method: 'face'
-                    });
-                } catch (logError) {
-                    console.error("âš ï¸ Failed to record ambiguous access log:", logError.message);
-                }
+                await logAccess(supabase, { employee_id: response.data.id_hint || null, status: 'failed', device_id: 'terminal_01', method: 'face', metadata: { reason: 'Ambiguous match', location: scanLocation } });
 
                 return res.status(403).json({
                     success: false,
@@ -1145,17 +1140,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                     const key = `face_null_denied`;
                     const lastLog = logRateLimiter.get(key);
                     if (!lastLog || (Date.now() - lastLog) > LOG_THROTTLE_MS) {
-                        await supabase.from('access_logs').insert({
-                            employee_id: null,
-                            status: 'failed',
-                            confidence: response.data.confidence || null,
-                            device_id: 'terminal_01',
-                            method: 'FACE',
-                            metadata: {
-                                reason: response.data.message,
-                                unlock_source: 'BIOMETRIC'
-                            }
-                        });
+                        await logAccess(supabase, { employee_id: null, status: 'failed', confidence: response.data.confidence || null, device_id: 'terminal_01', method: 'FACE', metadata: { reason: response.data.message, unlock_source: 'BIOMETRIC', location: scanLocation } });
                         logRateLimiter.set(key, Date.now());
                     }
                 } catch (le) { console.error('âš ï¸ Failed to log rejection:', le.message); }
@@ -1167,15 +1152,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
         } catch (engineError) {
             console.error("âŒ Biometric Engine error/offline:", engineError.message);
             // Log engine offline as failed
-            try {
-                await supabase.from('access_logs').insert({
-                    employee_id: null,
-                    status: 'failed',
-                    device_id: 'terminal_01',
-                    method: 'face',
-                    metadata: { reason: 'Biometric engine offline', error: engineError.message }
-                });
-            } catch (le) { console.error('âš ï¸ Failed to log engine-offline event:', le.message); }
+            await logAccess(supabase, { employee_id: null, status: 'failed', device_id: 'terminal_01', method: 'face', metadata: { reason: 'Biometric engine offline', error: engineError.message } });
             return res.status(503).json({
                 success: false,
                 message: "Biometric Service Unavailable. Please use manual override or contact admin."

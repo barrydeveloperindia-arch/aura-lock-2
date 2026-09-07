@@ -75,11 +75,10 @@ function DeleteDialog({ user, onConfirm, onCancel }) {
                     <AlertTriangle className="w-8 h-8 text-red-500" />
                 </div>
                 <div>
-                    <h2 className="text-xl font-black text-white mb-2">Confirm Deletion</h2>
+                    <h2 className="text-xl font-black text-white mb-2">Deactivate employee</h2>
                     <p className="text-sm text-slate-400 leading-relaxed">
-                        Permanently delete <span className="text-white font-bold">{user?.name}</span> and all related records
-                        (attendance, access logs, biometrics).{' '}
-                        <span className="text-red-400 font-bold">This cannot be undone.</span>
+                        <span className="text-white font-bold">{user?.name}</span> will be hidden from all lists and can no longer
+                        check in or unlock the door. Attendance history and photos are kept for records.
                     </p>
                 </div>
                 <div className="flex gap-3 w-full pt-2">
@@ -89,7 +88,7 @@ function DeleteDialog({ user, onConfirm, onCancel }) {
                     </button>
                     <button onClick={onConfirm}
                         className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-black transition-all shadow-lg shadow-red-600/20">
-                        Delete Permanently
+                        Deactivate
                     </button>
                 </div>
             </div>
@@ -106,6 +105,7 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
     const handleSubmit = async (e, enrollType = null) => {
         if (e) e.preventDefault();
         if (!form.name.trim() || !form.email.trim()) { setErr('Name and email are required.'); return; }
+        if (!String(form.employee_id || '').trim()) { setErr('Employee ID is required (e.g. EMP-037).'); return; }
         setSaving(true); setErr('');
         try { 
             const savedUser = await onSave(form); 
@@ -275,7 +275,7 @@ function FaceEnrollModal({ user, onDone, onClose }) {
         stopCamera();
     };
 
-    const retake = () => { setCaptured(null); setStatus(''); startCamera(); };
+    const retake = () => { setCaptured(null); setStatus(''); }; // the effect on `captured` restarts the camera
 
     const enroll = async () => {
         if (!captured) return;

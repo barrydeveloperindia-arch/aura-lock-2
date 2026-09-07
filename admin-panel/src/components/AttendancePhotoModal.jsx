@@ -178,7 +178,7 @@ export default function AttendancePhotoModal({ record, kind: initialKind, onClos
                     )}
                 </div>
 
-                {state.photo?.location && (
+                {state.photo?.location && typeof state.photo.location.lat === 'number' && typeof state.photo.location.lng === 'number' && (
                     <div className="px-5 py-3 border-t border-slate-200 flex items-center justify-between gap-4 bg-slate-50">
                         <div className="text-[11px] text-slate-700 min-w-0">
                             <span className="font-black uppercase tracking-widest text-[10px] text-slate-500 mr-2">Location</span>

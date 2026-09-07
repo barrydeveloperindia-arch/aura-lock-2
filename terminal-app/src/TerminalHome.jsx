@@ -16,6 +16,13 @@ const ADMIN_DOOR_PIN = '2026';
 const MAX_PIN_ATTEMPTS = 3;
 const PIN_COOLDOWN_SECONDS = 30;
 const CAPTURE_INTERVAL_MS = 800;
+const DEVICE_ID = 'terminal_01';          // one id for every attendance path (cloud + local)
+const TERMINAL_KEY = import.meta.env?.VITE_TERMINAL_KEY || ''; // shared key for /api/attendance/mark (see backend TERMINAL_KEY)
+const VERIFY_TIMEOUT_MS = 12000;          // never let a slow request unlock the door minutes later
+const SCAN_TIMEOUT_MS = 20000;
+const GPS_MAX_AGE_MS = 120000;            // a fix older than this is not sent
+const IST = { timeZone: 'Asia/Kolkata' };
+const fmtTimeIST = (d) => new Date(d).toLocaleTimeString('en-IN', { ...IST, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
 const BLE_MAC = '58:8C:81:CC:65:29';
 const DOOR_SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
@@ -70,12 +77,29 @@ export default function TerminalHome() {
     const [adminPin, setAdminPin] = useState('');
     const [selectedEmp, setSelectedEmp] = useState(null);
     const [bleStatus, setBleStatus] = useState('disconnected');
-    const [lastDoorUpdate, setLastDoorUpdate] = useState(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }));
+    const [lastDoorUpdate, setLastDoorUpdate] = useState(new Date().toLocaleTimeString('en-IN', { ...IST, hour: '2-digit', minute: '2-digit', hour12: true }));
     const [doorState, setDoorState] = useState('locked');
     const videoRef = useRef(null);
     const streamRef = useRef(null);
     const [isScanning, setIsScanning] = useState(false);
     const verifyInFlightRef = useRef(false);
+    // Scan session guard: a response that arrives after the scan was cancelled,
+    // timed out or restarted is ignored, so nothing can unlock the door late.
+    const scanSessionRef = useRef(0);
+    const isScanningRef = useRef(false);
+    useEffect(() => {
+        isScanningRef.current = isScanning;
+        if (isScanning) scanSessionRef.current += 1;
+    }, [isScanning]);
+    const bleStatusRef = useRef('disconnected');
+    useEffect(() => { bleStatusRef.current = bleStatus; }, [bleStatus]);
+    const unlockUntilRef = useRef(0);
+    const showDenied = (title, subtitle, detail) => {
+        setIsScanning(false);
+        setResult({ title, subtitle });
+        setMessage(detail || '');
+        setView('error');
+    };
 
     // ── Terminal geo-stamp ────────────────────────────────────────────────
     // The tablet's own GPS fix, refreshed every 60 s, sent with every scan so the
@@ -109,6 +133,8 @@ export default function TerminalHome() {
     const appendLocation = (formData) => {
         const fix = lastFixRef.current;
         if (!fix) return;
+        // A fix from a phone that lost signal an hour ago is not "where the scan happened"
+        if (Date.now() - new Date(fix.fix_time).getTime() > GPS_MAX_AGE_MS) return;
         formData.append('lat', String(fix.lat));
         formData.append('lng', String(fix.lng));
         formData.append('accuracy', String(fix.accuracy));
@@ -123,10 +149,13 @@ export default function TerminalHome() {
 
     // ── Local Door BLE Controller ─────────────────────────────────────────────
     const triggerDoorUnlock = async () => {
+        // Already open (face success + remote poll within 5.5 s): extend, don't reconnect
+        if (Date.now() < unlockUntilRef.current) return;
+        unlockUntilRef.current = Date.now() + 5500;
         let shouldDisconnect = true;
         try {
             setDoorState('unlocked');
-            setLastDoorUpdate(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }));
+            setLastDoorUpdate(new Date().toLocaleTimeString('en-IN', { ...IST, hour: '2-digit', minute: '2-digit', hour12: true }));
             
             try { await BleClient.initialize(); } catch (_e) {}
 
@@ -156,14 +185,14 @@ export default function TerminalHome() {
                 } finally {
                     try { await BleClient.disconnect(BLE_MAC); } catch (_e) {}
                     setDoorState('locked');
-                    setLastDoorUpdate(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }));
+                    setLastDoorUpdate(new Date().toLocaleTimeString('en-IN', { ...IST, hour: '2-digit', minute: '2-digit', hour12: true }));
                 }
             }, 5500);
 
         } catch (_err) {
             setTimeout(() => {
                 setDoorState('locked');
-                setLastDoorUpdate(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }));
+                setLastDoorUpdate(new Date().toLocaleTimeString('en-IN', { ...IST, hour: '2-digit', minute: '2-digit', hour12: true }));
             }, 5500);
         } finally {
             if (shouldDisconnect) {
@@ -285,6 +314,9 @@ export default function TerminalHome() {
         
         // Poll for remote unlock commands from the Admin Panel
         const remoteUnlockInterval = setInterval(async () => {
+            // Only the device next to the lock (BLE found it) may consume a remote unlock;
+            // a staff phone elsewhere must not eat the flag or open its own door.
+            if (bleStatusRef.current !== 'ready' && bleStatusRef.current !== 'connected') return;
             try {
                 const res = await axios.get(`${API_BASE}/api/door/poll`, { timeout: 3000 });
                 if (res.data.unlock) {
@@ -307,7 +339,7 @@ export default function TerminalHome() {
             timeout = setTimeout(() => {
                 setIsScanning(false);
                 setMessage('Scan timed out. Please try again.');
-            }, 15000);
+            }, SCAN_TIMEOUT_MS);
         }
         return () => {
             if (timeout) clearTimeout(timeout);
@@ -349,9 +381,11 @@ export default function TerminalHome() {
     // ── Face Scan Live Feed ───────────────────────────────────────────────────
     useEffect(() => {
         let interval;
+        let cancelled = false;
         const startCamera = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; } // effect already cleaned up
                 streamRef.current = stream;
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
@@ -377,114 +411,115 @@ export default function TerminalHome() {
         }
 
         return () => {
+            cancelled = true;
             if (interval) clearInterval(interval);
             if (streamRef.current) {
                 streamRef.current.getTracks().forEach(t => t.stop());
+                streamRef.current = null;
             }
+            if (videoRef.current) videoRef.current.srcObject = null;
         };
     }, [view, verifyMethod, isScanning]);
 
     const captureAndVerify = async () => {
-        if (!videoRef.current || view !== 'home' || !isScanning || verifyMethod !== 'face' || loading) return;
+        const video = videoRef.current;
+        if (!video || view !== 'home' || !isScanning || verifyMethod !== 'face' || loading) return;
         if (verifyInFlightRef.current) return;
+        // Wait for real frames; otherwise black images get posted while the camera warms up
+        if (video.readyState < 2 || !video.videoWidth) return;
         verifyInFlightRef.current = true;
+        const session = scanSessionRef.current;
+        const stillCurrent = () => session === scanSessionRef.current && isScanningRef.current;
 
         try {
-            // ── FAST PATH: Local on-device matching ──────────────────────
+            // One frame for everything: local match, server verification, success screen
+            const canvas = document.createElement('canvas');
+            const MAX_W = 480;
+            const scale = Math.min(1, MAX_W / video.videoWidth);
+            canvas.width = Math.round(video.videoWidth * scale);
+            canvas.height = Math.round(video.videoHeight * scale);
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.6));
+            if (!blob) return;
+            let frameDataUrl = null;
+            const frameUrl = () => frameDataUrl || (frameDataUrl = canvas.toDataURL('image/jpeg', 0.7));
+
+            const applyResult = (data, name, employeeId) => {
+                if (!stillCurrent()) return; // cancelled / timed out meanwhile: no screen, no unlock
+                if (data.event === 'duplicate') {
+                    const when = data.check_out || data.check_in;
+                    showDenied('Already recorded', 'No new entry made',
+                        `${name || 'Attendance'} was recorded at ${when ? fmtTimeIST(when) : 'a moment ago'}. Wait 2 minutes before scanning again.`);
+                    return;
+                }
+                const isCheckout = data.event ? data.event === 'check_out' : !!data.check_out;
+                const now = new Date();
+                setResult({
+                    name: name || 'Employee',
+                    time: data.check_in ? fmtTimeIST(data.check_in) : fmtTimeIST(now),
+                    checkoutTime: data.check_out ? fmtTimeIST(data.check_out) : fmtTimeIST(now),
+                    workingHours: data.working_hours != null ? formatWorkHours(data.working_hours) : null,
+                    isCheckout,
+                    photo: frameUrl(),
+                    employeeId: employeeId || '',
+                    capturedAt: (isCheckout ? data.check_out : data.check_in) || now.toISOString(),
+                });
+                setView(isCheckout ? 'checkout' : 'checkin');
+                triggerDoorUnlock();
+            };
+
+            const handleError = (err) => {
+                if (!stillCurrent()) return;
+                const status = err.response?.status;
+                const code = err.response?.data?.error_code;
+                const msg = err.response?.data?.message;
+                if (code === 'EMPLOYEE_INACTIVE') { showDenied('Access disabled', 'Contact the administrator', msg); return; }
+                if (status === 503) { showDenied('Engine starting up', 'Try again in a moment', msg || 'The biometric engine is starting.'); return; }
+                if (status === 401 || status === 403) {
+                    setMessage(msg || 'Face not identified');
+                    setTimeout(() => { if (isScanningRef.current) setMessage('Scanning...'); }, 1500);
+                } else if (!err.response) {
+                    setMessage(err.code === 'ECONNABORTED' ? 'Server is slow, retrying...' : 'Server offline. Cannot connect to backend.');
+                } else {
+                    setMessage('Scanning...');
+                }
+            };
+
+            // ── FAST PATH: on-device match. The SERVER still decides (active? duplicate?)
+            // and the door opens only after it confirms.
             const localStatus = localFaceService.getStatus();
             if (localStatus.modelsLoaded && localStatus.descriptorCount > 0) {
-                const localResult = await localFaceService.matchFace(videoRef.current);
+                const localResult = await localFaceService.matchFace(video);
                 if (localResult.matched && (localResult.confidence === 'high' || localResult.confidence === 'medium')) {
-                    // Local match — instant unlock + async attendance log
-                    triggerDoorUnlock();
-                    const now = new Date();
-                    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-
                     try {
-                        const attendRes = await axios.post(`${API_BASE}/api/attendance/mark`, {
-                            employee_id: localResult.employee.employee_id,
-                            method: 'face_local',
-                            device_id: 'office_terminal',
-                        }, { timeout: 10000 });
-                        const aData = attendRes.data || {};
-                        const isCheckout = !!(aData.check_out);
-                        setResult({
-                            name: localResult.employee.name,
-                            time: aData.check_in ? new Date(aData.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : timeStr,
-                            checkoutTime: aData.check_out ? new Date(aData.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : timeStr,
-                            workingHours: aData.working_hours != null ? formatWorkHours(aData.working_hours) : null,
-                            isCheckout,
+                        const formData = new FormData();
+                        formData.append('employee_id', localResult.employee.employee_id);
+                        formData.append('method', 'face');
+                        formData.append('device_id', DEVICE_ID);
+                        formData.append('file', blob, 'verify.jpg');
+                        appendLocation(formData);
+                        const attendRes = await axios.post(`${API_BASE}/api/attendance/mark`, formData, {
+                            headers: { 'Content-Type': 'multipart/form-data', ...(TERMINAL_KEY ? { 'x-terminal-key': TERMINAL_KEY } : {}) },
+                            timeout: VERIFY_TIMEOUT_MS,
                         });
-                        setView(isCheckout ? 'checkout' : 'checkin');
-                    } catch (_attendErr) {
-                        // Backend logging failed, but door is already unlocked
-                        setResult({ name: localResult.employee.name, time: timeStr, checkoutTime: timeStr, workingHours: null, isCheckout: false });
-                        setView('checkin');
-                    }
+                        applyResult(attendRes.data || {}, localResult.employee.name, localResult.employee.employee_id);
+                    } catch (err) { handleError(err); }
                     return;
                 }
             }
 
-            // ── SLOW PATH: Cloud fallback ────────────────────────────────
-            const canvas = document.createElement('canvas');
-            const MAX_W = 480;
-            const srcW = videoRef.current.videoWidth || 640;
-            const srcH = videoRef.current.videoHeight || 480;
-            const scale = Math.min(1, MAX_W / srcW);
-            canvas.width = Math.round(srcW * scale);
-            canvas.height = Math.round(srcH * scale);
-            if (canvas.width === 0) return;
-
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.6));
-            if (!blob) return;
-            // Keep the same frame for the success screen (shown with date/time stamp)
-            const frameDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-
+            // ── CLOUD PATH
             try {
                 const formData = new FormData();
                 formData.append('file', blob, 'verify.jpg');
+                formData.append('device_id', DEVICE_ID);
                 appendLocation(formData);
-                
                 const res = await axios.post(`${API_BASE}/api/biometrics/face/verify`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
+                    timeout: VERIFY_TIMEOUT_MS,
                 });
-
-                if (res.data.success && view === 'home' && verifyMethod === 'face') {
-                    const isCheckout = !!(res.data.check_out || res.data.checkout);
-                    const now = new Date();
-                    setResult({
-                        name: res.data.user?.name || res.data.name || res.data.employee_name || 'Employee',
-                        time: res.data.check_in
-                            ? new Date(res.data.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-                            : now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
-                        checkoutTime: res.data.check_out
-                            ? new Date(res.data.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-                            : now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
-                        workingHours: res.data.working_hours != null ? formatWorkHours(res.data.working_hours) : null,
-                        isCheckout,
-                        // Captured frame + server timestamp for the on-screen photo stamp
-                        photo: frameDataUrl,
-                        employeeId: res.data.user?.employee_id || res.data.employeeId || '',
-                        capturedAt: (isCheckout ? res.data.check_out : res.data.check_in) || now.toISOString(),
-                    });
-                    setView(isCheckout ? 'checkout' : 'checkin');
-                    triggerDoorUnlock();
-                }
-            } catch (err) {
-                if (err.response?.status === 401 || err.response?.status === 403) {
-                    setMessage(err.response.data.message || 'Face Not Identified');
-                    setTimeout(() => { if (view === 'home' && verifyMethod === 'face') setMessage('Scanning...') }, 1500);
-                } else if (err.response?.status === 503) {
-                    setMessage('Biometric Engine Offline');
-                } else if (!err.response) {
-                    setMessage('Server Offline. Cannot connect to Backend.');
-                } else {
-                    setMessage('Scanning...');
-                }
-            }
+                if (res.data.success) applyResult(res.data, res.data.user?.name || res.data.name, res.data.user?.employee_id || res.data.employeeId);
+            } catch (err) { handleError(err); }
         } finally {
             verifyInFlightRef.current = false;
         }
@@ -1131,11 +1166,11 @@ export default function TerminalHome() {
                             </motion.p>
                             <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                                 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
-                                Face Not Recognized
+                                {result?.title || 'Face Not Recognized'}
                             </motion.h2>
                             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
                                 className="text-rose-500 font-bold text-sm uppercase tracking-widest mb-1">
-                                Please Try Again
+                                {result?.subtitle || 'Please Try Again'}
                             </motion.p>
                             {message && message !== 'Face not recognized' && (
                                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }}

@@ -46,7 +46,7 @@ export default function DoorControl() {
                 isOnline: status.online,
                 isConnected: status.isConnected,
                 isLocked: status.isLocked !== undefined ? status.isLocked : prev.isLocked,
-                rssi: status.rssi || (status.online ? -65 : -100),
+                rssi: typeof status.rssi === 'number' ? status.rssi : null,
                 lastActivity: new Date()
             }));
             if (status.mac) setDeviceInfo(prev => ({ ...prev, name: status.name, mac: status.mac }));
@@ -117,7 +117,7 @@ export default function DoorControl() {
             {/* Header with Live Badge */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h1 className="text-2xl md:text-5xl font-black text-white tracking-tighter mb-2">Door Manager <span className="text-blue-500">v2.1</span></h1>
+                    <h1 className="text-2xl md:text-5xl font-black text-slate-900 tracking-tighter mb-2">Door Manager <span className="text-blue-500">v2.1</span></h1>
                     <div className="flex flex-wrap items-center gap-2 md:gap-4">
                         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em]">Hardware Ecosystem Control</p>
                         <div className="hidden md:block h-px w-12 bg-white/10" />
@@ -171,16 +171,16 @@ export default function DoorControl() {
                             <div className="flex-grow grid grid-cols-2 md:grid-cols-3 gap-y-10 gap-x-6 w-full">
                                 <div>
                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Target Device</p>
-                                    <h3 className="text-xl font-black text-white truncate">{deviceInfo.name}</h3>
+                                    <h3 className="text-xl font-black text-slate-900 truncate">{deviceInfo.name}</h3>
                                     <code className="text-[10px] font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded mt-1 block w-fit italic">{deviceInfo.mac}</code>
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Signal Strength</p>
                                     <div className="flex items-center gap-3">
                                         <div className="flex-grow h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                            <div className="h-full bg-blue-500 transition-all duration-1000" style={{ width: `${Math.max(0, 100 + doorState.rssi)}%` }} />
+                                            <div className="h-full bg-blue-500 transition-all duration-1000" style={{ width: doorState.rssi == null ? '0%' : `${Math.max(0, 100 + doorState.rssi)}%` }} />
                                         </div>
-                                        <span className="text-sm font-black text-white tabular-nums">{doorState.rssi} <span className="text-[9px] text-slate-500">dBm</span></span>
+                                        <span className="text-sm font-black text-white tabular-nums">{doorState.rssi == null ? 'n/a' : doorState.rssi} <span className="text-[9px] text-slate-500">dBm</span></span>
                                     </div>
                                 </div>
                                 <div>
@@ -234,7 +234,7 @@ export default function DoorControl() {
                     <div className={SECTION_STYLE}>
                         <div className="flex items-center gap-3 mb-8">
                             <Zap className="w-5 h-5 text-amber-400" />
-                            <h2 className="text-xl font-black text-white tracking-tight">Hardware Diagnostics</h2>
+                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Hardware Diagnostics</h2>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {[{ name: 'Test Relay', icon: RotateCcw, color: 'text-indigo-400', api: apiService.testRelay },
@@ -261,7 +261,7 @@ export default function DoorControl() {
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-3">
                                 <Search className="w-5 h-5 text-blue-400" />
-                                <h2 className="text-xl font-black text-white tracking-tight">BLE Scanner</h2>
+                                <h2 className="text-xl font-black text-slate-900 tracking-tight">BLE Scanner</h2>
                             </div>
                             <button
                                 onClick={startScan}
@@ -313,7 +313,7 @@ export default function DoorControl() {
                     <div className={SECTION_STYLE}>
                         <div className="flex items-center gap-3 mb-8">
                             <History className="w-5 h-5 text-indigo-400" />
-                            <h2 className="text-xl font-black text-white tracking-tight">Live Event Feed</h2>
+                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Live Event Feed</h2>
                         </div>
                         <div className="space-y-6">
                             {logs.slice(0, 6).map((log, i) => (
@@ -333,7 +333,7 @@ export default function DoorControl() {
                                 </div>
                             ))}
                         </div>
-                        <button onClick={() => window.location.href = '/logs'} className="w-full mt-10 py-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-all">View All Audit Logs</button>
+                        <button onClick={() => window.location.href = '/admin/logs'} className="w-full mt-10 py-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-all">View All Audit Logs</button>
                     </div>
                 </div>
             </div>

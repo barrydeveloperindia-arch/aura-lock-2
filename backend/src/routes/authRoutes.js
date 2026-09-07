@@ -9,6 +9,7 @@ const authLimiter = (req, res, next) => next();
 router.post('/auth/login', authLimiter, authController.login);
 
 // Update Admin Credentials
-router.post('/api/system/update-credentials', authController.updateCredentials);
+const { authenticateToken, isAdmin } = require('../middleware/auth');
+router.post('/api/system/update-credentials', authenticateToken, isAdmin, authController.updateCredentials);
 
 module.exports = router;

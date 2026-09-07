@@ -26,7 +26,7 @@ export default function Reports() {
         "July", "August", "September", "October", "November", "December"
     ];
 
-    const years = [2024, 2025, 2026];
+    const years = Array.from({ length: new Date().getFullYear() - 2024 + 2 }, (_, i) => 2024 + i);
 
     useEffect(() => {
         fetchInitialData();
@@ -63,7 +63,7 @@ export default function Reports() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-black text-white mb-2 tracking-tighter uppercase">Attendance Analytics</h1>
+                    <h1 className="text-3xl font-black text-slate-900 mb-2 tracking-tighter uppercase">Attendance Analytics</h1>
                     <p className="text-slate-500 text-sm font-medium uppercase tracking-[0.2em]">Data Insights // Performance Audit</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 md:gap-3">
@@ -82,7 +82,7 @@ export default function Reports() {
                 <div className="card p-8 bg-white/[0.02] border border-white/[0.05]">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-xl font-black text-white tracking-tight">Presence Volume</h2>
+                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Presence Volume</h2>
                             <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-bold">7-Day Rolling Activity</p>
                         </div>
                         <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
@@ -115,7 +115,7 @@ export default function Reports() {
                 <div className="card p-8 bg-white/[0.02] border border-white/[0.05]">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-xl font-black text-white tracking-tight">Punctuality Score</h2>
+                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Punctuality Score</h2>
                             <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-bold">Consistency Metrics</p>
                         </div>
                         <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
@@ -147,7 +147,7 @@ export default function Reports() {
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Monthly Report Generation</h2>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Monthly Report Generation</h2>
                         <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Personnel Aggregation // {months[selectedMonth - 1]} {selectedYear}</p>
                     </div>
 
@@ -211,7 +211,7 @@ export default function Reports() {
                                             <td className="px-4 md:px-8 py-5">
                                                 <div className="flex items-center gap-3 md:gap-4">
                                                     <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-slate-900 border border-white/5 flex items-center justify-center text-[10px] md:text-xs font-black text-slate-500 uppercase">
-                                                        {row.name[0]}
+                                                        {(row.name || '?')[0]}
                                                     </div>
                                                     <div className="min-w-0">
                                                         <div className="text-xs md:text-sm font-bold text-white group-hover:text-blue-400 transition-colors truncate">{row.name}</div>

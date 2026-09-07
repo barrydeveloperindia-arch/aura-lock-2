@@ -16,7 +16,20 @@ except ImportError:
     HAS_BLE = False
     print("[WARNING] Bleak not found. BLE features will be disabled.")
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Header, Depends
+from fastapi.responses import JSONResponse
+
+# Shared secret between the Node backend and this engine. When ENGINE_KEY is set,
+# every endpoint that enrols, deletes or verifies faces requires the same value
+# in the X-Engine-Key header; without it the engine was open to anyone who could
+# reach the Cloud Run URL (enrol their own face as any employee).
+ENGINE_KEY = os.getenv("ENGINE_KEY", "")
+async def require_engine_key(x_engine_key: str = Header(default=None)):
+    if ENGINE_KEY and x_engine_key != ENGINE_KEY:
+        raise HTTPException(status_code=401, detail="Engine key required")
+    return True
+
+MAX_IMAGE_SIDE = 1024  # dlib HOG on a 12-MP phone photo takes seconds and hundreds of MB
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 try:
@@ -401,18 +414,17 @@ async def door_scan_endpoint():
             "rssi": getattr(d, 'rssi', -100)
         } for d in devices]
 
-@app.post("/api/biometrics/cache/rebuild")
-async def rebuild_cache_endpoint():
-    """Trigger a manual refresh of the local face templates cache."""
-    print("[INFO] Manual cache rebuild triggered...")
-    await sync_task()
-    return {"success": True, "message": "Biometric cache rebuilt successfully"}
-
 @app.get("/health")
 async def health_check():
-    return {"status": "ready", "engine": "face-recognition", "model": "HOG/CNN", "timestamp": datetime.utcnow()}
+    # A fresh instance starts with an empty cache; until the first sync lands every
+    # verify would answer "No registered users found", so report not-ready instead.
+    loaded = int(FACE_VECTORS.shape[0]) if hasattr(FACE_VECTORS, "shape") and FACE_VECTORS.ndim > 0 else 0
+    body = {"status": "ready" if loaded > 0 else "warming", "engine": "face-recognition", "model": "HOG/CNN", "faces": loaded, "timestamp": datetime.utcnow().isoformat()}
+    if loaded == 0:
+        return JSONResponse(status_code=503, content=body)
+    return body
 
-@app.post("/api/biometrics/face/register")
+@app.post("/api/biometrics/face/register", dependencies=[Depends(require_engine_key)])
 async def register_face(
     employeeId: str = Form(...),
     email: str = Form(...),
@@ -434,6 +446,7 @@ async def register_face(
             # FORCE CONVERSION TO RGB
             if image.mode != "RGB":
                 image = image.convert("RGB")
+            image.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE))  # cap size before dlib
             
             frame = np.array(image)
             
@@ -447,7 +460,7 @@ async def register_face(
         # 2. Detect and encode using face-recognition
         try:
             if HAS_FACE_REC:
-                encodings = face_recognition.face_encodings(frame)
+                encodings = await asyncio.to_thread(face_recognition.face_encodings, frame)
                 if not encodings:
                     return {"success": False, "message": "No face detected.", "error_code": "NO_FACE"}
                 encoding_list = encodings[0].tolist()
@@ -492,8 +505,8 @@ async def register_face(
                     same_employee = (conflicting_emp.get("employee_id") == employeeId)
                     is_re_enroll = re_enroll.lower() == "true"
                     
-                    if same_employee or is_re_enroll:
-                        print(f"[INFO] Conflict guard bypassed for re-enrollment of {employeeId}")
+                    if same_employee:
+                        print(f"[INFO] Conflict guard bypassed for re-enrollment of {employeeId} (re_enroll={is_re_enroll})")
                     else:
                         print(f"[REJECTED] Biometric Conflict! Face already registered to: {conflicting_emp['name']}")
                         
@@ -587,7 +600,7 @@ async def register_face(
         print(f"[ERROR] Registration Error: {str(e)}")
         return {"success": False, "message": f"Engine Error: {str(e)}"}
 
-@app.post("/api/biometrics/face/verify")
+@app.post("/api/biometrics/face/verify", dependencies=[Depends(require_engine_key)])
 async def verify_face(file: UploadFile = File(...)):
     """
     Verify a live frame against registered encodings.
@@ -606,6 +619,9 @@ async def verify_face(file: UploadFile = File(...)):
             import cv2
             nparr = np.frombuffer(contents, np.uint8)
             frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if frame is not None and max(frame.shape[:2]) > MAX_IMAGE_SIDE:
+                scale = MAX_IMAGE_SIDE / max(frame.shape[:2])
+                frame = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
             
             if frame is None:
                 raise Exception("OpenCV decoding returned None")
@@ -628,7 +644,7 @@ async def verify_face(file: UploadFile = File(...)):
         # 2. Single Embedding Generation
         try:
             if HAS_FACE_REC:
-                live_encodings = face_recognition.face_encodings(frame)
+                live_encodings = await asyncio.to_thread(face_recognition.face_encodings, frame)
                 if not live_encodings:
                     return {"success": False, "message": "No face detected."}
                 live_encoding = live_encodings[0]
@@ -750,6 +766,7 @@ async def verify_face(file: UploadFile = File(...)):
                 "success": False,
                 "message": "Ambiguous Match: Multiple users similar.",
                 "error_code": "AMBIGUOUS_MATCH",
+                "id_hint": matched_emp["employee_id"],
                 "confidence": max_similarity
             }
 
@@ -757,7 +774,7 @@ async def verify_face(file: UploadFile = File(...)):
         is_live, liveness_msg = await check_liveness(contents)
         if not is_live:
             print(f"[SECURITY] REJECTED: {liveness_msg} for {matched_emp['employee_id']}")
-            asyncio.create_task(background_log_access(matched_emp["employee_id"], "spoof_detected", max_similarity, "terminal_01"))
+            asyncio.create_task(background_log_access(matched_emp["employee_id"], "failed", max_similarity, "terminal_01"))
             return {
                 "success": False,
                 "message": f"Security Alert: {liveness_msg}",
@@ -800,7 +817,7 @@ async def verify_face(file: UploadFile = File(...)):
 
 # ── Biometric Cache Management ─────────────────────────────────────────────────
 
-@app.delete("/api/biometrics/face/{employee_id}")
+@app.delete("/api/biometrics/face/{employee_id}", dependencies=[Depends(require_engine_key)])
 async def delete_face(employee_id: str):
     """
     Remove a specific employee's face template from local cache and database.
@@ -819,7 +836,7 @@ async def delete_face(employee_id: str):
 
     return {"success": True, "message": f"Face data removed for {employee_id}"}
 
-@app.post("/api/biometrics/cache/rebuild")
+@app.post("/api/biometrics/cache/rebuild", dependencies=[Depends(require_engine_key)])
 async def rebuild_cache():
     """
     Force a full rebuild of face_cache.json from face_encodings.

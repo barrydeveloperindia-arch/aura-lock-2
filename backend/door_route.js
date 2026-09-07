@@ -3,6 +3,7 @@ const router = express.Router();
 const { unlockDoor, lockDoor, checkStatus, getDeviceInfo, rebuildCache, clearLogs } = require('./doorService');
 
 const supabase = require('./supabase');
+const { logAccess } = require('./src/lib/db');
 
 global.remoteUnlockRequested = false;
 
@@ -15,24 +16,12 @@ router.post('/unlock', async (req, res) => {
     try {
         // Flag the android tablet to open the door locally
         global.remoteUnlockRequested = true;
+        global.remoteUnlockRequestedAt = Date.now();
         
         console.log('✅ Remote door unlock signal queued for Tablet');
 
         // Log the remote unlock event
-        try {
-            await supabase.from('access_logs').insert({
-                employee_id: null,
-                status: 'success',
-                device_id: 'admin_panel',
-                method: 'REMOTE',
-                metadata: { 
-                    operator: req.user?.email || 'admin',
-                    unlock_source: 'ADMIN_PANEL'
-                }
-            });
-        } catch (logError) {
-            console.error("⚠️ Failed to record remote unlock log:", logError.message);
-        }
+        await logAccess(supabase, { employee_id: null, status: 'success', device_id: 'admin_panel', method: 'REMOTE', metadata: { operator: req.user?.email || 'admin', unlock_source: 'ADMIN_PANEL' } });
 
         return res.json({ success: true, message: "Signal sent to tablet", timestamp: new Date().toISOString() });
     } catch (error) {
