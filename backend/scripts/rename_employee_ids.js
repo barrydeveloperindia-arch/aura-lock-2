@@ -45,13 +45,19 @@ const BUCKET = 'attendance-photos';
     if (!APPLY || plan.length === 0) return;
 
     const dir = path.join(__dirname, '..', 'backups'); fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, `employee-ids-${Date.now()}.json`), JSON.stringify(plan, null, 2));
+    const faceBackup = {};
+    for (const p of plan) faceBackup[p.from] = (await sb.from('face_encodings').select('*').eq('employee_id', p.from)).data;
+    fs.writeFileSync(path.join(dir, `employee-ids-${Date.now()}.json`), JSON.stringify({ plan, face_encodings: faceBackup }, null, 2));
 
     for (const p of plan) {
         const step = async (label, fn) => { const { error: e } = await fn(); console.log(`  ${p.to} ${label}: ${e ? 'FAILED ' + e.message : 'ok'}`); if (e) throw e; };
-        await step('employees', () => sb.from('employees').update({ employee_id: p.to }).eq('id', p.uuid));
+        // face_encodings has a plain FK to employees (no cascade): lift the rows out, rename, put them back with the new id.
+        const { data: faces, error: fErr } = await sb.from('face_encodings').select('*').eq('employee_id', p.from);
+        if (fErr) throw fErr;
+        if (faces.length) await step(`face_encodings lift (${faces.length})`, () => sb.from('face_encodings').delete().eq('employee_id', p.from));
+        await step('employees (access_logs follow by cascade)', () => sb.from('employees').update({ employee_id: p.to }).eq('id', p.uuid));
         await step(`access_logs (${p.access_logs})`, () => sb.from('access_logs').update({ employee_id: p.to }).eq('employee_id', p.from));
-        await step('face_encodings', () => sb.from('face_encodings').update({ employee_id: p.to }).eq('employee_id', p.from));
+        if (faces.length) await step('face_encodings restore', () => sb.from('face_encodings').insert(faces.map(f => ({ ...f, employee_id: p.to }))));
         if (p.avatar) await step('avatar file', () => sb.storage.from(BUCKET).move(`avatars/${p.from}.jpg`, `avatars/${p.to}.jpg`));
     }
     console.log('done. Backup in backend/backups/. The engine picks up the new IDs within 60 s.');
