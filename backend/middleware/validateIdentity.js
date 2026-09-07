@@ -1,4 +1,5 @@
 const supabase = require('../supabase');
+const { isValidEmail, normalizeEmail } = require('../src/lib/validate');
 
 /**
  * Middleware to enforce identity integrity.
@@ -18,6 +19,14 @@ const validateIdentity = async (req, res, next) => {
     console.log(`🛡️ [IdentityValidation] ${req.method} ${req.url} | finalId: ${finalId} | isReEnroll: ${isReEnroll}`);
     if (Object.keys(req.body).length === 0) {
         console.warn("⚠️ [IdentityValidation] Empty body detected! Possibly Multer hasn't finished parsing?");
+    }
+
+    // Email: optional, but when given it must be a real address (name@domain.tld) and is stored lower-cased
+    if (req.body.email !== undefined && req.body.email !== null && String(req.body.email).trim() !== '') {
+        if (!isValidEmail(req.body.email)) {
+            return res.status(400).json({ success: false, message: 'Enter a valid email address, e.g. name@gmail.com' });
+        }
+        req.body.email = normalizeEmail(req.body.email);
     }
 
     // When re-enrolling biometrics the employee MUST already exist.

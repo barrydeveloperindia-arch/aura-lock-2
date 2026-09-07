@@ -105,6 +105,7 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
     const handleSubmit = async (e, enrollType = null) => {
         if (e) e.preventDefault();
         if (!form.name.trim() || !form.email.trim()) { setErr('Name and email are required.'); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(form.email.trim())) { setErr('Enter a valid email address, e.g. name@gmail.com'); return; }
         if (!String(form.employee_id || '').trim()) { setErr('Employee ID is required (e.g. EMP-037).'); return; }
         setSaving(true); setErr('');
         try { 
