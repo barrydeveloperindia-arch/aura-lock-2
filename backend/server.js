@@ -29,7 +29,10 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '2026';
 const JWT_SECRET = process.env.JWT_SECRET || 'auralock_super_secret_key_2026';
 
 // â”€â”€ Service Discovery â”€â”€
-let PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'https://smart-door-edge-50851729985.asia-south1.run.app';
+// Fixed for the life of the process. Never "discover" another engine: the old
+// smart-door-edge service still answers /health but has no enrolled faces, and
+// silently switching to it made every scan fail with "No registered users found".
+const PYTHON_ENGINE_URL = process.env.PYTHON_ENGINE_URL || 'https://auralock-biometric-engine-50851729985.asia-south1.run.app';
 
 console.log('ðŸ§¬ [Biometrics] Target Engine:', PYTHON_ENGINE_URL);
 console.log('ðŸš€ [Config] ADMIN_EMAIL:', ADMIN_EMAIL);
@@ -961,35 +964,20 @@ app.post('/api/biometrics/face/register', upload.single('file'), validateIdentit
     }
 });
 
-// Biometric Health Proxy with Multi-Fallback Discovery
+// Health of the ONE configured engine. Cloud Run cold starts can take 10-20 s,
+// so wait for that instead of failing over to a different service.
 app.get('/api/biometrics/health', async (req, res) => {
-    const fallbacks = [
-        PYTHON_ENGINE_URL,
-        'https://smart-door-edge-50851729985.asia-south1.run.app',
-        'http://smart-door-edge:8001',
-        'http://localhost:8001'
-    ].filter(Boolean);
-
-    for (const url of fallbacks) {
-        try {
-            console.log(`ðŸ” [Health Check] Trying: ${url}/health`);
-            await axios.get(`${url}/health`, { timeout: 3000 });
-            // If success, update the global URL if it was a fallback
-            if (url !== PYTHON_ENGINE_URL) {
-                console.log(`âœ… [Discovery] Updating PYTHON_ENGINE_URL to proven fallback: ${url}`);
-                PYTHON_ENGINE_URL = url;
-            }
-            return res.json({ status: 'ready', engine: 'face-recognition', url });
-        } catch (err) {
-            console.warn(`âš ï¸ [Health Check] Failed for ${url}: ${err.message}`);
-        }
+    try {
+        await axios.get(`${PYTHON_ENGINE_URL}/health`, { timeout: 20000 });
+        return res.json({ status: 'ready', engine: 'face-recognition', url: PYTHON_ENGINE_URL });
+    } catch (err) {
+        console.warn(`[Health Check] Engine not ready at ${PYTHON_ENGINE_URL}: ${err.message}`);
+        return res.status(503).json({
+            status: 'offline',
+            message: 'Biometric engine is starting up or unreachable. Please try again in a few seconds.',
+            url: PYTHON_ENGINE_URL
+        });
     }
-
-    res.status(503).json({ 
-        status: "offline", 
-        message: "Biometric Engine unreachable across all known internal hostnames",
-        tried_urls: fallbacks
-    });
 });
 
 app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'), async (req, res) => {
