@@ -1,0 +1,58 @@
+/**
+ * Rename employee IDs everywhere they are referenced.
+ *
+ *   node scripts/rename_employee_ids.js                 # dry run: show what would change
+ *   node scripts/rename_employee_ids.js --apply         # do it (backup written to backend/backups/)
+ *   node scripts/rename_employee_ids.js --map "Old=NEW;Old2=NEW2" [--apply]
+ *
+ * Touches: employees.employee_id, access_logs.employee_id (text EID),
+ * face_encodings.employee_id (engine re-reads it within 60 s), and the avatar
+ * file avatars/<id>.jpg. attendance rows key on the employee UUID, so they
+ * are unaffected. The terminal re-syncs its local face list every 5 minutes.
+ */
+require('dotenv').config({ path: __dirname + '/../.env', quiet: true });
+const fs = require('fs');
+const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
+
+const APPLY = process.argv.includes('--apply');
+const mapArg = process.argv[process.argv.indexOf('--map') + 1];
+const DEFAULT_MAP = { 'Eng_dharm': 'EMP-041', 'Amresh': 'EMP-042' };
+const MAP = process.argv.includes('--map')
+    ? Object.fromEntries(mapArg.split(';').map(p => p.split('=').map(s => s.trim())).filter(([a, b]) => a && b))
+    : DEFAULT_MAP;
+
+const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+const BUCKET = 'attendance-photos';
+
+(async () => {
+    const { data: all, error } = await sb.from('employees').select('id, employee_id, name, status, is_deleted');
+    if (error) throw error;
+    const byId = new Map(all.map(e => [e.employee_id, e]));
+    const taken = new Set(all.map(e => e.employee_id.toUpperCase()));
+    const plan = [];
+    for (const [from, to] of Object.entries(MAP)) {
+        const emp = byId.get(from);
+        if (!emp) { console.log(`skip ${from}: no such employee`); continue; }
+        if (!/^EMP-\d{3}$/.test(to)) { console.log(`skip ${from}: target ${to} is not EMP-###`); continue; }
+        if (taken.has(to.toUpperCase())) { console.log(`skip ${from}: ${to} is already used`); continue; }
+        const count = async (t) => (await sb.from(t).select('*', { count: 'exact', head: true }).eq('employee_id', from)).count || 0;
+        const { data: av } = await sb.storage.from(BUCKET).list('avatars', { search: from });
+        plan.push({ from, to, uuid: emp.id, name: emp.name.trim(), access_logs: await count('access_logs'), face_encodings: await count('face_encodings'), avatar: (av || []).some(f => f.name === `${from}.jpg`) });
+    }
+    console.log(`${APPLY ? 'APPLYING' : 'DRY RUN'}: ${plan.length} rename(s)`);
+    for (const p of plan) console.log(`  ${p.from} -> ${p.to}  ${p.name}  | access_logs ${p.access_logs} | face_encodings ${p.face_encodings} | avatar ${p.avatar ? 'yes' : 'no'}`);
+    if (!APPLY || plan.length === 0) return;
+
+    const dir = path.join(__dirname, '..', 'backups'); fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, `employee-ids-${Date.now()}.json`), JSON.stringify(plan, null, 2));
+
+    for (const p of plan) {
+        const step = async (label, fn) => { const { error: e } = await fn(); console.log(`  ${p.to} ${label}: ${e ? 'FAILED ' + e.message : 'ok'}`); if (e) throw e; };
+        await step('employees', () => sb.from('employees').update({ employee_id: p.to }).eq('id', p.uuid));
+        await step(`access_logs (${p.access_logs})`, () => sb.from('access_logs').update({ employee_id: p.to }).eq('employee_id', p.from));
+        await step('face_encodings', () => sb.from('face_encodings').update({ employee_id: p.to }).eq('employee_id', p.from));
+        if (p.avatar) await step('avatar file', () => sb.storage.from(BUCKET).move(`avatars/${p.from}.jpg`, `avatars/${p.to}.jpg`));
+    }
+    console.log('done. Backup in backend/backups/. The engine picks up the new IDs within 60 s.');
+})().catch(e => { console.error('FAIL', e.message); process.exit(1); });
