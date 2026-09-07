@@ -98,7 +98,7 @@ function DeleteDialog({ user, onConfirm, onCancel }) {
 }
 
 // ── Add / Edit Modal ──────────────────────────────────────────────────────────
-function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnrollFP }) {
+function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnrollFP, departments = DEPARTMENTS }) {
     const [form, setForm] = useState(initialData || EMPTY_FORM);
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState('');
@@ -149,7 +149,7 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                                    focus:outline-none focus:border-blue-500/40 transition-colors placeholder:text-slate-700" 
                     />
                     <datalist id="departments-list">
-                        {DEPARTMENTS.map(d => <option key={d} value={d} />)}
+                        {departments.map(d => <option key={d} value={d} />)}
                     </datalist>
                 </div>
                 {err && <p className="text-xs font-bold text-red-400 bg-red-500/10 px-3 py-2 rounded-xl border border-red-500/20">{err}</p>}
@@ -600,6 +600,14 @@ export default function Users() {
 
     const { toasts, add: addToast, dismiss } = useToast();
 
+    // Departments actually in use (from the API) merged with the known list, so anything
+    // typed in the dashboard shows up as a suggestion next time.
+    const [liveDepartments, setLiveDepartments] = useState([]);
+    useEffect(() => {
+        apiService.getDepartments().then(d => setLiveDepartments(Array.isArray(d) ? d : [])).catch(() => {});
+    }, []);
+    const allDepartments = [...new Set([...DEPARTMENTS, ...liveDepartments.filter(Boolean)])].sort((a, b) => a.localeCompare(b));
+
     useEffect(() => { fetchUsers(); }, []);
 
     const fetchUsers = async () => {
@@ -706,8 +714,8 @@ export default function Users() {
             <Toast toasts={toasts} dismiss={dismiss} />
 
             {/* Modals */}
-            {addOpen && <EmployeeModal mode="add" onSave={handleAdd} onClose={() => setAddOpen(false)} onEnrollFace={setFaceTarget} onEnrollFP={setFpTarget} />}
-            {editTarget && <EmployeeModal mode="edit" initialData={editTarget} onSave={handleEdit} onClose={() => setEditTarget(null)} onEnrollFace={setFaceTarget} onEnrollFP={setFpTarget} />}
+            {addOpen && <EmployeeModal departments={allDepartments} mode="add" onSave={handleAdd} onClose={() => setAddOpen(false)} onEnrollFace={setFaceTarget} onEnrollFP={setFpTarget} />}
+            {editTarget && <EmployeeModal departments={allDepartments} mode="edit" initialData={editTarget} onSave={handleEdit} onClose={() => setEditTarget(null)} onEnrollFace={setFaceTarget} onEnrollFP={setFpTarget} />}
             {faceTarget && <FaceEnrollModal user={faceTarget} onDone={handleFaceEnrolled} onClose={() => setFaceTarget(null)} />}
             {fpTarget && <FingerprintEnrollModal user={fpTarget} onDone={handleFPEnrolled} onClose={() => setFpTarget(null)} />}
             <DeleteDialog user={deleteTarget} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteTarget(null)} />

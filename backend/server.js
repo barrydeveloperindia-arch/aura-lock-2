@@ -1079,7 +1079,28 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
 
                 // --- RECORD ATTENDANCE ---
                 // We need the internal UUID for the attendance table
-                const { data: empRecord } = await supabase.from('employees').select('id').eq('employee_id', employeeId).single();
+                const { data: empRecord } = await supabase.from('employees').select('id, status, is_deleted').eq('employee_id', employeeId).single();
+
+                // A face may still be cached in the engine after the employee was deleted or
+                // disabled in the dashboard. Never record attendance or unlock for them.
+                if (!empRecord || empRecord.is_deleted || empRecord.status !== 'Active') {
+                    console.warn(`[Verification] Face matched ${employeeId} but the employee is ${!empRecord ? 'missing' : empRecord.is_deleted ? 'deleted' : empRecord.status}. Denied.`);
+                    try {
+                        await supabase.from('access_logs').insert({
+                            employee_id: empRecord?.id || null,
+                            status: 'failed',
+                            device_id: 'terminal_01',
+                            method: 'face',
+                            metadata: { reason: 'Employee deleted or disabled', employee_code: employeeId, location: scanLocation }
+                        });
+                    } catch (le) { console.error('Failed to log denied scan:', le.message); }
+                    return res.status(403).json({
+                        success: false,
+                        error_code: 'EMPLOYEE_INACTIVE',
+                        message: 'Access disabled. Please contact the administrator.'
+                    });
+                }
+
                 let attendanceResult = null;
                 let photo = null;
                 if (empRecord) {
