@@ -22,6 +22,7 @@ router.get('/', authenticateToken, attendanceController.getAttendanceList);
 
 // Attendance photos: signed URL for one event, employee avatars, and admin retention sweep
 router.get('/avatars', authenticateToken, attendanceController.getEmployeeAvatars);
+router.get('/locations', authenticateToken, attendanceController.getAttendanceLocations);
 router.get('/:id/photo/:kind', authenticateToken, attendanceController.getAttendancePhoto);
 router.post('/photos/cleanup', authenticateToken, isAdmin, attendanceController.cleanupAttendancePhotos);
 router.get('/employee/:employee_id', authenticateToken, attendanceController.getEmployeeHistory);

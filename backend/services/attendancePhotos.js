@@ -98,11 +98,13 @@ function normalizeLocation(raw) {
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
     // Accept both the raw multipart field (accuracy) and an already-normalised
     // object (accuracy_m) so normalising twice never drops the +/- metres.
-    const accuracy = Number(raw.accuracy ?? raw.accuracy_m);
+    const rawAcc = raw.accuracy ?? raw.accuracy_m;
+    // null / empty / 0 all mean "unknown": a 0 m radius is never a real GPS reading
+    const accuracy = rawAcc === null || rawAcc === undefined || rawAcc === "" ? NaN : Number(rawAcc);
     return {
         lat: Math.round(lat * 1e6) / 1e6,
         lng: Math.round(lng * 1e6) / 1e6,
-        accuracy_m: Number.isFinite(accuracy) ? Math.round(accuracy) : null,
+        accuracy_m: Number.isFinite(accuracy) && accuracy > 0 ? Math.round(accuracy) : null,
         fix_time: raw.fix_time || null,
     };
 }
@@ -131,6 +133,38 @@ async function getPhotoLocation({ date, attendanceId, kind }) {
     } catch (_err) {
         return null;
     }
+}
+
+/**
+ * Every GPS sidecar stored for one day, for the Live Map.
+ * One bucket listing, then the JSON files are downloaded in parallel.
+ * @returns {Promise<Map<string,{in:object|null,out:object|null}>>} keyed by attendance id
+ */
+async function getPhotoLocationsForDate(date) {
+    const result = new Map();
+    if (!isValidDate(date)) return result;
+    let objects = [];
+    try {
+        const { data, error } = await getClient().storage.from(BUCKET).list(date, { limit: 1000 });
+        if (error || !data) return result;
+        objects = data;
+    } catch (err) {
+        console.error(`[Photos] Sidecar list failed for ${date}: ${err.message}`);
+        return result;
+    }
+    const wanted = [];
+    for (const obj of objects) {
+        const m = /^([0-9a-fA-F-]{36})_(in|out)\.json$/.exec(obj.name);
+        if (m) wanted.push({ attendanceId: m[1], kind: m[2] });
+    }
+    await Promise.all(wanted.map(async ({ attendanceId, kind }) => {
+        const sidecar = await getPhotoLocation({ date, attendanceId, kind });
+        if (!sidecar) return;
+        const entry = result.get(attendanceId) || { in: null, out: null };
+        entry[kind] = sidecar;
+        result.set(attendanceId, entry);
+    }));
+    return result;
 }
 
 // ── Employee avatars ──────────────────────────────────────────────────────────
@@ -472,6 +506,7 @@ module.exports = {
     formatStampLocation,
     normalizeLocation,
     getPhotoLocation,
+    getPhotoLocationsForDate,
     makeAvatar,
     avatarPath,
     saveEmployeeAvatar,

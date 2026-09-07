@@ -170,6 +170,12 @@ export const apiService = {
         return response.data;
     },
 
+    // Live Map: today's (or one date's) check-in / check-out GPS fixes per active employee
+    getAttendanceLocations: async (date) => {
+        const response = await api.get('/api/attendance/locations', { params: date ? { date } : {} });
+        return response.data;
+    },
+
     // Signed avatar URLs (1h) for many employees: { avatars: { 'EMP-001': url, ... } }
     getAvatars: async (employeeIds) => {
         const ids = [...new Set((employeeIds || []).filter(Boolean))];

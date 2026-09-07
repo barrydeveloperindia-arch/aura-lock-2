@@ -42,6 +42,11 @@ function makeFakeStorage(initialFiles = {}) {
             for (const p of paths) delete files[p];
             return { data: paths, error: null };
         },
+        download: async (path) => {
+            if (!files[path]) return { data: null, error: { message: 'Object not found' } };
+            const buf = files[path];
+            return { data: { text: async () => buf.toString('utf8'), arrayBuffer: async () => buf }, error: null };
+        },
         createSignedUrl: async (path, ttl) => {
             calls.signed.push({ path, ttl });
             if (!files[path]) return { data: null, error: { message: 'Object not found' } };
@@ -221,6 +226,31 @@ describe('attendancePhotos.stampPhoto', () => {
     });
 });
 
+describe('attendancePhotos.getPhotoLocationsForDate (Live Map)', () => {
+    const side = (kind, lat) => Buffer.from(JSON.stringify({ attendance_id: ATT_ID, kind, captured_at: '2026-09-07T03:35:13Z', location: { lat, lng: 76.852932, accuracy_m: 9, fix_time: 't' }, source: 'terminal' }));
+    test('returns every valid sidecar of the day keyed by attendance id, ignoring photos and junk', async () => {
+        const fake = makeFakeStorage({
+            ['2026-09-07/' + ATT_ID + '_in.jpg']: Buffer.from('jpg'),
+            ['2026-09-07/' + ATT_ID + '_in.json']: side('in', 30.721805),
+            ['2026-09-07/' + ATT_ID + '_out.json']: side('out', 30.721836),
+            ['2026-09-07/' + ATT_ID_2 + '_in.json']: Buffer.from('{"location":{"lat":"abc"}}'),
+            ['2026-09-07/not-an-id_in.json']: side('in', 1),
+            ['2026-09-06/' + ATT_ID_2 + '_in.json']: side('in', 2),
+        });
+        photos._setClientForTests(fake.client);
+        const m = await photos.getPhotoLocationsForDate('2026-09-07');
+        assert.equal(m.size, 1);
+        assert.equal(m.get(ATT_ID).in.location.lat, 30.721805);
+        assert.equal(m.get(ATT_ID).out.location.lat, 30.721836);
+        assert.equal(fake.calls.list.length, 1, 'one bucket listing per day');
+    });
+    test('bad date or empty day gives an empty map', async () => {
+        photos._setClientForTests(makeFakeStorage().client);
+        assert.equal((await photos.getPhotoLocationsForDate('07-09-2026')).size, 0);
+        assert.equal((await photos.getPhotoLocationsForDate('2026-09-07')).size, 0);
+    });
+});
+
 describe('attendancePhotos location (geo-stamp)', () => {
     const Jimp = require('jimp');
     const frame = () => new Jimp(640, 480, 0x336699FF).quality(80).getBufferAsync(Jimp.MIME_JPEG);
@@ -232,6 +262,10 @@ describe('attendancePhotos location (geo-stamp)', () => {
         assert.equal(photos.normalizeLocation({ lat: 95, lng: 10 }), null);
         assert.equal(photos.normalizeLocation(undefined), null);
         assert.equal(photos.normalizeLocation({ lat: 28.6, lng: 77.2 }).accuracy_m, null);
+        // unknown accuracy from the terminal ('0') or an old sidecar (accuracy_m: null) must not become +/-0 m
+        assert.equal(photos.normalizeLocation({ lat: 28.6, lng: 77.2, accuracy: '0' }).accuracy_m, null);
+        assert.equal(photos.normalizeLocation({ lat: 28.6, lng: 77.2, accuracy_m: null }).accuracy_m, null);
+        assert.equal(photos.normalizeLocation({ lat: 28.6, lng: 77.2, accuracy_m: 15 }).accuracy_m, 15);
     });
 
     test('normalizeLocation is idempotent: a second pass keeps accuracy (live bug 7 Sep: +/- m was always null)', () => {

@@ -8,6 +8,7 @@ import Attendance from './pages/Attendance';
 import EmployeeAttendance from './pages/EmployeeAttendance';
 import EmployeeAccess from './pages/EmployeeAccess';
 import Reports from './pages/Reports';
+import LiveMap from './pages/LiveMap';
 import Login from './pages/Login';
 
 import DoorControl from './pages/DoorControl';
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="attendance/employee/:employee_id" element={<EmployeeAttendance />} />
         <Route path="access/employee/:employee_id" element={<EmployeeAccess />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="live-map" element={<LiveMap />} />
         <Route path="logs" element={<Logs />} />
         <Route path="door-control" element={<DoorControl />} />
         <Route path="settings" element={<Settings />} />

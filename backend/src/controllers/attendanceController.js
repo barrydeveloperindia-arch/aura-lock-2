@@ -236,6 +236,56 @@ const attachAttendancePhoto = async (attendanceResult, frameBuffer, meta = {}) =
     return { kind, saved: !!saved, stamped_at: capturedAt, location: attendancePhotos.normalizeLocation(meta.location) };
 };
 
+/**
+ * Live Map: where every active employee checked in / out on one day (IST date,
+ * default today), from the GPS sidecars stored next to the attendance photos.
+ * Rows without a fix are returned too (with in/out = null) so the page can show
+ * who is present but has no location.
+ */
+exports.getAttendanceLocations = async (req, res) => {
+    try {
+        const date = attendancePhotos.isValidDate(req.query.date) ? req.query.date : istDateString();
+        const { data: rows, error } = await supabase
+            .from('attendance')
+            .select('id, date, check_in, check_out, status, employees!inner(employee_id, name, department, status, is_deleted)')
+            .eq('date', date)
+            .eq('employees.is_deleted', false)
+            .eq('employees.status', 'Active')
+            .order('check_in', { ascending: false });
+        if (error) throw error;
+
+        const sidecars = await attendancePhotos.getPhotoLocationsForDate(date);
+        const point = (sidecar) => {
+            const loc = attendancePhotos.normalizeLocation(sidecar?.location);
+            return loc ? { ...loc, captured_at: sidecar.captured_at || null, source: sidecar.source || 'terminal' } : null;
+        };
+        // One row per employee (the duplicate clean-up may not have run yet): keep the earliest check-in
+        const seen = new Set();
+        const out = [];
+        for (const r of (rows || []).slice().sort((a, b) => String(a.check_in).localeCompare(String(b.check_in)))) {
+            const eid = r.employees?.employee_id;
+            if (!eid || seen.has(eid)) continue;
+            seen.add(eid);
+            const s = sidecars.get(r.id) || {};
+            out.push({
+                attendance_id: r.id,
+                employee_id: eid,
+                name: r.employees.name,
+                department: r.employees.department || null,
+                check_in: r.check_in,
+                check_out: r.check_out,
+                status: r.status,
+                in: point(s.in),
+                out: point(s.out),
+            });
+        }
+        res.json({ date, generated_at: new Date().toISOString(), rows: out });
+    } catch (err) {
+        console.error('[Attendance] locations failed:', err.message);
+        res.status(500).json({ error: 'Could not load locations' });
+    }
+};
+
 /** Pull an optional terminal GPS fix out of a multipart/JSON body. */
 const locationFromBody = (body = {}) => attendancePhotos.normalizeLocation({
     lat: body.lat, lng: body.lng, accuracy: body.accuracy, fix_time: body.fix_time,
