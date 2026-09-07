@@ -527,6 +527,7 @@ module.exports = {
     formatStampLocation,
     normalizeLocation,
     getPhotoLocation,
+    getClient, // service-role client for the private bucket (calibration sessions reuse it)
     getPhotoLocationsForDate,
     setSidecarAddress,
     makeAvatar,

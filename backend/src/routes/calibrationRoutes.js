@@ -9,7 +9,7 @@
  */
 const express = require('express');
 const FormData = require('form-data');
-const supabase = require('../../supabase');
+const attendancePhotos = require('../../services/attendancePhotos'); // service-role client: the bucket is private
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { buildReport } = require('../lib/calibration');
 
@@ -18,7 +18,7 @@ const sessionKey = (s) => (/^[A-Za-z0-9_-]{1,40}$/.test(String(s || '')) ? Strin
 const filePath = (session) => `calibration/${session}.json`;
 
 async function readRows(session) {
-    const { data, error } = await supabase.storage.from(BUCKET).download(filePath(session));
+    const { data, error } = await attendancePhotos.getClient().storage.from(BUCKET).download(filePath(session));
     if (error || !data) return [];
     try {
         const text = typeof data.text === 'function' ? await data.text() : Buffer.from(await data.arrayBuffer()).toString('utf8');
@@ -27,7 +27,7 @@ async function readRows(session) {
     } catch (_e) { return []; }
 }
 async function writeRows(session, rows) {
-    const { error } = await supabase.storage.from(BUCKET).upload(filePath(session), Buffer.from(JSON.stringify(rows)), {
+    const { error } = await attendancePhotos.getClient().storage.from(BUCKET).upload(filePath(session), Buffer.from(JSON.stringify(rows)), {
         contentType: 'application/json', upsert: true, cacheControl: '0',
     });
     if (error) throw new Error('Could not save measurement: ' + error.message);
