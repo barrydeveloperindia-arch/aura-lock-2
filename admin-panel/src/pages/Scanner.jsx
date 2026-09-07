@@ -72,8 +72,9 @@ export default function Scanner() {
     useEffect(() => {
         const fetchEmployees = async () => {
             try {
-                const res = await axios.get(`${API_BASE}/api/users`);
-                setEmployees(res.data.filter(u => u.status !== 'Deleted'));
+                // Public terminal endpoint (no admin token needed on the scanner screen)
+                const res = await axios.get(`${API_BASE}/api/terminal/users`);
+                setEmployees((res.data || []).filter(u => u.status === 'Active'));
             } catch (err) { console.error('Failed to fetch employees:', err); }
         };
         fetchEmployees();
