@@ -4,9 +4,9 @@ import { BrowserRouter } from 'react-router-dom';
 
 // Leaflet needs a real layout engine; in jsdom we only check the page logic around it.
 vi.mock('leaflet', () => {
-    const chain = () => { const o = {}; ['addTo', 'bindPopup', 'openPopup', 'clearLayers', 'setView', 'fitBounds', 'flyTo', 'remove'].forEach(k => { o[k] = vi.fn(() => o); }); o.getZoom = () => 15; return o; };
+    const chain = () => { const o = {}; ['addTo', 'bindPopup', 'openPopup', 'clearLayers', 'setView', 'fitBounds', 'flyTo', 'remove', 'on'].forEach(k => { o[k] = vi.fn(() => o); }); o.getZoom = () => 15; o.getContainer = () => document.createElement('div'); return o; };
     const bounds = () => ({ pad: () => 'bounds' });
-    return { default: { map: () => chain(), tileLayer: () => chain(), layerGroup: () => chain(), marker: () => chain(), divIcon: (o) => o, latLngBounds: bounds } };
+    return { default: { map: () => chain(), tileLayer: () => chain(), layerGroup: () => chain(), marker: () => chain(), polyline: () => chain(), divIcon: (o) => o, latLngBounds: bounds } };
 });
 vi.mock('leaflet/dist/leaflet.css', () => ({}));
 
@@ -23,6 +23,7 @@ vi.mock('../services/api', () => ({
     apiService: {
         getAttendanceLocations: vi.fn(async () => ({ date: '2026-09-07', generated_at: 'now', rows })),
         getAvatars: vi.fn(async () => ({ avatars: {} })),
+        getAttendancePhoto: vi.fn(async (id, kind) => ({ url: 'https://signed.example/' + id + '_' + kind + '.jpg', kind, address: 'Industrial Area Phase 8B, Mohali, Punjab 160055, India', location: { lat: 30.721836, lng: 76.852475, accuracy_m: 14 } })),
     },
 }));
 
@@ -60,6 +61,25 @@ describe('LiveMap page', () => {
         expect(screen.getByText(/located of 3 present/i)).toBeInTheDocument();
         const tile = (label) => screen.getByText(label).previousSibling.textContent;
         expect([tile('Present'), tile('Located'), tile('In now'), tile('Checked out')]).toEqual(['3', '2', '2', '1']);
+    });
+
+    it('clicking a person opens their check-in card with photo, address, time and coordinates', async () => {
+        const { fireEvent } = await import('@testing-library/react');
+        render(<LiveMap />, { wrapper: BrowserRouter });
+        await waitFor(() => expect(screen.getByText('Gaurav Panchal')).toBeInTheDocument());
+        fireEvent.click(screen.getByText('Gaurav Panchal'));
+        // Gaurav has a check-out fix, so the card opens on OUT
+        await waitFor(() => expect(screen.getByRole('img', { name: /Gaurav Panchal check-out/i })).toBeInTheDocument());
+        expect(apiService.getAttendancePhoto).toHaveBeenCalledWith('a1', 'out');
+        expect(screen.getByText('Mechanical Engineering: Check-out')).toBeInTheDocument();
+        expect(screen.getByText('Industrial Area Phase 8B, Mohali, Punjab 160055, India')).toBeInTheDocument();
+        expect(screen.getByText(/30.721836, 76.852475/)).toBeInTheDocument();
+        expect(screen.getByText('Open in Google Maps')).toHaveAttribute('href', 'https://www.google.com/maps?q=30.721836,76.852475');
+        // switch to IN, then back to the list
+        fireEvent.click(screen.getByRole('button', { name: 'IN' }));
+        await waitFor(() => expect(apiService.getAttendancePhoto).toHaveBeenCalledWith('a1', 'in'));
+        fireEvent.click(screen.getByText('All staff'));
+        expect(screen.getByText('Parmod Bahl')).toBeInTheDocument();
     });
 
     it('shows an error banner when the API fails', async () => {

@@ -9,13 +9,16 @@ import {
 import { format } from 'date-fns';
 import { apiService } from '../services/api';
 import useAvatars from '../hooks/useAvatars';
+import CheckinCard from '../components/CheckinCard';
 import { lastPoint, groupPoints, groupOf } from '../lib/liveMapPoints';
 
 /**
  * Live Map (phase 1): where each staff member checked in / out today, from the
- * GPS fix the terminal sends with every scan. Pins at the same spot (the office
- * door) are grouped into one marker with a count. Phase 2 (staff phone
- * tracking between check-in and check-out) needs signed consent forms first.
+ * GPS fix the terminal sends with every scan. Pins within 25 m (the office
+ * door) are grouped into one marker with a count. Selecting a person shows
+ * their check-in card (photo, street address, time, coordinates) and their
+ * own IN / OUT pins. Phase 2 (staff phone tracking between check-in and
+ * check-out) needs signed consent forms first.
  */
 const REFRESH_MS = 60 * 1000;
 
@@ -24,7 +27,6 @@ const todayIST = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkat
 const fmtTime = (iso) => iso ? format(new Date(iso), 'HH:mm:ss') : '—';
 const initials = (name) => (name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
 const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
 const mapsLink = (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`;
 
 function markerHtml(group, avatars) {
@@ -41,9 +43,22 @@ function markerHtml(group, avatars) {
     return `<div style="position:relative;width:46px;height:46px;border-radius:9999px;background:#fff;border:3px solid ${color};box-shadow:0 6px 16px rgba(14,67,104,.25);display:flex;align-items:center;justify-content:center;overflow:visible">${face}${badge}</div>`;
 }
 
+/** Pin for one person's IN or OUT event (selected mode). */
+function eventPinHtml(kind, avatarUrl, name) {
+    const color = kind === 'in' ? '#10b981' : '#f59e0b';
+    const face = avatarUrl
+        ? `<img src="${escapeHtml(avatarUrl)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9999px" />`
+        : `<span style="font:700 12px Inter,system-ui,sans-serif;color:#0e4368">${escapeHtml(initials(name))}</span>`;
+    return `<div style="position:relative;width:44px;height:52px">
+        <div style="width:44px;height:44px;border-radius:9999px;background:#fff;border:3px solid ${color};box-shadow:0 6px 16px rgba(14,67,104,.25);display:flex;align-items:center;justify-content:center;overflow:hidden">${face}</div>
+        <div style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid ${color}"></div>
+        <span style="position:absolute;right:-6px;top:-6px;background:${color};color:#fff;font:800 9px Inter,system-ui,sans-serif;letter-spacing:.08em;border-radius:6px;padding:2px 5px;border:2px solid #fff">${kind.toUpperCase()}</span>
+    </div>`;
+}
+
 function popupHtml(group) {
     const rows = group.members.map(({ row, point }) => `
-        <div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid #e2e8f0">
+        <div data-eid="${escapeHtml(row.employee_id)}" role="button" style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid #e2e8f0;cursor:pointer">
             <div style="min-width:0">
                 <div style="font-weight:700;color:#0f172a;font-size:13px">${escapeHtml(row.name)}</div>
                 <div style="font:500 10px ui-monospace,monospace;color:#64748b">${escapeHtml(row.employee_id)}${row.department ? ' · ' + escapeHtml(row.department) : ''}</div>
@@ -54,14 +69,16 @@ function popupHtml(group) {
                 <div style="color:#94a3b8">${point.kind === 'out' ? 'check-out fix' : 'check-in fix'}${point.accuracy_m != null ? ` · ±${point.accuracy_m} m` : ''}</div>
             </div>
         </div>`).join('');
+    const address = group.members.map(m => m.point.address).find(Boolean);
     return `
-        <div style="min-width:240px;font-family:Inter,system-ui,sans-serif">
+        <div style="min-width:250px;font-family:Inter,system-ui,sans-serif">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
                 <span style="font:800 10px Inter,system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#64748b">${group.members.length} ${group.members.length === 1 ? 'person' : 'people'} · ${group.present} in</span>
                 <a href="${mapsLink(group.lat.toFixed(6), group.lng.toFixed(6))}" target="_blank" rel="noopener noreferrer" style="font:700 11px Inter,system-ui,sans-serif;color:#0e4368">Google Maps ↗</a>
             </div>
+            ${address ? `<div style="font:600 12px Inter,system-ui,sans-serif;color:#0f172a;margin-bottom:6px">${escapeHtml(address)}</div>` : ''}
             ${rows}
-            <div style="font:500 10px ui-monospace,monospace;color:#94a3b8;margin-top:6px">${group.lat.toFixed(5)}, ${group.lng.toFixed(5)}</div>
+            <div style="font:500 10px ui-monospace,monospace;color:#94a3b8;margin-top:6px">${group.lat.toFixed(5)}, ${group.lng.toFixed(5)} · click a person for their card</div>
         </div>`;
 }
 
@@ -73,10 +90,12 @@ export default function LiveMap() {
     const [error, setError] = useState(null);
     const [updatedAt, setUpdatedAt] = useState(null);
     const [autoRefresh, setAutoRefresh] = useState(true);
-    const [selected, setSelected] = useState(null);
+    const [selected, setSelected] = useState(null); // employee_id
+    const [cardKind, setCardKind] = useState('in');
 
     const avatars = useAvatars(rows.map(r => r.employee_id));
     const groups = useMemo(() => groupPoints(rows), [rows]);
+    const selectedRow = useMemo(() => rows.find(r => r.employee_id === selected) || null, [rows, selected]);
 
     const load = useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
@@ -99,11 +118,19 @@ export default function LiveMap() {
         return () => clearInterval(t);
     }, [autoRefresh, date, load]);
 
-    // ── Leaflet map: created once, markers rebuilt whenever the data changes ──
+    const select = useCallback((row) => {
+        if (!row) { setSelected(null); return; }
+        setSelected(row.employee_id);
+        setCardKind(row.check_out && row.out ? 'out' : (row.check_in ? 'in' : 'out'));
+    }, []);
+
+    // ── Leaflet map: created once, markers rebuilt whenever the data or the selection changes ──
     const mapEl = useRef(null);
     const mapRef = useRef(null);
     const layerRef = useRef(null);
     const markersRef = useRef(new Map()); // group key -> marker
+    const rowsRef = useRef(rows);
+    rowsRef.current = rows;
 
     useEffect(() => {
         if (!mapEl.current || mapRef.current) return;
@@ -115,36 +142,63 @@ export default function LiveMap() {
         map.setView([20.5937, 78.9629], 5); // India, until the first fix arrives
         layerRef.current = L.layerGroup().addTo(map);
         mapRef.current = map;
-        return () => { map.remove(); mapRef.current = null; layerRef.current = null; };
-    }, []);
+        // a person row inside a popup opens their card
+        const onClick = (e) => {
+            const el = e.target.closest?.('[data-eid]');
+            if (!el) return;
+            const row = rowsRef.current.find(r => r.employee_id === el.getAttribute('data-eid'));
+            if (row) select(row);
+        };
+        const container = map.getContainer();
+        container.addEventListener('click', onClick);
+        return () => { container.removeEventListener('click', onClick); map.remove(); mapRef.current = null; layerRef.current = null; };
+    }, [select]);
 
     useEffect(() => {
         const map = mapRef.current, layer = layerRef.current;
         if (!map || !layer) return;
         layer.clearLayers();
         markersRef.current = new Map();
+
+        if (selectedRow) {
+            // one pin per event for the selected person, joined by a dashed line
+            const pts = ['in', 'out'].filter(k => selectedRow[k]).map(k => ({ kind: k, ...selectedRow[k] }));
+            if (pts.length === 0) return;
+            for (const p of pts) {
+                L.marker([p.lat, p.lng], {
+                    icon: L.divIcon({ html: eventPinHtml(p.kind, avatars[selectedRow.employee_id], selectedRow.name), className: 'live-map-marker', iconSize: [44, 52], iconAnchor: [22, 52], popupAnchor: [0, -52] }),
+                    title: `${selectedRow.name} ${p.kind === 'in' ? 'check-in' : 'check-out'}`,
+                    zIndexOffset: p.kind === 'out' ? 10 : 0,
+                }).on('click', () => setCardKind(p.kind)).addTo(layer);
+            }
+            if (pts.length === 2) L.polyline(pts.map(p => [p.lat, p.lng]), { color: '#0e4368', weight: 3, dashArray: '6 8', opacity: 0.7 }).addTo(layer);
+            const bounds = L.latLngBounds(pts.map(p => [p.lat, p.lng]));
+            map.fitBounds(bounds.pad(0.4), { maxZoom: 18, animate: false });
+            return;
+        }
+
         if (groups.length === 0) return;
         for (const g of groups) {
             const marker = L.marker([g.lat, g.lng], {
                 icon: L.divIcon({ html: markerHtml(g, avatars), className: 'live-map-marker', iconSize: [46, 46], iconAnchor: [23, 23], popupAnchor: [0, -26] }),
                 title: g.members.map(m => m.row.name).join(', '),
-            }).bindPopup(popupHtml(g), { maxWidth: 320 });
+            }).bindPopup(popupHtml(g), { maxWidth: 340 });
             marker.addTo(layer);
             markersRef.current.set(g.key, marker);
         }
         const bounds = L.latLngBounds(groups.map(g => [g.lat, g.lng]));
         map.fitBounds(bounds.pad(0.3), { maxZoom: 17, animate: false });
-    }, [groups, avatars]);
+    }, [groups, avatars, selectedRow]);
 
-    const focus = (row) => {
-        const p = lastPoint(row);
-        if (!p) return;
-        setSelected(row.employee_id);
-        const g = groupOf(groups, row.employee_id);
-        const marker = g ? markersRef.current.get(g.key) : null;
-        const map = mapRef.current;
-        if (map) map.flyTo([p.lat, p.lng], Math.max(map.getZoom(), 17), { duration: 0.6 });
-        if (marker) marker.openPopup();
+    const showEveryone = () => {
+        const row = selectedRow;
+        setSelected(null);
+        // after the group markers are back, open the popup of the group this person belongs to
+        setTimeout(() => {
+            const g = row ? groupOf(groups, row.employee_id) : null;
+            const marker = g ? markersRef.current.get(g.key) : null;
+            if (marker) marker.openPopup();
+        }, 0);
     };
 
     const withFix = rows.filter(r => lastPoint(r));
@@ -169,7 +223,7 @@ export default function LiveMap() {
                 <div className="flex flex-wrap items-center gap-3">
                     <label className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-600">
                         <Calendar className="w-4 h-4 text-slate-400" />
-                        <input type="date" value={date} max={todayIST()} onChange={(e) => e.target.value && setDate(e.target.value)}
+                        <input type="date" value={date} max={todayIST()} onChange={(e) => { if (e.target.value) { setDate(e.target.value); setSelected(null); } }}
                             aria-label="Date" className="bg-transparent outline-none text-slate-800 font-mono" />
                     </label>
                     <button type="button" onClick={() => setAutoRefresh(v => !v)} disabled={!isToday}
@@ -208,10 +262,61 @@ export default function LiveMap() {
                 </div>
             )}
 
-            {/* ── Map + list ── */}
+            {/* ── Card / list + map ── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 rounded-2xl bg-white border border-slate-200 overflow-hidden relative">
-                    <div ref={mapEl} className="h-[420px] md:h-[560px] w-full" role="region" aria-label="Map of check-in locations" />
+                <div className="rounded-2xl bg-white border border-slate-200 flex flex-col max-h-[620px] overflow-hidden order-2 lg:order-1">
+                    {selectedRow ? (
+                        <CheckinCard key={selectedRow.employee_id} row={selectedRow} kind={cardKind} onKind={setCardKind}
+                            avatarUrl={avatars[selectedRow.employee_id]} onBack={() => setSelected(null)} />
+                    ) : (
+                        <>
+                            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Staff · {date}</div>
+                                {updatedAt && <div className="text-[10px] font-mono text-slate-400">updated {format(updatedAt, 'HH:mm:ss')}</div>}
+                            </div>
+                            <div className="overflow-y-auto divide-y divide-slate-100">
+                                {loading && rows.length === 0 && (
+                                    <div className="p-8 text-center text-slate-400 text-xs font-semibold flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading…</div>
+                                )}
+                                {!loading && rows.length === 0 && !error && (
+                                    <div className="p-8 text-center text-slate-400 text-xs font-semibold">Nobody has checked in on this date.</div>
+                                )}
+                                {sorted.map(row => {
+                                    const p = lastPoint(row);
+                                    return (
+                                        <div key={row.employee_id}
+                                            className="flex items-center gap-3 px-4 py-3 transition-colors cursor-pointer hover:bg-slate-50"
+                                            onClick={() => select(row)} role="button" tabIndex={0}
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(row); } }}>
+                                            <div className={`w-10 h-10 rounded-full border-2 shrink-0 overflow-hidden flex items-center justify-center bg-slate-50 font-bold text-xs text-brand-navy ${row.check_out ? 'border-amber-400' : 'border-emerald-500'}`}>
+                                                {avatars[row.employee_id] ? <img src={avatars[row.employee_id]} alt="" className="w-full h-full object-cover" /> : initials(row.name)}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="text-sm font-bold text-slate-900 truncate">{row.name}</div>
+                                                <div className="text-[10px] text-slate-500 truncate">{p?.address || <span className="font-mono">{row.employee_id}{row.department ? ` · ${row.department}` : ''}</span>}</div>
+                                            </div>
+                                            <div className="text-right text-[11px] font-mono text-slate-600 shrink-0">
+                                                <div><span className="text-emerald-500 font-bold">IN</span> {fmtTime(row.check_in)}</div>
+                                                <div><span className="text-amber-500 font-bold">OUT</span> {fmtTime(row.check_out)}</div>
+                                                {p
+                                                    ? <div className="text-[10px] text-slate-400">{p.kind === 'out' ? 'out fix' : 'in fix'}{p.accuracy_m != null ? ` ±${p.accuracy_m} m` : ''}</div>
+                                                    : <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No GPS</div>}
+                                            </div>
+                                            <button type="button" aria-label={`Open ${row.name} attendance`}
+                                                onClick={(e) => { e.stopPropagation(); navigate(`/admin/attendance/employee/${row.employee_id}`); }}
+                                                className="w-8 h-8 rounded-lg border border-slate-200 text-slate-400 hover:text-brand-navy hover:bg-slate-50 flex items-center justify-center shrink-0">
+                                                <ExternalLink className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                <div className="lg:col-span-2 rounded-2xl bg-white border border-slate-200 overflow-hidden relative order-1 lg:order-2">
+                    <div ref={mapEl} className="h-[420px] md:h-[620px] w-full" role="region" aria-label="Map of check-in locations" />
                     {!loading && groups.length === 0 && (
                         <div className="absolute inset-0 z-[500] flex items-center justify-center bg-white/70 backdrop-blur-sm pointer-events-none">
                             <div className="text-center px-6">
@@ -221,54 +326,27 @@ export default function LiveMap() {
                             </div>
                         </div>
                     )}
+                    {selectedRow && !selectedRow.in && !selectedRow.out && (
+                        <div className="absolute inset-0 z-[500] flex items-center justify-center bg-white/70 backdrop-blur-sm pointer-events-none">
+                            <div className="text-center px-6">
+                                <MapPin className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                <div className="text-sm font-bold text-slate-700">{selectedRow.name} has no GPS fix today</div>
+                            </div>
+                        </div>
+                    )}
                     <div className="absolute left-3 bottom-3 z-[500] flex items-center gap-3 px-3 py-2 rounded-xl bg-white/90 border border-slate-200 text-[10px] font-bold text-slate-600 shadow">
-                        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-[3px] border-emerald-500 bg-white" /> someone still in</span>
-                        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-[3px] border-amber-500 bg-white" /> all checked out</span>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl bg-white border border-slate-200 flex flex-col max-h-[560px]">
-                    <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Staff · {date}</div>
-                        {updatedAt && <div className="text-[10px] font-mono text-slate-400">updated {format(updatedAt, 'HH:mm:ss')}</div>}
-                    </div>
-                    <div className="overflow-y-auto divide-y divide-slate-100">
-                        {loading && rows.length === 0 && (
-                            <div className="p-8 text-center text-slate-400 text-xs font-semibold flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading…</div>
+                        {selectedRow ? (
+                            <>
+                                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-[3px] border-emerald-500 bg-white" /> check-in</span>
+                                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-[3px] border-amber-500 bg-white" /> check-out</span>
+                                <button type="button" onClick={showEveryone} className="text-brand-navy underline">show everyone</button>
+                            </>
+                        ) : (
+                            <>
+                                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-[3px] border-emerald-500 bg-white" /> someone still in</span>
+                                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-[3px] border-amber-500 bg-white" /> all checked out</span>
+                            </>
                         )}
-                        {!loading && rows.length === 0 && !error && (
-                            <div className="p-8 text-center text-slate-400 text-xs font-semibold">Nobody has checked in on this date.</div>
-                        )}
-                        {sorted.map(row => {
-                            const p = lastPoint(row);
-                            const active = selected === row.employee_id;
-                            return (
-                                <div key={row.employee_id}
-                                    className={`flex items-center gap-3 px-4 py-3 transition-colors ${p ? 'cursor-pointer hover:bg-slate-50' : 'opacity-70'} ${active ? 'bg-brand-navy/[0.05]' : ''}`}
-                                    onClick={() => focus(row)} role={p ? 'button' : undefined} tabIndex={p ? 0 : undefined}
-                                    onKeyDown={(e) => { if (p && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); focus(row); } }}>
-                                    <div className={`w-10 h-10 rounded-full border-2 shrink-0 overflow-hidden flex items-center justify-center bg-slate-50 font-bold text-xs text-brand-navy ${row.check_out ? 'border-amber-400' : 'border-emerald-500'}`}>
-                                        {avatars[row.employee_id] ? <img src={avatars[row.employee_id]} alt="" className="w-full h-full object-cover" /> : initials(row.name)}
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="text-sm font-bold text-slate-900 truncate">{row.name}</div>
-                                        <div className="text-[10px] font-mono text-slate-500 truncate">{row.employee_id}{row.department ? ` · ${row.department}` : ''}</div>
-                                    </div>
-                                    <div className="text-right text-[11px] font-mono text-slate-600 shrink-0">
-                                        <div><span className="text-emerald-500 font-bold">IN</span> {fmtTime(row.check_in)}</div>
-                                        <div><span className="text-amber-500 font-bold">OUT</span> {fmtTime(row.check_out)}</div>
-                                        {p
-                                            ? <div className="text-[10px] text-slate-400">{p.kind === 'out' ? 'out fix' : 'in fix'}{p.accuracy_m != null ? ` ±${p.accuracy_m} m` : ''}</div>
-                                            : <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No GPS</div>}
-                                    </div>
-                                    <button type="button" aria-label={`Open ${row.name} attendance`}
-                                        onClick={(e) => { e.stopPropagation(); navigate(`/admin/attendance/employee/${row.employee_id}`); }}
-                                        className="w-8 h-8 rounded-lg border border-slate-200 text-slate-400 hover:text-brand-navy hover:bg-slate-50 flex items-center justify-center shrink-0">
-                                        <ExternalLink className="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
-                            );
-                        })}
                     </div>
                 </div>
             </div>
@@ -276,7 +354,7 @@ export default function LiveMap() {
             <div className="flex items-start gap-3 p-4 rounded-2xl bg-brand-navy/[0.04] border border-brand-navy/10 text-xs text-slate-600">
                 <Navigation className="w-4 h-4 text-brand-navy shrink-0 mt-0.5" />
                 <div>
-                    <span className="font-bold text-brand-navy">Phase 1.</span> Each pin is the terminal's GPS fix at the moment of the face scan, so today it shows where people checked in and out.
+                    <span className="font-bold text-brand-navy">Phase 1.</span> Each pin is the terminal's GPS fix at the moment of the face scan; the street address comes from OpenStreetMap.
                     Live movement between check-in and check-out (staff phone app, every few minutes, duty hours only) is phase 2 and starts once the location consent forms are signed.
                 </div>
             </div>

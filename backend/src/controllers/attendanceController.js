@@ -2,6 +2,7 @@ const supabase = require('../../supabase');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 const attendancePhotos = require('../../services/attendancePhotos');
+const geocode = require('../../services/geocode');
 const { istDateString, rowIsLate, monthRange } = require('../lib/attendanceTime');
 const { fetchAll, logAccess, likeLiteral } = require('../lib/db');
 
@@ -255,9 +256,11 @@ exports.getAttendanceLocations = async (req, res) => {
         if (error) throw error;
 
         const sidecars = await attendancePhotos.getPhotoLocationsForDate(date);
+        await Promise.all([...sidecars.entries()].flatMap(([attendanceId, s]) =>
+            ['in', 'out'].filter(k => s[k]).map(k => withAddress({ date, attendanceId, kind: k, sidecar: s[k] }))));
         const point = (sidecar) => {
             const loc = attendancePhotos.normalizeLocation(sidecar?.location);
-            return loc ? { ...loc, captured_at: sidecar.captured_at || null, source: sidecar.source || 'terminal' } : null;
+            return loc ? { ...loc, address: sidecar.address || null, captured_at: sidecar.captured_at || null, source: sidecar.source || 'terminal' } : null;
         };
         // One row per employee (the duplicate clean-up may not have run yet): keep the earliest check-in
         const seen = new Set();
@@ -286,6 +289,23 @@ exports.getAttendanceLocations = async (req, res) => {
     }
 };
 
+/**
+ * Make sure a sidecar carries a street address: reverse-geocode once, write it
+ * back into the sidecar (best effort), and return the same object mutated.
+ */
+const withAddress = async ({ date, attendanceId, kind, sidecar }) => {
+    if (!sidecar || sidecar.address) return sidecar;
+    const loc = attendancePhotos.normalizeLocation(sidecar.location);
+    if (!loc) return sidecar;
+    const address = await geocode.reverseGeocode(loc.lat, loc.lng);
+    if (address) {
+        sidecar.address = address;
+        attendancePhotos.setSidecarAddress({ date, attendanceId, kind, address }).catch(() => {});
+    }
+    return sidecar;
+};
+exports.withAddress = withAddress;
+
 /** Pull an optional terminal GPS fix out of a multipart/JSON body. */
 const locationFromBody = (body = {}) => attendancePhotos.normalizeLocation({
     lat: body.lat, lng: body.lng, accuracy: body.accuracy, fix_time: body.fix_time,
@@ -307,11 +327,12 @@ exports.getAttendancePhoto = async (req, res) => {
             .single();
         if (error || !row) return res.status(404).json({ error: 'Attendance record not found' });
 
-        const [signed, sidecar] = await Promise.all([
+        const [signed, rawSidecar] = await Promise.all([
             attendancePhotos.getSignedPhotoUrl({ date: row.date, attendanceId: row.id, kind }),
             attendancePhotos.getPhotoLocation({ date: row.date, attendanceId: row.id, kind }),
         ]);
         if (!signed) return res.status(404).json({ error: 'No photo stored for this event' });
+        const sidecar = await withAddress({ date: row.date, attendanceId: row.id, kind, sidecar: rawSidecar });
 
         res.json({
             ...signed,
@@ -322,6 +343,8 @@ exports.getAttendancePhoto = async (req, res) => {
             // Terminal GPS fix at the moment of the scan (null if the tablet had no fix)
             location: sidecar?.location || null,
             location_source: sidecar?.source || null,
+            // Street address from reverse geocoding (null until resolved / when offline)
+            address: sidecar?.address || null,
         });
     } catch (error) {
         console.error('❌ Attendance photo error:', error.message);

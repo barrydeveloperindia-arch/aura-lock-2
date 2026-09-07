@@ -182,6 +182,7 @@ export default function AttendancePhotoModal({ record, kind: initialKind, onClos
                     <div className="px-5 py-3 border-t border-slate-200 flex items-center justify-between gap-4 bg-slate-50">
                         <div className="text-[11px] text-slate-700 min-w-0">
                             <span className="font-black uppercase tracking-widest text-[10px] text-slate-500 mr-2">Location</span>
+                            {state.photo.address && <span className="font-semibold text-slate-800 block">{state.photo.address}</span>}
                             <span className="font-mono">{state.photo.location.lat.toFixed(5)}, {state.photo.location.lng.toFixed(5)}</span>
                             {state.photo.location.accuracy_m != null && (
                                 <span className="text-slate-500"> · ±{state.photo.location.accuracy_m} m</span>

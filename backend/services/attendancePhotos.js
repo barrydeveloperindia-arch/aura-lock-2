@@ -136,6 +136,27 @@ async function getPhotoLocation({ date, attendanceId, kind }) {
 }
 
 /**
+ * Persist a reverse-geocoded street address into an existing sidecar so the
+ * lookup happens once per photo. Returns true when written.
+ */
+async function setSidecarAddress({ date, attendanceId, kind, address }) {
+    try {
+        if (!address || typeof address !== 'string') return false;
+        const sidecar = await getPhotoLocation({ date, attendanceId, kind });
+        if (!sidecar) return false;
+        const body = Buffer.from(JSON.stringify({ ...sidecar, address: address.slice(0, 300) }));
+        const { error } = await getClient().storage.from(BUCKET).upload(sidecarPath(date, attendanceId, kind), body, {
+            contentType: 'application/json', upsert: true, cacheControl: '0',
+        });
+        if (error) { console.error(`[Photos] Address write failed for ${attendanceId}_${kind}: ${error.message}`); return false; }
+        return true;
+    } catch (err) {
+        console.error(`[Photos] Address write error: ${err.message}`);
+        return false;
+    }
+}
+
+/**
  * Every GPS sidecar stored for one day, for the Live Map.
  * One bucket listing, then the JSON files are downloaded in parallel.
  * @returns {Promise<Map<string,{in:object|null,out:object|null}>>} keyed by attendance id
@@ -507,6 +528,7 @@ module.exports = {
     normalizeLocation,
     getPhotoLocation,
     getPhotoLocationsForDate,
+    setSidecarAddress,
     makeAvatar,
     avatarPath,
     saveEmployeeAvatar,

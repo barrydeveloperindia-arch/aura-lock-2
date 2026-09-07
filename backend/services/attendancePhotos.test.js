@@ -244,6 +244,19 @@ describe('attendancePhotos.getPhotoLocationsForDate (Live Map)', () => {
         assert.equal(m.get(ATT_ID).out.location.lat, 30.721836);
         assert.equal(fake.calls.list.length, 1, 'one bucket listing per day');
     });
+    test('setSidecarAddress writes the address into the existing sidecar and it is returned afterwards', async () => {
+        const fake = makeFakeStorage({ ['2026-09-07/' + ATT_ID + '_in.json']: side('in', 30.721805) });
+        photos._setClientForTests(fake.client);
+        assert.equal(await photos.setSidecarAddress({ date: '2026-09-07', attendanceId: ATT_ID, kind: 'in', address: 'Industrial Area, Mohali' }), true);
+        const after = await photos.getPhotoLocation({ date: '2026-09-07', attendanceId: ATT_ID, kind: 'in' });
+        assert.equal(after.address, 'Industrial Area, Mohali');
+        assert.equal(after.location.lat, 30.721805, 'location untouched');
+        assert.equal(fake.calls.upload.at(-1).opts.contentType, 'application/json');
+        // no sidecar / no address -> nothing written
+        assert.equal(await photos.setSidecarAddress({ date: '2026-09-07', attendanceId: ATT_ID_2, kind: 'in', address: 'x' }), false);
+        assert.equal(await photos.setSidecarAddress({ date: '2026-09-07', attendanceId: ATT_ID, kind: 'in', address: '' }), false);
+    });
+
     test('bad date or empty day gives an empty map', async () => {
         photos._setClientForTests(makeFakeStorage().client);
         assert.equal((await photos.getPhotoLocationsForDate('07-09-2026')).size, 0);
