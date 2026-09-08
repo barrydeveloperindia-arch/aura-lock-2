@@ -10,6 +10,7 @@ import EmployeeAccess from './pages/EmployeeAccess';
 import Reports from './pages/Reports';
 import LiveMap from './pages/LiveMap';
 import FaceCalibration from './pages/FaceCalibration';
+import Leaves from './pages/Leaves';
 import Login from './pages/Login';
 
 import DoorControl from './pages/DoorControl';
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="users" element={<Users />} />
         <Route path="attendance" element={<Attendance />} />
         <Route path="attendance/employee/:employee_id" element={<EmployeeAttendance />} />
+        <Route path="leaves" element={<Leaves />} />
         <Route path="access/employee/:employee_id" element={<EmployeeAccess />} />
         <Route path="reports" element={<Reports />} />
         <Route path="live-map" element={<LiveMap />} />

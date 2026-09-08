@@ -194,6 +194,8 @@ export default function Reports() {
                                     <th className="hidden lg:table-cell px-8 py-5 text-center">Working Days</th>
                                     <th className="px-4 md:px-8 py-5 text-center">Present</th>
                                     <th className="px-4 md:px-8 py-5 text-center text-red-400">Absent</th>
+                                    <th className="px-4 md:px-8 py-5 text-center text-brand-navy">CL</th>
+                                    <th className="hidden sm:table-cell px-8 py-5 text-center">Leave</th>
                                     <th className="hidden sm:table-cell px-8 py-5 text-center text-amber-400">Late</th>
                                     <th className="px-4 md:px-8 py-5 text-right">Hours</th>
                                 </tr>
@@ -202,7 +204,7 @@ export default function Reports() {
                                 {generating ? (
                                     Array(3).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td colSpan="7" className="px-8 py-6 h-16 bg-white/[0.01]"></td>
+                                            <td colSpan="9" className="px-8 py-6 h-16 bg-white/[0.01]"></td>
                                         </tr>
                                     ))
                                 ) : monthlyReport?.data.length > 0 ? (
@@ -239,6 +241,12 @@ export default function Reports() {
                                                     <AlertTriangle className="w-3 h-3" /> {row.absentDays}
                                                 </div>
                                             </td>
+                                            <td className="px-4 md:px-8 py-5 text-center">
+                                                <span className="inline-flex px-2 md:px-3 py-1 rounded-full bg-brand-navy/10 text-[10px] md:text-[11px] font-black text-brand-navy tabular-nums">{row.cl ?? 0}</span>
+                                            </td>
+                                            <td className="hidden sm:table-cell px-8 py-5 text-center">
+                                                <span className="inline-flex px-3 py-1 rounded-full bg-slate-100 text-[11px] font-black text-slate-600 tabular-nums" title={Object.entries(row.leaves || {}).map(([k, v]) => `${k} ${v}`).join(' · ') || 'no leave'}>{row.leaveDays ?? 0}</span>
+                                            </td>
                                             <td className="hidden sm:table-cell px-8 py-5 text-center">
                                                 <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black tabular-nums ${row.lateDays > 5 ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-500'
                                                     }`}>
@@ -255,7 +263,7 @@ export default function Reports() {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="7" className="px-8 py-20 text-center">
+                                        <td colSpan="9" className="px-8 py-20 text-center">
                                             <div className="flex flex-col items-center gap-4">
                                                 <Calendar className="w-12 h-12 text-slate-900" />
                                                 <div className="text-slate-600 text-[10px] font-black uppercase tracking-[0.2em]">No analytics data for this period</div>

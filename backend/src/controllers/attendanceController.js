@@ -5,6 +5,8 @@ const attendancePhotos = require('../../services/attendancePhotos');
 const geocode = require('../../services/geocode');
 const { istDateString, rowIsLate, monthRange } = require('../lib/attendanceTime');
 const { fetchAll, logAccess, likeLiteral } = require('../lib/db');
+const { workingDates, summarize } = require('../lib/leaves');
+const { leavesBetween, holidaysBetween } = require('../routes/leaveRoutes');
 
 // One in-flight recordAttendance per employee: several camera frames reach the
 // server within the same second and the "does today's row exist?" check used to
@@ -643,12 +645,14 @@ exports.getAttendanceList = async (req, res) => {
                 absentEmps = absentEmps.filter(e => e.name?.toLowerCase().includes(s));
             }
 
-            // Mock the format for Attendance UI
+            // People on leave that day are shown as LEAVE (with the type), not as absent
+            const dayLeaves = new Map((await leavesBetween(fromDate, fromDate)).map(l => [l.employee_id, l.type]));
             const formattedAbsent = absentEmps.map(e => ({
                 id: `absent-${e.id}`,
                 employee_id: e.id,
                 date: fromDate,
-                status: 'ABSENT',
+                status: dayLeaves.has(e.id) ? 'LEAVE' : 'ABSENT',
+                leave_type: dayLeaves.get(e.id) || null,
                 employees: e
             }));
 
@@ -1358,23 +1362,19 @@ exports.getMonthlyReport = async (req, res) => {
 
         if (attError) throw attError;
 
-        // 3. Calculate working days (exclude weekends)
-        let workingDaysCount = 0;
-        const tempDate = new Date(startDate);
-        while (tempDate <= endDate) {
-            const day = tempDate.getDay();
-            if (day !== 0 && day !== 6) { // Not Sunday or Saturday
-                workingDaysCount++;
-            }
-            tempDate.setDate(tempDate.getDate() + 1);
-        }
+        // 3. Working days = weekdays minus company holidays; leaves per person (tables may not exist yet -> empty)
+        const [holidays, leaves] = await Promise.all([holidaysBetween(startDateStr, endDateStr), leavesBetween(startDateStr, endDateStr)]);
+        const working = workingDates(startDateStr, endDateStr, holidays);
+        const workingDaysCount = working.size;
+        void startDate; void endDate;
 
         // 4. Aggregate data
         const LATE_THRESHOLD = "09:00:00";
         const report = employees.map(emp => {
             const empAtt = attendanceData.filter(a => a.employee_id === emp.id);
-            const presentDays = new Set(empAtt.map(a => a.date)).size;
-            const absentDays = Math.max(0, workingDaysCount - presentDays);
+            const leaveSummary = summarize(working, empAtt.map(a => a.date), leaves.filter(l => l.employee_id === emp.id));
+            const presentDays = leaveSummary.presentDays;
+            const absentDays = leaveSummary.absentDays; // working days − present − leave
 
             let lateDays = 0;
             let totalMins = 0;
@@ -1403,6 +1403,9 @@ exports.getMonthlyReport = async (req, res) => {
                 department: emp.department || 'General',
                 presentDays,
                 absentDays,
+                leaveDays: leaveSummary.leaveDays,
+                leaves: leaveSummary.byType, // e.g. { CL: 2, SL: 1 }
+                cl: leaveSummary.byType.CL || 0,
                 lateDays,
                 totalWorkHours: (totalMins / 60).toFixed(1),
                 totalOvertime: (totalOvertimeMins / 60).toFixed(1)
@@ -1413,6 +1416,7 @@ exports.getMonthlyReport = async (req, res) => {
             month: parseInt(month),
             year: parseInt(year),
             workingDaysInMonth: workingDaysCount,
+            holidays,
             data: report
         });
     } catch (error) {

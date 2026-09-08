@@ -14,6 +14,7 @@ import {
     Key,
     MapPin,
     ScanFace,
+    CalendarOff,
     X
 } from 'lucide-react';
 
@@ -21,6 +22,7 @@ const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { name: 'Employees', icon: Users, path: '/admin/users' },
     { name: 'Attendance', icon: ClipboardList, path: '/admin/attendance' },
+    { name: 'Leaves', icon: CalendarOff, path: '/admin/leaves' },
     { name: 'Live Map', icon: MapPin, path: '/admin/live-map' },
     { name: 'Reports', icon: Shield, path: '/admin/reports' },
     { name: 'Access Logs', icon: ClipboardList, path: '/admin/logs' },

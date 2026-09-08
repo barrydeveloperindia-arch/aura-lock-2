@@ -42,7 +42,13 @@ const workHoursDisplay = (record) => {
 };
 
 // ── Status badge ──────────────────────────────────────────────────────────────
-function StatusBadge({ status }) {
+function StatusBadge({ status, leaveType }) {
+    if (status === 'LEAVE')
+        return (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-navy/10 border border-brand-navy/20 text-[10px] font-black text-brand-navy uppercase tracking-widest">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-navy" />{leaveType || 'Leave'}
+            </span>
+        );
     if (status === 'LATE')
         return (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-black text-amber-400 uppercase tracking-widest">
@@ -589,7 +595,7 @@ export default function Attendance() {
 
                                         {/* Status */}
                                         <td className="px-4 md:px-6 py-4 text-center">
-                                            <StatusBadge status={rec.status} />
+                                            <StatusBadge status={rec.status} leaveType={rec.leave_type} />
                                         </td>
 
                                         {/* Method */}

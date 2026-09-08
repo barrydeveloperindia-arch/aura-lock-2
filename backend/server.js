@@ -201,6 +201,8 @@ app.use('/', statsRoutes);
 
 const attendanceRoutes = require('./src/routes/attendanceRoutes');
 app.use('/api/attendance', attendanceRoutes);
+// Leave register + holidays (feeds the monthly report and the absent list)
+app.use('/', require('./src/routes/leaveRoutes'));
 // Activity and Analytics were previously under /api/stats, so we'll mount them explicitly
 app.use('/api/stats', attendanceRoutes);
 

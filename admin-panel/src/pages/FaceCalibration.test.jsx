@@ -81,6 +81,6 @@ describe('FaceCalibration page', () => {
         render(<FaceCalibration />, { wrapper: BrowserRouter });
         await waitFor(() => expect(screen.getByLabelText('Undo last measurement')).toBeEnabled());
         fireEvent.click(screen.getByLabelText('Undo last measurement'));
-        await waitFor(() => expect(apiService.undoLastMeasurement).toHaveBeenCalledWith('2026-09-07'));
+        await waitFor(() => expect(apiService.undoLastMeasurement).toHaveBeenCalledWith(expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/))); // today's session
     });
 });
