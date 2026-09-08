@@ -11,16 +11,20 @@ export default defineConfig({
   ],
   server: {
     host: true,
-    port: 5181,
+    port: 2000,
     strictPort: true,
     proxy: {
+      // Local dev usually runs the backend on 8002; when it isn't running,
+      // point at the live Cloud Run backend instead so the console still works.
       '/api': {
-        target: 'http://localhost:8002',
-        changeOrigin: true
+        target: process.env.VITE_API_PROXY_TARGET || 'https://auralock-backend-tjpy7sonwq-el.a.run.app',
+        changeOrigin: true,
+        secure: true
       },
       '/auth': {
-        target: 'http://localhost:8002',
-        changeOrigin: true
+        target: process.env.VITE_API_PROXY_TARGET || 'https://auralock-backend-tjpy7sonwq-el.a.run.app',
+        changeOrigin: true,
+        secure: true
       }
     }
   }
