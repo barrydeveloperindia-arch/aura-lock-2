@@ -19,6 +19,9 @@ const { recordAttendance, attachAttendancePhoto, locationFromBody } = require('.
 const attendancePhotos = require('./services/attendancePhotos');
 const { istDayStartUTC, istDayEndUTC, istDateString, monthRange } = require('./src/lib/attendanceTime');
 const { fetchAll, logAccess } = require('./src/lib/db');
+const { createAmbiguityStreak } = require('./src/lib/ambiguityStreak');
+// Look-alike colleagues: N consecutive ambiguous frames that all point at the same person are accepted (see lib)
+const ambiguityStreak = createAmbiguityStreak({ frames: Number(process.env.AMBIGUITY_FRAMES) || 3 });
 
 // Refuse to start production with default secrets or missing admin credentials.
 if (process.env.NODE_ENV === 'production' || process.env.K_SERVICE) {
@@ -1072,6 +1075,18 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
                 timeout: 120000 // 120s â€” Render Free/Starter tiers can be slow on first Cold-Start
             });
 
+            const scanDevice = req.body?.device_id || 'terminal_01';
+            if (response.data?.error_code === 'AMBIGUOUS_MATCH' && response.data.id_hint) {
+                const run = ambiguityStreak.record(scanDevice, response.data.id_hint);
+                if (run) {
+                    const { data: hinted } = await supabase.from('employees').select('name').eq('employee_id', response.data.id_hint).maybeSingle();
+                    console.log(`[Verification] ${run} consecutive ambiguous frames all matched ${response.data.id_hint} (distance ${response.data.distance}, gap ${response.data.gap}); accepting.`);
+                    response.data = { success: true, employee_id: response.data.id_hint, name: hinted?.name || response.data.name_hint || response.data.id_hint, confidence: response.data.confidence, consistent_frames: run };
+                }
+            } else {
+                ambiguityStreak.reset(scanDevice);
+            }
+
             if (response.data.success) {
                 const employeeId = response.data.employee_id;
                 console.log(`âœ… Face Verified: ${employeeId}`);
@@ -1129,7 +1144,7 @@ app.post('/api/biometrics/face/verify', biometricLimiter, upload.single('file'),
             } else if (response.data.error_code === 'AMBIGUOUS_MATCH') {
                 console.warn(`âš ï¸ Ambiguous Match for hint: ${response.data.id_hint}. Requesting Fingerprint fallback.`);
 
-                await logAccess(supabase, { employee_id: response.data.id_hint || null, status: 'failed', device_id: 'terminal_01', method: 'face', metadata: { reason: 'Ambiguous match', location: scanLocation } });
+                await logAccess(supabase, { employee_id: response.data.id_hint || null, status: 'failed', confidence: response.data.confidence || null, device_id: 'terminal_01', method: 'face', metadata: { reason: 'Ambiguous match', distance: response.data.distance ?? null, gap: response.data.gap ?? null, location: scanLocation } });
 
                 return res.status(403).json({
                     success: false,
@@ -1189,8 +1204,8 @@ app.use((req, res, next) => {
         return next();
     }
     
-    // Serve the main index.html for everything else
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    // The only UI is the admin console under /admin (there is no public/index.html)
+    res.redirect(302, '/admin/');
 });
 
 if (require.main === module) {

@@ -258,8 +258,11 @@ exports.getAttendanceLocations = async (req, res) => {
         if (error) throw error;
 
         const sidecars = await attendancePhotos.getPhotoLocationsForDate(date);
-        await Promise.all([...sidecars.entries()].flatMap(([attendanceId, s]) =>
-            ['in', 'out'].filter(k => s[k]).map(k => withAddress({ date, attendanceId, kind: k, sidecar: s[k] }))));
+        // Addresses: wait briefly for lookups (stored / cached ones resolve at once); anything slower keeps
+        // running in the background, is written into the sidecar, and shows on the next refresh.
+        const lookups = [...sidecars.entries()].flatMap(([attendanceId, s]) =>
+            ['in', 'out'].filter(k => s[k]).map(k => withAddress({ date, attendanceId, kind: k, sidecar: s[k] }).catch(() => null)));
+        await Promise.race([Promise.all(lookups), new Promise(r => setTimeout(r, 1500))]);
         const point = (sidecar) => {
             const loc = attendancePhotos.normalizeLocation(sidecar?.location);
             if (!loc) return null;

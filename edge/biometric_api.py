@@ -9,6 +9,14 @@ import os
 import numpy as np
 import cv2
 import google.generativeai as genai
+import threading
+
+# dlib is not safe to run from two threads at once: two scans a second apart
+# crashed the engine (signal 11) on 9 Sep 2026. Every encode goes through this lock.
+_DLIB_LOCK = threading.Lock()
+def _encode_locked(frame):
+    with _DLIB_LOCK:
+        return face_recognition.face_encodings(frame)
 try:
     from bleak import BleakClient, BleakScanner
     HAS_BLE = True
@@ -468,7 +476,7 @@ async def register_face(
         # 2. Detect and encode using face-recognition
         try:
             if HAS_FACE_REC:
-                encodings = await asyncio.to_thread(face_recognition.face_encodings, frame)
+                encodings = await asyncio.to_thread(_encode_locked, frame)
                 if not encodings:
                     return {"success": False, "message": "No face detected.", "error_code": "NO_FACE"}
                 encoding_list = encodings[0].tolist()
@@ -652,7 +660,7 @@ async def verify_face(file: UploadFile = File(...)):
         # 2. Single Embedding Generation
         try:
             if HAS_FACE_REC:
-                live_encodings = await asyncio.to_thread(face_recognition.face_encodings, frame)
+                live_encodings = await asyncio.to_thread(_encode_locked, frame)
                 if not live_encodings:
                     return {"success": False, "message": "No face detected."}
                 live_encoding = live_encodings[0]
@@ -717,7 +725,7 @@ async def verify_face(file: UploadFile = File(...)):
                 mirror_distances = []
                 
                 if HAS_FACE_REC:
-                    live_mirror = face_recognition.face_encodings(mirrored)
+                    live_mirror = await asyncio.to_thread(_encode_locked, mirrored)
                     if live_mirror:
                         mirror_distances = face_recognition.face_distance(FACE_VECTORS, live_mirror[0])
                         mirror_idx = np.argmin(mirror_distances)
@@ -750,9 +758,10 @@ async def verify_face(file: UploadFile = File(...)):
         
         # Ambiguity Detection
         is_ambiguous = False
+        gap = 1.0  # distance margin to the nearest OTHER employee (not a second sample of the same person)
         if len(distances) > 1:
-            sorted_distances = np.sort(distances)
-            gap = sorted_distances[1] - min_distance # Bigger gap means less ambiguity
+            others = [float(d) for d, meta in zip(distances, FACE_METADATA) if meta.get("employee_id") != matched_emp.get("employee_id")]
+            gap = (min(others) - min_distance) if others else 1.0  # bigger gap means less ambiguity
             if gap < AMBIGUITY_GAP and min_distance < STRICT_THRESHOLD + 0.10:
                 is_ambiguous = True
                 print(f"[REJECTED] Ambiguity detected! Distance Gap: {gap:.4f} < {AMBIGUITY_GAP}")
@@ -772,6 +781,9 @@ async def verify_face(file: UploadFile = File(...)):
                 "message": "Ambiguous Match: Multiple users similar.",
                 "error_code": "AMBIGUOUS_MATCH",
                 "id_hint": matched_emp["employee_id"],
+                "name_hint": matched_emp.get("name"),
+                "distance": round(min_distance, 4),
+                "gap": round(gap, 4),
                 "confidence": max_similarity
             }
 
@@ -846,7 +858,7 @@ async def measure_face(file: UploadFile = File(...)):
         return {"success": False, "face_found": False, "message": f"Invalid image: {img_err}"}
     if not HAS_FACE_REC:
         return {"success": False, "face_found": False, "message": "face_recognition is not available on this engine."}
-    encodings = await asyncio.to_thread(face_recognition.face_encodings, frame)
+    encodings = await asyncio.to_thread(_encode_locked, frame)
     if not encodings:
         return {"success": True, "face_found": False, "message": "No face detected.", "threshold": FACE_THRESHOLD, "encode_ms": int((time.time() - t0) * 1000)}
     if FACE_VECTORS.size == 0:
