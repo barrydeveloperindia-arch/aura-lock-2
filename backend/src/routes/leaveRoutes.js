@@ -73,6 +73,18 @@ router.delete('/api/leaves/:id', authenticateToken, isAdmin, async (req, res) =>
     } catch (err) { fail(res, err, 'delete leave'); }
 });
 
+// CL ledger for one month: { month, rows: [{ employee_id (uuid), opening_cl, added_cl, used_cl, closing_cl, source }] }
+router.get('/api/leave-ledger', authenticateToken, isAdmin, async (req, res) => {
+    const m = /^(\d{4})-(\d{2})$/.exec(String(req.query.month || ''));
+    if (!m) return res.status(400).json({ error: 'month must be YYYY-MM' });
+    const month = `${m[1]}-${m[2]}-01`;
+    try {
+        const { data, error } = await supabase.from('leave_ledger').select('id, employee_id, month, opening_cl, added_cl, used_cl, closing_cl, source, note').eq('month', month);
+        if (error) throw error;
+        res.json({ month, rows: data || [] });
+    } catch (err) { fail(res, err, 'load leave ledger'); }
+});
+
 router.get('/api/holidays', authenticateToken, async (req, res) => {
     const year = Number(req.query.year) || new Date().getFullYear();
     try {
@@ -110,6 +122,15 @@ async function leavesBetween(from, to) {
         return data || [];
     } catch (err) { if (!missingTable(err)) console.warn('[Leaves] read failed:', err.message); return []; }
 }
+/** Monthly CL ledger rows (first-of-month dates) between two months; missing table -> []. */
+async function ledgerBetween(fromMonth, toMonth) {
+    try {
+        const { data, error } = await supabase.from('leave_ledger').select('employee_id, month, opening_cl, added_cl, used_cl, closing_cl, source').gte('month', fromMonth).lte('month', toMonth);
+        if (error) throw error;
+        return data || [];
+    } catch (err) { if (!missingTable(err)) console.warn('[Ledger] read failed:', err.message); return []; }
+}
+
 async function holidaysBetween(from, to) {
     try {
         const { data, error } = await supabase.from('holidays').select('date, name').gte('date', from).lte('date', to);
@@ -120,4 +141,5 @@ async function holidaysBetween(from, to) {
 
 module.exports = router;
 module.exports.leavesBetween = leavesBetween;
+module.exports.ledgerBetween = ledgerBetween;
 module.exports.holidaysBetween = holidaysBetween;

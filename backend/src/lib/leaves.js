@@ -3,7 +3,7 @@
  *
  * A leave is one employee, one date, one type. Holidays are per date for
  * everyone. A month's "working days" are the calendar days minus weekends
- * (Saturday + Sunday by default, configurable) minus holidays. For a person:
+ * (Sunday only at EngLabs, configurable) minus holidays. For a person:
  *   present = distinct attendance dates in the month
  *   leave   = leave dates that fall on working days (a leave on a Sunday is not counted)
  *   absent  = working days − present − leave (never below 0)
@@ -15,7 +15,7 @@ const LEAVE_TYPES = {
     WFH: 'Work from home',
     OD: 'On duty (site / client visit)',
 };
-const DEFAULT_WEEKEND = [0, 6]; // Sunday, Saturday
+const DEFAULT_WEEKEND = [0]; // Sunday only: EngLabs works Saturdays (payroll sheet: 26 working days in a 30-day month)
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const isValidLeaveType = (t) => typeof t === 'string' && Object.prototype.hasOwnProperty.call(LEAVE_TYPES, t.toUpperCase());

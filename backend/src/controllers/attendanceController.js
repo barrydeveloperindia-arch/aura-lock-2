@@ -6,7 +6,7 @@ const geocode = require('../../services/geocode');
 const { istDateString, rowIsLate, monthRange } = require('../lib/attendanceTime');
 const { fetchAll, logAccess, likeLiteral } = require('../lib/db');
 const { workingDates, summarize } = require('../lib/leaves');
-const { leavesBetween, holidaysBetween } = require('../routes/leaveRoutes');
+const { leavesBetween, holidaysBetween, ledgerBetween } = require('../routes/leaveRoutes');
 
 // One in-flight recordAttendance per employee: several camera frames reach the
 // server within the same second and the "does today's row exist?" check used to
@@ -1315,7 +1315,7 @@ exports.getReport = async (req, res) => {
         // Calculate absent for each day
         Object.values(countsByDate).forEach(day => {
             const dateObj = new Date(day.date);
-            const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+            const isWeekend = dateObj.getDay() === 0; // Sunday only: Saturdays are working days at EngLabs
             day.absent = isWeekend ? 0 : Math.max(0, (totalEmployees || 0) - day.present);
         });
 
@@ -1363,7 +1363,10 @@ exports.getMonthlyReport = async (req, res) => {
         if (attError) throw attError;
 
         // 3. Working days = weekdays minus company holidays; leaves per person (tables may not exist yet -> empty)
-        const [holidays, leaves] = await Promise.all([holidaysBetween(startDateStr, endDateStr), leavesBetween(startDateStr, endDateStr)]);
+        const prevMonthStr = new Date(Date.UTC(Number(year), Number(month) - 2, 1)).toISOString().slice(0, 10);
+        const [holidays, leaves, ledgerRows] = await Promise.all([holidaysBetween(startDateStr, endDateStr), leavesBetween(startDateStr, endDateStr), ledgerBetween(prevMonthStr, startDateStr)]);
+        const ledgerThis = new Map(ledgerRows.filter(l => l.month === startDateStr).map(l => [l.employee_id, l]));
+        const ledgerPrev = new Map(ledgerRows.filter(l => l.month === prevMonthStr).map(l => [l.employee_id, l]));
         const working = workingDates(startDateStr, endDateStr, holidays);
         const workingDaysCount = working.size;
         void startDate; void endDate;
@@ -1373,6 +1376,11 @@ exports.getMonthlyReport = async (req, res) => {
         const report = employees.map(emp => {
             const empAtt = attendanceData.filter(a => a.employee_id === emp.id);
             const leaveSummary = summarize(working, empAtt.map(a => a.date), leaves.filter(l => l.employee_id === emp.id));
+            // CL: the payroll ledger (imported sheet) is the record for months it covers; otherwise dated CL leaves.
+            // Balance: ledger closing, or previous month's closing + 1 (monthly accrual) - CL used this month.
+            const led = ledgerThis.get(emp.id), ledPrev = ledgerPrev.get(emp.id);
+            const clUsed = led && led.source === 'sheet' ? Number(led.used_cl) : (leaveSummary.byType.CL || 0);
+            const clBalance = led ? Number(led.closing_cl) - (led.source === 'sheet' ? 0 : (leaveSummary.byType.CL || 0)) : (ledPrev ? Number(ledPrev.closing_cl) + 1 - clUsed : null);
             const presentDays = leaveSummary.presentDays;
             const absentDays = leaveSummary.absentDays; // working days − present − leave
 
@@ -1405,7 +1413,9 @@ exports.getMonthlyReport = async (req, res) => {
                 absentDays,
                 leaveDays: leaveSummary.leaveDays,
                 leaves: leaveSummary.byType, // e.g. { CL: 2, SL: 1 }
-                cl: leaveSummary.byType.CL || 0,
+                cl: clUsed,
+                cl_balance: clBalance, // null when no ledger history exists for this person
+                cl_source: led ? led.source : (leaveSummary.byType.CL ? 'leaves' : null),
                 lateDays,
                 totalWorkHours: (totalMins / 60).toFixed(1),
                 totalOvertime: (totalOvertimeMins / 60).toFixed(1)

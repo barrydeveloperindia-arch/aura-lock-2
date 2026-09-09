@@ -194,7 +194,8 @@ export default function Reports() {
                                     <th className="hidden lg:table-cell px-8 py-5 text-center">Working Days</th>
                                     <th className="px-4 md:px-8 py-5 text-center">Present</th>
                                     <th className="px-4 md:px-8 py-5 text-center text-red-400">Absent</th>
-                                    <th className="px-4 md:px-8 py-5 text-center text-brand-navy">CL</th>
+                                    <th className="px-4 md:px-8 py-5 text-center text-brand-navy">CL used</th>
+                                    <th className="hidden md:table-cell px-8 py-5 text-center text-brand-navy">CL bal.</th>
                                     <th className="hidden sm:table-cell px-8 py-5 text-center">Leave</th>
                                     <th className="hidden sm:table-cell px-8 py-5 text-center text-amber-400">Late</th>
                                     <th className="px-4 md:px-8 py-5 text-right">Hours</th>
@@ -204,7 +205,7 @@ export default function Reports() {
                                 {generating ? (
                                     Array(3).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td colSpan="9" className="px-8 py-6 h-16 bg-white/[0.01]"></td>
+                                            <td colSpan="10" className="px-8 py-6 h-16 bg-white/[0.01]"></td>
                                         </tr>
                                     ))
                                 ) : monthlyReport?.data.length > 0 ? (
@@ -242,7 +243,10 @@ export default function Reports() {
                                                 </div>
                                             </td>
                                             <td className="px-4 md:px-8 py-5 text-center">
-                                                <span className="inline-flex px-2 md:px-3 py-1 rounded-full bg-brand-navy/10 text-[10px] md:text-[11px] font-black text-brand-navy tabular-nums">{row.cl ?? 0}</span>
+                                                <span className="inline-flex px-2 md:px-3 py-1 rounded-full bg-brand-navy/10 text-[10px] md:text-[11px] font-black text-brand-navy tabular-nums" title={row.cl_source === 'sheet' ? 'from the payroll sheet' : row.cl_source === 'leaves' ? 'from the leave register' : ''}>{row.cl ?? 0}</span>
+                                            </td>
+                                            <td className="hidden md:table-cell px-8 py-5 text-center">
+                                                <span className="text-[11px] font-black text-slate-700 tabular-nums">{row.cl_balance == null ? '—' : row.cl_balance}</span>
                                             </td>
                                             <td className="hidden sm:table-cell px-8 py-5 text-center">
                                                 <span className="inline-flex px-3 py-1 rounded-full bg-slate-100 text-[11px] font-black text-slate-600 tabular-nums" title={Object.entries(row.leaves || {}).map(([k, v]) => `${k} ${v}`).join(' · ') || 'no leave'}>{row.leaveDays ?? 0}</span>
@@ -263,7 +267,7 @@ export default function Reports() {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="9" className="px-8 py-20 text-center">
+                                        <td colSpan="10" className="px-8 py-20 text-center">
                                             <div className="flex flex-col items-center gap-4">
                                                 <Calendar className="w-12 h-12 text-slate-900" />
                                                 <div className="text-slate-600 text-[10px] font-black uppercase tracking-[0.2em]">No analytics data for this period</div>
