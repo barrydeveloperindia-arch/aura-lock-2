@@ -22,9 +22,10 @@ router.get('/scan', async (req, res) => {
         if (result.success && result.devices) {
             return res.json({ success: true, devices: result.devices });
         }
-        res.json({ success: false, available: false, devices: [], message: result.message || 'Bluetooth scanning is not available on this server' });
+        res.json({ success: false, available: false, devices: [], message: 'Bluetooth scanning only works on a computer next to the door, not on the cloud server.' });
     } catch (error) {
-        res.json({ success: false, available: false, devices: [], message: 'Bluetooth scanning is not available on this server (' + error.message + ')' });
+        console.warn('[BLE] scan unavailable:', error.message);
+        res.json({ success: false, available: false, devices: [], message: 'Bluetooth scanning only works on a computer next to the door, not on the cloud server.' });
     }
 });
 

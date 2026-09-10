@@ -61,7 +61,7 @@ const ConfidenceBar = ({ value }) => {
 };
 
 // ── Stat pill ─────────────────────────────────────────────────────────────────
-const StatPill = ({ label, value, color }) => (
+const StatPill = ({ label, value, color, icon: Icon }) => (
     <div className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] border border-white/[0.06] rounded-xl">
         <Icon className={`w-4 h-4 ${color}`} />
         <div>
