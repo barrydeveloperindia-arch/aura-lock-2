@@ -1452,7 +1452,9 @@ exports.getAnalytics = async (req, res) => {
         // --- Monthly ranges ---
         const currMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
         const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
-        const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+        // Compare like with like: the previous month only up to the same day-of-month (1-9 Sep vs 1-9 Aug)
+        const prevMonthLastDay = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+        const prevMonthEnd = new Date(now.getFullYear(), now.getMonth() - 1, Math.min(now.getDate(), prevMonthLastDay)).toISOString().split('T')[0];
 
         // Run all three queries in parallel for minimal latency
         const [
@@ -1517,7 +1519,7 @@ exports.getAnalytics = async (req, res) => {
         // 3. Department breakdown
         const deptHeadcountMap = {};
         (employees || []).forEach(emp => {
-            const dept = emp.department || 'General';
+            const dept = (emp.department || 'General').trim();
             deptHeadcountMap[dept] = (deptHeadcountMap[dept] || 0) + 1;
         });
 
@@ -1526,7 +1528,7 @@ exports.getAnalytics = async (req, res) => {
         );
         const deptPresentMap = {};
         (employees || []).forEach(emp => {
-            const dept = emp.department || 'General';
+            const dept = (emp.department || 'General').trim();
             if (todayAttEmpIds.has(emp.id)) {
                 deptPresentMap[dept] = (deptPresentMap[dept] || 0) + 1;
             }

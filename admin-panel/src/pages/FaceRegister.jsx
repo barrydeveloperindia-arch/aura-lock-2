@@ -32,7 +32,7 @@ export default function FaceRegister() {
             });
             setStream(mediaStream);
             if (videoRef.current) videoRef.current.srcObject = mediaStream;
-        } catch (err) {
+        } catch {
             setStatus({ type: 'error', message: 'Browser camera blocked. Use "Direct Cam" or "Mobile Capture" below.' });
         }
     };

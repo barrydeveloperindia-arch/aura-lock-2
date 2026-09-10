@@ -61,7 +61,7 @@ const ConfidenceBar = ({ value }) => {
 };
 
 // ── Stat pill ─────────────────────────────────────────────────────────────────
-const StatPill = ({ label, value, color, icon: Icon }) => (
+const StatPill = ({ label, value, color }) => (
     <div className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] border border-white/[0.06] rounded-xl">
         <Icon className={`w-4 h-4 ${color}`} />
         <div>
@@ -75,6 +75,7 @@ export default function Logs() {
     const navigate = useNavigate();
     const [logs, setLogs] = useState([]);
     const [total, setTotal] = useState(0);
+    const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [refreshing, setRefreshing] = useState(false);
@@ -101,8 +102,10 @@ export default function Logs() {
                 ...(endDate && { endDate }),
             };
             const res = await apiService.getAccessLogs(params);
-            setLogs(res.logs || []);
+            // an "Ambiguous match" is stored as a failed row with that reason; show it as its own outcome
+            setLogs((res.logs || []).map(l => (l.status === 'failed' && l.metadata?.reason === 'Ambiguous match') ? { ...l, status: 'ambiguous' } : l));
             setTotal(res.total || res.pagination?.total || 0);
+            setSummary(res.summary || null);
         } catch (err) {
             console.error('Failed to fetch logs', err);
         } finally {
@@ -128,9 +131,10 @@ export default function Logs() {
     const totalPages = Math.ceil(total / PAGE_SIZE);
 
     // Summary counts from loaded page
-    const granted = logs.filter(l => l.status === 'success').length;
-    const denied = logs.filter(l => l.status === 'failed').length;
-    const ambiguous = logs.filter(l => l.status === 'ambiguous').length;
+    // counters cover the whole filtered range (server summary), not just this page
+    const granted = summary?.granted ?? logs.filter(l => l.status === 'success').length;
+    const denied = summary?.denied ?? logs.filter(l => l.status === 'failed').length;
+    const ambiguous = summary?.ambiguous ?? logs.filter(l => l.status === 'ambiguous').length;
 
     const inputCls = 'bg-white/[0.04] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 transition-colors';
     const selCls = `${inputCls} appearance-none cursor-pointer`;

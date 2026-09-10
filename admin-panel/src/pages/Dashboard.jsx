@@ -31,7 +31,7 @@ export default function Dashboard() {
                 setLastUnlock(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
                 setTimeout(() => setDoorStatus('Locked'), 5000);
             }
-        } catch (e) {
+        } catch {
             console.error('Remote unlock failed');
         } finally {
             setUnlocking(false);
@@ -62,7 +62,7 @@ export default function Dashboard() {
             try {
                 const health = await apiService.getDoorStatus();
                 setIsOnline(health.online);
-            } catch (e) {
+            } catch {
                 setIsOnline(false);
             }
         };
@@ -301,7 +301,7 @@ export default function Dashboard() {
                         <div className="w-full h-px bg-white/5" />
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Previous Month</p>
+                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Same days last month</p>
                                 <div className="text-2xl font-black text-slate-400 tabular-nums">{loading ? '—' : analytics?.monthly?.previous ?? 0}</div>
                             </div>
                             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/60 border border-white/5 ${growthColor}`}>

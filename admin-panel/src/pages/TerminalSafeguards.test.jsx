@@ -26,7 +26,7 @@ describe('Terminal Safeguards & Error Transparency', () => {
         axios.get.mockResolvedValue({ data: [] });
         
         // Mocking navigator.mediaDevices
-        global.navigator.mediaDevices = {
+        globalThis.navigator.mediaDevices = {
             getUserMedia: vi.fn().mockResolvedValue({
                 getTracks: () => [{ stop: vi.fn() }]
             })

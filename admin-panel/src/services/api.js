@@ -170,6 +170,9 @@ export const apiService = {
         return response.data;
     },
 
+    // Live system configuration for the Settings page
+    getSystemInfo: async () => (await api.get('/api/system/info', { timeout: 30000 })).data,
+
     // Leave register + holidays
     getLeaveTypes: async () => (await api.get('/api/leaves/types')).data,
     getLeaves: async (from, to, employee_id) => (await api.get('/api/leaves', { params: { from, to, ...(employee_id ? { employee_id } : {}) } })).data,

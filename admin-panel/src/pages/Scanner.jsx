@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Camera, Fingerprint, X, CheckCircle2, LogOut, AlertTriangle, Clock, ArrowLeft } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -14,7 +14,7 @@ try {
     CapCamera = Cam.Camera;
     CameraResultType = Cam.CameraResultType;
     CameraSource = Cam.CameraSource;
-} catch (e) {
+} catch {
     console.warn("Capacitor plugins not available in this environment (Web Fallback)");
 }
 
@@ -111,7 +111,7 @@ export default function Scanner() {
 
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
-    const [stream, setStream] = useState(null);
+    const [, setStream] = useState(null);
 
     // ── Refined Camera Lifecycle with Safeguards ─────────────────────────────
     useEffect(() => {
@@ -292,7 +292,7 @@ export default function Scanner() {
                         setView('fingerprint');
                     }
                 }
-            } catch (err) {
+            } catch {
                 // If cancelled or failed, just restart the listener
                 if (active) setTimeout(fingerprintLoop, 2000);
             }
@@ -367,7 +367,7 @@ export default function Scanner() {
 
                 {/* ── TERMINAL VIEW (Unified Face Scan) ── */}
                 {view === 'face' && (
-                    <motion.div key="face"
+                    <Motion.div key="face"
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="flex flex-col items-center gap-12 text-center z-10 w-full max-w-4xl">
                         
@@ -394,7 +394,7 @@ export default function Scanner() {
                                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40" />
  
                                 {/* Scanning Line Animation */}
-                                <motion.div
+                                <Motion.div
                                     animate={{ y: ['0%', '100%', '0%'] }}
                                     transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                                     className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent z-10 opacity-60"
@@ -409,12 +409,12 @@ export default function Scanner() {
                             </div>
                             <p className="text-slate-500 text-[8px] md:text-[10px] font-bold uppercase tracking-[0.4em]">Biometric Terminal Active</p>
                         </div>
-                    </motion.div>
+                    </Motion.div>
                 )}
 
                 {/* ── FINGERPRINT EMPLOYEE PICKER ── */}
                 {view === 'fingerprint' && (
-                    <motion.div key="fingerprint"
+                    <Motion.div key="fingerprint"
                         initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
                         className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 p-10 rounded-[3rem] w-full max-w-2xl flex flex-col gap-8 shadow-2xl z-10">
                         <div className="flex items-center justify-between border-b border-white/[0.05] pb-6">
@@ -442,16 +442,16 @@ export default function Scanner() {
                                     </button>
                                 ))}
                         </div>
-                    </motion.div>
+                    </Motion.div>
                 )}
 
                 {/* ── CHECK-IN SUCCESS ── */}
                 {view === 'checkin' && (
-                    <motion.div key="checkin"
+                    <Motion.div key="checkin"
                         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                         className="flex flex-col items-center gap-10 text-center z-10">
                         <div className="relative">
-                            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0, 0.2] }} transition={{ duration: 2, repeat: Infinity }} className="absolute inset-[-20px] rounded-full bg-emerald-500/20" />
+                            <Motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0, 0.2] }} transition={{ duration: 2, repeat: Infinity }} className="absolute inset-[-20px] rounded-full bg-emerald-500/20" />
                             <div className="w-40 h-40 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center shadow-[0_0_40px_rgba(16,185,129,0.1)]">
                                 <CheckCircle2 size={84} className="text-emerald-400" />
                             </div>
@@ -468,16 +468,16 @@ export default function Scanner() {
                             <CountdownRing seconds={countdown} color="#10b981" />
                             <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Auto-reset: {countdown}s</span>
                         </div>
-                    </motion.div>
+                    </Motion.div>
                 )}
 
                 {/* ── CHECK-OUT SUCCESS ── */}
                 {view === 'checkout' && (
-                    <motion.div key="checkout"
+                    <Motion.div key="checkout"
                         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                         className="flex flex-col items-center gap-10 text-center z-10">
                         <div className="relative">
-                            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0, 0.2] }} transition={{ duration: 2, repeat: Infinity }} className="absolute inset-[-20px] rounded-full bg-indigo-500/20" />
+                            <Motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0, 0.2] }} transition={{ duration: 2, repeat: Infinity }} className="absolute inset-[-20px] rounded-full bg-indigo-500/20" />
                             <div className="w-40 h-40 rounded-full bg-indigo-500/10 border-2 border-indigo-500/30 flex items-center justify-center shadow-[0_0_40px_rgba(99,102,241,0.1)]">
                                 <LogOut size={84} className="text-indigo-400" />
                             </div>
@@ -501,18 +501,18 @@ export default function Scanner() {
                             <CountdownRing seconds={countdown} color="#6366f1" />
                             <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Auto-reset: {countdown}s</span>
                         </div>
-                    </motion.div>
+                    </Motion.div>
                 )}
 
                 {/* ── ERROR ── */}
                 {view === 'error' && (
-                    <motion.div key="error"
+                    <Motion.div key="error"
                         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                         className="flex flex-col items-center gap-10 text-center z-10">
                         <div className="relative">
-                            <motion.div animate={{ rotate: [-5, 5, -5, 5, 0] }} transition={{ duration: 0.4 }} className="w-40 h-40 rounded-full bg-red-500/10 border-2 border-red-500/30 flex items-center justify-center shadow-[0_0_40px_rgba(239,68,68,0.1)]">
+                            <Motion.div animate={{ rotate: [-5, 5, -5, 5, 0] }} transition={{ duration: 0.4 }} className="w-40 h-40 rounded-full bg-red-500/10 border-2 border-red-500/30 flex items-center justify-center shadow-[0_0_40px_rgba(239,68,68,0.1)]">
                                 <AlertTriangle size={84} className="text-red-400" />
-                            </motion.div>
+                            </Motion.div>
                         </div>
                         <div className="space-y-4 px-4">
                             <p className="text-[10px] font-black uppercase tracking-[0.6em] text-red-500">Security Warning</p>
@@ -524,7 +524,7 @@ export default function Scanner() {
                             <CountdownRing seconds={countdown} color="#ef4444" />
                             <span className="text-[10px] font-black uppercase tracking-widest">Back: {countdown}s</span>
                         </div>
-                    </motion.div>
+                    </Motion.div>
                 )}
 
             </AnimatePresence>

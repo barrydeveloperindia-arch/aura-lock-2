@@ -21,6 +21,7 @@ export default function DoorControl() {
     const [deviceInfo, setDeviceInfo] = useState({ name: 'Englabs_MD', mac: '58:8C:81:CC:65:29' });
     const [scanResults, setScanResults] = useState([]);
     const [isScanning, setIsScanning] = useState(false);
+    const [scanNote, setScanNote] = useState('');
     const [isConnecting, setIsConnecting] = useState(false);
     const [logs, setLogs] = useState([]);
     const [alert, setAlert] = useState(null);
@@ -50,7 +51,7 @@ export default function DoorControl() {
                 lastActivity: new Date()
             }));
             if (status.mac) setDeviceInfo(prev => ({ ...prev, name: status.name, mac: status.mac }));
-        } catch (e) {
+        } catch {
             setDoorState(prev => ({ ...prev, isOnline: false }));
         }
     }, []);
@@ -82,7 +83,7 @@ export default function DoorControl() {
             } else {
                 showAlert('error', res.message || `Failed to ${action.toLowerCase()}.`);
             }
-        } catch (e) {
+        } catch {
             showAlert('error', `Communication failure for ${action}.`);
         } finally {
             setDoorState(prev => ({ ...prev, loading: false }));
@@ -94,7 +95,9 @@ export default function DoorControl() {
         try {
             const res = await apiService.scanBleDevices();
             if (res.success) setScanResults(res.devices || []);
-        } catch (e) { showAlert('error', 'Scanning failed.'); }
+            else if (res.available === false) { setScanResults([]); setScanNote(res.message || 'Bluetooth scanning is not available on this server'); }
+            else showAlert('error', res.message || 'Scanning failed.');
+        } catch { showAlert('error', 'Scanning failed.'); }
         finally { setIsScanning(false); }
     };
 
@@ -108,7 +111,7 @@ export default function DoorControl() {
             } else {
                 showAlert('error', res.message);
             }
-        } catch (e) { showAlert('error', 'Connection toggle failed.'); }
+        } catch { showAlert('error', 'Connection toggle failed.'); }
         finally { setIsConnecting(false); }
     };
 
@@ -303,7 +306,7 @@ export default function DoorControl() {
                             )) : (
                                 <div className="py-12 flex flex-col items-center gap-2 text-slate-500 italic text-xs">
                                     <Info className="w-5 h-5 opacity-20" />
-                                    <span>No devices found nearby.</span>
+                                    <span>{scanNote || 'No devices found nearby.'}</span>
                                 </div>
                             )}
                         </div>

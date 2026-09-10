@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent} from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import Scanner from './Scanner';
 import axios from 'axios';
@@ -26,7 +26,7 @@ describe('Scanner Component (Automated Terminal)', () => {
         axios.get.mockResolvedValue({ data: [] });
         
         // Mocking navigator.mediaDevices
-        global.navigator.mediaDevices = {
+        globalThis.navigator.mediaDevices = {
             getUserMedia: vi.fn().mockResolvedValue({
                 getTracks: () => [{ stop: vi.fn() }]
             })

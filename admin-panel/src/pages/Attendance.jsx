@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Calendar, Clock, Fingerprint, ScanFace,
@@ -97,7 +97,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
 export default function Attendance() {
     const navigate = useNavigate();
     const [attendance, setAttendance] = useState([]);
-    const [employees, setEmployees] = useState([]);
+    const [, setEmployees] = useState([]);
     const [totalRecords, setTotalRecords] = useState(0);
     const [loading, setLoading] = useState(true);
 
@@ -278,7 +278,7 @@ export default function Attendance() {
     const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
     const presentCount = attendance.filter(r => r.check_in).length;
     const lateCount = attendance.filter(r => r.status === 'LATE').length;
-    const checkedOut = attendance.filter(r => r.check_out).length;
+    const _checkedOut = attendance.filter(r => r.check_out).length;
     const onTimeCount = attendance.filter(r => r.status === 'ON_TIME').length;
 
     const inputCls = 'w-full bg-white border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500/30 transition-colors';

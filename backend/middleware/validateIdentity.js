@@ -27,6 +27,9 @@ const validateIdentity = async (req, res, next) => {
     }
     if (!isUpdate && finalId) req.body.employee_id = String(finalId).trim().toUpperCase();
 
+    if (typeof req.body.department === 'string') req.body.department = req.body.department.trim();
+    if (typeof req.body.name === 'string') req.body.name = req.body.name.trim();
+
     // Email: optional, but when given it must be a real address (name@domain.tld) and is stored lower-cased
     if (req.body.email !== undefined && req.body.email !== null && String(req.body.email).trim() !== '') {
         if (!isValidEmail(req.body.email)) {

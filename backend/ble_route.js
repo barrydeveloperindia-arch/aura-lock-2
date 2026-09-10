@@ -22,9 +22,9 @@ router.get('/scan', async (req, res) => {
         if (result.success && result.devices) {
             return res.json({ success: true, devices: result.devices });
         }
-        res.status(500).json({ success: false, message: result.message || 'Scan failed' });
+        res.json({ success: false, available: false, devices: [], message: result.message || 'Bluetooth scanning is not available on this server' });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        res.json({ success: false, available: false, devices: [], message: 'Bluetooth scanning is not available on this server (' + error.message + ')' });
     }
 });
 

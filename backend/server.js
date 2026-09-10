@@ -51,6 +51,7 @@ console.log('[Biometrics] Target Engine:', PYTHON_ENGINE_URL);
 const engineHttp = axios.create({ headers: process.env.ENGINE_KEY ? { 'x-engine-key': process.env.ENGINE_KEY } : {} });
 // Face-threshold calibration (admin 'measure mode'): distances only, no logging / attendance / unlock
 app.use(require('./src/routes/calibrationRoutes')({ engineHttp, engineUrl: PYTHON_ENGINE_URL, upload }));
+app.use(require('./src/routes/systemRoutes')({ engineHttp, engineUrl: PYTHON_ENGINE_URL }));
 console.log('ðŸš€ [Config] ADMIN_EMAIL:', ADMIN_EMAIL);
 console.log('ðŸš€ [Config] JWT_SECRET:', JWT_SECRET ? 'SET' : 'MISSING');
 
@@ -248,8 +249,26 @@ app.get('/api/access-logs', authenticateToken, async (req, res) => {
         const { data: logs, count, error } = await q.range(from, to);
         if (error) throw error;
 
+        // Summary for the SAME filters but the whole range (the counters on the page used to count one page only,
+        // and "ambiguous" is a failed row whose reason says so, not a status of its own)
+        const countWhere = (extra) => {
+            let c = supabase.from('access_logs').select(search ? 'id, employees!inner(name)' : 'id', { count: 'exact', head: true });
+            if (req.query.method) c = c.ilike('metadata->>method', String(req.query.method));
+            if (device) c = c.eq('device_id', device);
+            if (startDate) c = c.gte('created_at', istDayStartUTC(startDate));
+            if (endDate) c = c.lte('created_at', istDayEndUTC(endDate));
+            if (search) c = c.ilike('employees.name', `%${search}%`);
+            return extra(c).then(r => (r.error ? null : r.count || 0));
+        };
+        const [granted, failedAll, ambiguous] = await Promise.all([
+            countWhere(c => c.eq('status', 'success')),
+            countWhere(c => c.eq('status', 'failed')),
+            countWhere(c => c.eq('status', 'failed').eq('metadata->>reason', 'Ambiguous match')),
+        ]);
+
         res.json({
             logs: logs || [],
+            summary: { granted, denied: failedAll == null || ambiguous == null ? failedAll : failedAll - ambiguous, ambiguous },
             total: count || 0,
             pagination: {
                 total: count || 0,

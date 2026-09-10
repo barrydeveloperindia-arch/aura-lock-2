@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Calendar, Clock, Fingerprint, ScanFace,
@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import AttendancePhotoModal from '../components/AttendancePhotoModal';
-import { format, startOfWeek, startOfMonth, subDays } from 'date-fns';
+import { format, startOfWeek, startOfMonth } from 'date-fns';
 
 const PAGE_SIZE = 10;
 
