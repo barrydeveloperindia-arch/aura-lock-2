@@ -6,7 +6,7 @@
  *   node scripts/rename_employee_ids.js --map "Old=NEW;Old2=NEW2" [--apply]
  *
  * Touches: employees.employee_id, access_logs.employee_id (text EID),
- * face_encodings.employee_id (engine re-reads it within 60 s), and the avatar
+ * face_encodings.employee_id (engine re-reads it within 60 s), security_alerts.employee_id, and the avatar
  * file avatars/<id>.jpg. attendance rows key on the employee UUID, so they
  * are unaffected. The terminal re-syncs its local face list every 5 minutes.
  */
@@ -24,6 +24,7 @@ const MAP = process.argv.includes('--map')
 
 const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 const BUCKET = 'attendance-photos';
+const PLAIN_FK_TABLES = ['face_encodings', 'security_alerts'];
 
 (async () => {
     const { data: all, error } = await sb.from('employees').select('id, employee_id, name, status, is_deleted');
@@ -35,7 +36,7 @@ const BUCKET = 'attendance-photos';
         const emp = byId.get(from);
         if (!emp) { console.log(`skip ${from}: no such employee`); continue; }
         if (!/^EMP-\d{3}$/.test(to)) { console.log(`skip ${from}: target ${to} is not EMP-###`); continue; }
-        if (taken.has(to.toUpperCase())) { console.log(`skip ${from}: ${to} is already used`); continue; }
+        if (taken.has(to.toUpperCase()) && from.toUpperCase() !== to.toUpperCase()) { console.log(`skip ${from}: ${to} is already used`); continue; }
         const count = async (t) => (await sb.from(t).select('*', { count: 'exact', head: true }).eq('employee_id', from)).count || 0;
         const { data: av } = await sb.storage.from(BUCKET).list('avatars', { search: from });
         plan.push({ from, to, uuid: emp.id, name: emp.name.trim(), access_logs: await count('access_logs'), face_encodings: await count('face_encodings'), avatar: (av || []).some(f => f.name === `${from}.jpg`) });
@@ -51,13 +52,26 @@ const BUCKET = 'attendance-photos';
 
     for (const p of plan) {
         const step = async (label, fn) => { const { error: e } = await fn(); console.log(`  ${p.to} ${label}: ${e ? 'FAILED ' + e.message : 'ok'}`); if (e) throw e; };
-        // face_encodings has a plain FK to employees (no cascade): lift the rows out, rename, put them back with the new id.
-        const { data: faces, error: fErr } = await sb.from('face_encodings').select('*').eq('employee_id', p.from);
-        if (fErr) throw fErr;
-        if (faces.length) await step(`face_encodings lift (${faces.length})`, () => sb.from('face_encodings').delete().eq('employee_id', p.from));
-        await step('employees (access_logs follow by cascade)', () => sb.from('employees').update({ employee_id: p.to }).eq('id', p.uuid));
-        await step(`access_logs (${p.access_logs})`, () => sb.from('access_logs').update({ employee_id: p.to }).eq('employee_id', p.from));
-        if (faces.length) await step('face_encodings restore', () => sb.from('face_encodings').insert(faces.map(f => ({ ...f, employee_id: p.to }))));
+        // These tables have a plain FK to employees (no cascade): lift their rows out, rename, put them back
+        // with the new id. If any step fails the lifted rows are put back under the old id, so nothing is lost.
+        const lifted = {};
+        for (const t of PLAIN_FK_TABLES) {
+            const { data, error: lErr } = await sb.from(t).select('*').eq('employee_id', p.from);
+            if (lErr) throw lErr;
+            lifted[t] = data || [];
+        }
+        try {
+            for (const t of PLAIN_FK_TABLES) if (lifted[t].length) await step(`${t} lift (${lifted[t].length})`, () => sb.from(t).delete().eq('employee_id', p.from));
+            await step('employees (access_logs follow by cascade)', () => sb.from('employees').update({ employee_id: p.to }).eq('id', p.uuid));
+            await step(`access_logs (${p.access_logs})`, () => sb.from('access_logs').update({ employee_id: p.to }).eq('employee_id', p.from));
+            for (const t of PLAIN_FK_TABLES) if (lifted[t].length) await step(`${t} restore`, () => sb.from(t).insert(lifted[t].map(f => ({ ...f, employee_id: p.to }))));
+        } catch (e) {
+            for (const t of PLAIN_FK_TABLES) if (lifted[t].length) {
+                const { count } = await sb.from(t).select('*', { count: 'exact', head: true }).eq('employee_id', p.from);
+                if (!count) { const { error: rErr } = await sb.from(t).insert(lifted[t]); console.log(`  ${p.from} ${t} put back under old id: ${rErr ? 'FAILED ' + rErr.message : 'ok'}`); }
+            }
+            throw e;
+        }
         if (p.avatar) await step('avatar file', () => sb.storage.from(BUCKET).move(`avatars/${p.from}.jpg`, `avatars/${p.to}.jpg`));
     }
     console.log('done. Backup in backend/backups/. The engine picks up the new IDs within 60 s.');

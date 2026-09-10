@@ -331,7 +331,7 @@ export default function EmployeeAccess() {
                                     <td className="hidden lg:table-cell px-6 py-4 text-center">
                                         <div className="flex items-center justify-center gap-2">
                                             <div className="w-16 h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
-                                                <div className={`h-full rounded-full ${log.confidence >= 0.8 ? 'bg-emerald-500' : log.confidence >= 0.6 ? 'bg-amber-500' : 'bg-red-500'}`} 
+                                                <div className={`h-full rounded-full ${log.confidence >= 0.5 ? 'bg-emerald-500' : log.confidence >= 0.4 ? 'bg-amber-500' : 'bg-red-500'}`} 
                                                      style={{ width: `${Math.round((log.confidence || 0) * 100)}%` }} />
                                             </div>
                                             <span className="text-[10px] font-black text-slate-500 w-8">{Math.round((log.confidence || 0) * 100)}%</span>
@@ -354,7 +354,7 @@ export default function EmployeeAccess() {
                 {totalPages > 1 && (
                     <div className="px-8 py-5 border-t border-white/[0.03] flex items-center justify-between">
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                            Page <span className="text-white">{page}</span> of <span className="text-white">{totalPages}</span>
+                            Page <span className="text-slate-900">{page}</span> of <span className="text-slate-900">{totalPages}</span>
                         </p>
                         <div className="flex items-center gap-2">
                             <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-white disabled:opacity-20"><ChevronLeft className="w-4 h-4" /></button>

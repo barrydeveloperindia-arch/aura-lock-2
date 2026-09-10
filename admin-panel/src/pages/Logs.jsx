@@ -13,10 +13,10 @@ const PAGE_SIZE = 20;
 // ── Status badge ───────────────────────────────────────────────────────────────
 const StatusBadge = ({ status }) => {
     const map = {
-        success: { label: 'Granted', bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', Icon: ShieldCheck },
-        failed: { label: 'Denied', bg: 'bg-red-500/10    text-red-400    border-red-500/20', Icon: ShieldAlert },
-        ambiguous: { label: 'Ambiguous', bg: 'bg-amber-500/10  text-amber-400  border-amber-500/20', Icon: ShieldQuestion },
-        warning: { label: 'Warning', bg: 'bg-orange-500/10 text-orange-400 border-orange-500/20', Icon: ShieldAlert },
+        success: { label: 'Granted', bg: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', Icon: ShieldCheck },
+        failed: { label: 'Denied', bg: 'bg-red-500/10    text-red-600    border-red-500/20', Icon: ShieldAlert },
+        ambiguous: { label: 'Ambiguous', bg: 'bg-amber-500/10  text-amber-600  border-amber-500/20', Icon: ShieldQuestion },
+        warning: { label: 'Warning', bg: 'bg-orange-500/10 text-orange-600 border-orange-500/20', Icon: ShieldAlert },
     };
     const s = map[status] || map.failed;
     return (
@@ -30,11 +30,11 @@ const StatusBadge = ({ status }) => {
 // ── Method badge ───────────────────────────────────────────────────────────────
 const MethodBadge = ({ method }) => {
     const map = {
-        face: { label: 'Face', Icon: ScanFace, cls: 'text-blue-400' },
-        fingerprint: { label: 'Fingerprint', Icon: Fingerprint, cls: 'text-violet-400' },
-        remote: { label: 'Remote', Icon: Monitor, cls: 'text-emerald-400' },
-        rfid: { label: 'RFID', Icon: CreditCard, cls: 'text-teal-400' },
-        manual: { label: 'Manual', Icon: User, cls: 'text-slate-400' },
+        face: { label: 'Face', Icon: ScanFace, cls: 'text-blue-600' },
+        fingerprint: { label: 'Fingerprint', Icon: Fingerprint, cls: 'text-violet-600' },
+        remote: { label: 'Remote', Icon: Monitor, cls: 'text-emerald-600' },
+        rfid: { label: 'RFID', Icon: CreditCard, cls: 'text-teal-600' },
+        manual: { label: 'Manual', Icon: User, cls: 'text-slate-500' },
     };
     const m = map[method?.toLowerCase()] || map.face;
     return (
@@ -49,10 +49,10 @@ const MethodBadge = ({ method }) => {
 const ConfidenceBar = ({ value }) => {
     if (value == null) return <span className="text-slate-700 text-[11px]">—</span>;
     const pct = Math.round(value * 100);
-    const color = pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-amber-500' : 'bg-red-500';
+    const color = pct >= 50 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-red-500';
     return (
         <div className="flex items-center gap-2 w-28">
-            <div className="flex-1 h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+            <div className="flex-1 h-1.5 rounded-full bg-slate-200 overflow-hidden">
                 <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
             </div>
             <span className="text-[10px] font-bold text-slate-500 w-8 text-right">{pct}%</span>
@@ -62,7 +62,7 @@ const ConfidenceBar = ({ value }) => {
 
 // ── Stat pill ─────────────────────────────────────────────────────────────────
 const StatPill = ({ label, value, color, icon: Icon }) => (
-    <div className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+    <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl">
         <Icon className={`w-4 h-4 ${color}`} />
         <div>
             <p className="text-[18px] font-black text-slate-900 leading-none">{value ?? '--'}</p>
@@ -136,7 +136,7 @@ export default function Logs() {
     const denied = summary?.denied ?? logs.filter(l => l.status === 'failed').length;
     const ambiguous = summary?.ambiguous ?? logs.filter(l => l.status === 'ambiguous').length;
 
-    const inputCls = 'bg-white/[0.04] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 transition-colors';
+    const inputCls = 'bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-blue-500/50 transition-colors';
     const selCls = `${inputCls} appearance-none cursor-pointer`;
 
     return (
@@ -149,7 +149,7 @@ export default function Logs() {
                     <p className="text-slate-500 text-[10px] md:text-sm">Real-time biometric access events &mdash; every scan attempt recorded</p>
                 </div>
                 <button onClick={() => fetchLogs(true)} disabled={refreshing}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.07] rounded-xl text-slate-400 hover:text-white text-xs font-bold transition-all disabled:opacity-50">
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-400 hover:text-slate-900 text-xs font-bold transition-all disabled:opacity-50">
                     {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                     Refresh
                 </button>
@@ -157,10 +157,10 @@ export default function Logs() {
 
             {/* ── Stat pills ── */}
             <div className="flex flex-wrap gap-3">
-                <StatPill label="Total Events" value={total} color="text-blue-400" icon={Activity} />
-                <StatPill label="Granted" value={granted} color="text-emerald-400" icon={ShieldCheck} />
-                <StatPill label="Denied" value={denied} color="text-red-400" icon={ShieldAlert} />
-                <StatPill label="Ambiguous" value={ambiguous} color="text-amber-400" icon={ShieldQuestion} />
+                <StatPill label="Total Events" value={total} color="text-blue-600" icon={Activity} />
+                <StatPill label="Granted" value={granted} color="text-emerald-600" icon={ShieldCheck} />
+                <StatPill label="Denied" value={denied} color="text-red-600" icon={ShieldAlert} />
+                <StatPill label="Ambiguous" value={ambiguous} color="text-amber-600" icon={ShieldQuestion} />
             </div>
 
             {/* ── Filters ── */}
@@ -203,7 +203,7 @@ export default function Logs() {
                     {/* Reset */}
                     {hasFilter && (
                         <button onClick={resetFilters}
-                            className="flex items-center gap-1.5 px-3 py-2 text-slate-500 hover:text-white text-xs font-bold transition-colors">
+                            className="flex items-center gap-1.5 px-3 py-2 text-slate-500 hover:text-slate-900 text-xs font-bold transition-colors">
                             <X className="w-3.5 h-3.5" /> Reset
                         </button>
                     )}
@@ -213,7 +213,7 @@ export default function Logs() {
             {/* ── Table ── */}
             <div className="card !p-0 overflow-hidden">
                 {/* Table header bar */}
-                <div className="px-6 py-3 border-b border-white/[0.05] flex items-center justify-between bg-white/[0.01]">
+                <div className="px-6 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
                     <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Live Access Stream</span>
@@ -224,7 +224,7 @@ export default function Logs() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-900/50 text-slate-600 text-[10px] font-bold uppercase tracking-widest border-b border-white/[0.05]">
+                            <tr className="bg-slate-50 text-slate-600 text-[10px] font-bold uppercase tracking-widest border-b border-slate-200">
                                 <th className="px-4 md:px-6 py-3">Subject</th>
                                 <th className="px-4 md:px-6 py-3">Method</th>
                                 <th className="hidden lg:table-cell px-6 py-3">Timestamp</th>
@@ -239,7 +239,7 @@ export default function Logs() {
                                     <tr key={i} className="animate-pulse">
                                         {Array.from({ length: 6 }).map((_, j) => (
                                             <td key={j} className="px-6 py-4">
-                                                <div className="h-4 bg-white/[0.04] rounded-lg" />
+                                                <div className="h-4 bg-slate-50 rounded-lg" />
                                             </td>
                                         ))}
                                     </tr>
@@ -248,7 +248,7 @@ export default function Logs() {
                                 <tr>
                                     <td colSpan={6} className="px-6 py-24 text-center">
                                         <div className="flex flex-col items-center gap-3 opacity-30">
-                                            <Activity className="w-10 h-10 text-blue-400 animate-pulse" />
+                                            <Activity className="w-10 h-10 text-blue-600 animate-pulse" />
                                             <p className="font-bold uppercase tracking-widest text-xs">No events found</p>
                                             {hasFilter && <p className="text-slate-600 text-xs">Try adjusting your filters</p>}
                                         </div>
@@ -257,12 +257,12 @@ export default function Logs() {
                             ) : logs.map(log => (
                                 <tr key={log.id}
                                     onClick={() => log.employee_id && navigate(`/admin/access/employee/${log.employee_id}`)}
-                                    className={`hover:bg-white/[0.03] cursor-pointer transition-all duration-300 group active:scale-[0.995] ${log.status === 'failed' ? 'border-l-2 border-red-500/30' : log.status === 'ambiguous' ? 'border-l-2 border-amber-500/30' : 'border-l-2 border-transparent'}`}>
+                                    className={`hover:bg-slate-100 cursor-pointer transition-all duration-300 group active:scale-[0.995] ${log.status === 'failed' ? 'border-l-2 border-red-500/30' : log.status === 'ambiguous' ? 'border-l-2 border-amber-500/30' : 'border-l-2 border-transparent'}`}>
 
                                     {/* Subject */}
                                     <td className="px-4 md:px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-slate-800 border border-white/[0.06] overflow-hidden shrink-0">
+                                            <div className="w-8 h-8 rounded-lg bg-slate-200 border border-slate-200 overflow-hidden shrink-0">
                                                 {log.employees?.image_url
                                                     ? <img src={log.employees.image_url} alt="" className="w-full h-full object-cover" />
                                                     : <div className="w-full h-full flex items-center justify-center text-slate-600 font-black text-[10px]">
@@ -270,7 +270,7 @@ export default function Logs() {
                                                     </div>}
                                             </div>
                                             <div className="min-w-0">
-                                                <div className="text-sm font-bold text-white leading-tight truncate">
+                                                <div className="text-sm font-bold text-slate-900 leading-tight truncate">
                                                     {log.employees?.name ? log.employees.name : (
                                                         log.method === 'REMOTE' ? 'Remote Unlock' : 
                                                         log.method === 'FINGERPRINT' ? 'Unknown Fingerprint' : 'Unknown Person'
@@ -320,13 +320,13 @@ export default function Logs() {
 
                 {/* ── Pagination ── */}
                 {totalPages > 1 && (
-                    <div className="px-6 py-4 border-t border-white/[0.05] flex items-center justify-between gap-4 bg-white/[0.01]">
+                    <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-4 bg-slate-50">
                         <span className="text-[11px] text-slate-600 font-bold">
                             Page {page} of {totalPages} &bull; {total} events
                         </span>
                         <div className="flex items-center gap-1">
                             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                                className="p-1.5 rounded-lg hover:bg-white/[0.05] disabled:opacity-30 transition-colors">
+                                className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30 transition-colors">
                                 <ChevronLeft className="w-4 h-4 text-slate-400" />
                             </button>
                             {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
@@ -336,13 +336,13 @@ export default function Logs() {
                                     <button key={pg} onClick={() => setPage(pg)}
                                         className={`w-7 h-7 rounded-lg text-[11px] font-black transition-all ${pg === page
                                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                                            : 'text-slate-500 hover:bg-white/[0.05] hover:text-white'}`}>
+                                            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}>
                                         {pg}
                                     </button>
                                 );
                             })}
                             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                                className="p-1.5 rounded-lg hover:bg-white/[0.05] disabled:opacity-30 transition-colors">
+                                className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-30 transition-colors">
                                 <ChevronRight className="w-4 h-4 text-slate-400" />
                             </button>
                         </div>

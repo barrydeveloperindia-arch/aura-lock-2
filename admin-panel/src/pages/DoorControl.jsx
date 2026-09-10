@@ -183,7 +183,7 @@ export default function DoorControl() {
                                         <div className="flex-grow h-1.5 bg-white/5 rounded-full overflow-hidden">
                                             <div className="h-full bg-blue-500 transition-all duration-1000" style={{ width: doorState.rssi == null ? '0%' : `${Math.max(0, 100 + doorState.rssi)}%` }} />
                                         </div>
-                                        <span className="text-sm font-black text-white tabular-nums">{doorState.rssi == null ? 'n/a' : doorState.rssi} <span className="text-[9px] text-slate-500">dBm</span></span>
+                                        <span className="text-sm font-black text-slate-900 tabular-nums">{doorState.rssi == null ? 'n/a' : doorState.rssi} <span className="text-[9px] text-slate-500">dBm</span></span>
                                     </div>
                                 </div>
                                 <div>
@@ -288,7 +288,7 @@ export default function DoorControl() {
                                             <Bluetooth className="w-4 h-4 text-blue-400" />
                                         </div>
                                         <div>
-                                            <p className="text-xs font-black text-white truncate max-w-[120px]">{d.name}</p>
+                                            <p className="text-xs font-black text-slate-900 truncate max-w-[120px]">{d.name}</p>
                                             <p className="text-[9px] font-mono text-slate-500">{d.address}</p>
                                         </div>
                                     </div>
@@ -324,11 +324,11 @@ export default function DoorControl() {
                                     <div className={`w-1 h-10 rounded-full flex-shrink-0 transition-all ${log.status === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`} />
                                     <div className="flex-grow">
                                         <div className="flex items-center justify-between mb-1">
-                                            <span className="text-xs font-black text-white truncate max-w-[150px] tracking-tight">{log.employees?.name || 'Unknown User'}</span>
+                                            <span className="text-xs font-black text-slate-900 truncate max-w-[150px] tracking-tight">{log.employees?.name || 'Unknown User'}</span>
                                             <span className="text-[10px] font-bold text-slate-600 tabular-nums">{new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className={`text-[9px] font-black uppercase tracking-widest ${log.method === 'face' ? 'text-blue-400' : 'text-purple-400'}`}>{log.method || 'Manual'}</span>
+                                            <span className={`text-[9px] font-black uppercase tracking-widest ${log.method === 'face' ? 'text-blue-400' : 'text-purple-400'}`}>{log.method || '—'}</span>
                                             <span className="text-[8px] text-slate-600 font-bold">•</span>
                                             <span className="text-[9px] text-slate-500 font-medium">Confidence: {((log.confidence || 0) * 100).toFixed(0)}%</span>
                                         </div>

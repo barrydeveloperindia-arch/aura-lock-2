@@ -214,6 +214,9 @@ app.use('/api/stats', attendanceRoutes);
 // â”€â”€â”€ Security Logs Endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Filters: status, method, device_id, startDate, endDate, search (employee name)
 // â”€â”€â”€ Simplified Access Logs Endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Rows store the method inside metadata; the admin pages read it at the top level.
+const withMethod = (rows) => (rows || []).map(r => ({ ...r, method: String(r.method || r.metadata?.method || '').toLowerCase().replace(/^remote_.*$/, 'remote') }));
+
 app.get('/api/access-logs', authenticateToken, async (req, res) => {
     try {
         const {
@@ -267,7 +270,7 @@ app.get('/api/access-logs', authenticateToken, async (req, res) => {
         ]);
 
         res.json({
-            logs: logs || [],
+            logs: withMethod(logs),
             summary: { granted, denied: failedAll == null || ambiguous == null ? failedAll : failedAll - ambiguous, ambiguous },
             total: count || 0,
             pagination: {
@@ -308,7 +311,7 @@ app.get('/api/access-logs/employee/:employee_id', authenticateToken, async (req,
         const { data: logs, count, error } = await q.range(from, to);
         if (error) throw error;
 
-        res.json({ logs: logs || [], total: count || 0 });
+        res.json({ logs: withMethod(logs), total: count || 0 });
     } catch (error) {
         console.error('âŒ Employee access logs error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
