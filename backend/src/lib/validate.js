@@ -17,8 +17,9 @@ function isValidEmail(value) {
     return v.length > 0 && v.length <= 254 && EMAIL_RE.test(v);
 }
 
-/** Company employee-ID format: EMP-001 … EMP-999 (upper-case, three digits). */
-const EMPLOYEE_ID_RE = /^EMP-\d{3}$/;
+/** Company employee-ID format: EL101 … EL999 (HR format, upper-case, three digits).
+ *  EMP-### is the interim format still carried by staff not yet renamed. */
+const EMPLOYEE_ID_RE = /^(EL\d{3}|EMP-\d{3})$/;
 function isValidEmployeeId(value) {
     return typeof value === 'string' && EMPLOYEE_ID_RE.test(value.trim());
 }

@@ -106,8 +106,8 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
         if (e) e.preventDefault();
         if (!form.name.trim() || !form.email.trim()) { setErr('Name and email are required.'); return; }
         if (!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(form.email.trim())) { setErr('Enter a valid email address, e.g. name@gmail.com'); return; }
-        if (!String(form.employee_id || '').trim()) { setErr('Employee ID is required (e.g. EMP-048).'); return; }
-        if (mode !== 'edit' && !/^EMP-\d{3}$/i.test(String(form.employee_id).trim())) { setErr('Employee ID must look like EMP-048 (EMP- followed by three digits).'); return; }
+        if (!String(form.employee_id || '').trim()) { setErr('Employee ID is required (e.g. EL107).'); return; }
+        if (mode !== 'edit' && !/^(EL\d{3}|EMP-\d{3})$/i.test(String(form.employee_id).trim())) { setErr('Employee ID must look like EL107 (EL followed by three digits).'); return; }
         setSaving(true); setErr('');
         try { 
             const savedUser = await onSave(form); 
@@ -139,7 +139,7 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
             <form onSubmit={e => handleSubmit(e)} className="space-y-4">
                 {field('Full Name', 'name', 'text', 'e.g. Rahul Sharma')}
                 {field('Email', 'email', 'email', 'e.g. rahul@company.com')}
-                {field('Employee ID', 'employee_id', 'text', 'e.g. EMP-001')}
+                {field('Employee ID', 'employee_id', 'text', 'e.g. EL107')}
                 <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Department</label>
                     <input 

@@ -35,7 +35,7 @@ const PLAIN_FK_TABLES = ['face_encodings', 'security_alerts'];
     for (const [from, to] of Object.entries(MAP)) {
         const emp = byId.get(from);
         if (!emp) { console.log(`skip ${from}: no such employee`); continue; }
-        if (!/^EMP-\d{3}$/.test(to)) { console.log(`skip ${from}: target ${to} is not EMP-###`); continue; }
+        if (!/^(EL\d{3}|EMP-\d{3})$/.test(to)) { console.log(`skip ${from}: target ${to} is not EL### / EMP-###`); continue; }
         if (taken.has(to.toUpperCase()) && from.toUpperCase() !== to.toUpperCase()) { console.log(`skip ${from}: ${to} is already used`); continue; }
         const count = async (t) => (await sb.from(t).select('*', { count: 'exact', head: true }).eq('employee_id', from)).count || 0;
         const { data: av } = await sb.storage.from(BUCKET).list('avatars', { search: from });

@@ -21,9 +21,9 @@ const validateIdentity = async (req, res, next) => {
         console.warn("⚠️ [IdentityValidation] Empty body detected! Possibly Multer hasn't finished parsing?");
     }
 
-    // New staff get a company-format ID (EMP-###). Existing odd IDs are renamed by scripts/rename_employee_ids.js.
-    if (!isUpdate && finalId && !isValidEmployeeId(finalId)) {
-        return res.status(400).json({ success: false, message: 'Employee ID must look like EMP-048 (EMP- followed by three digits).' });
+    // New staff get the HR-format ID (EL###). Existing IDs are renamed by scripts/rename_employee_ids.js.
+    if (!isUpdate && finalId && !isValidEmployeeId(String(finalId).trim().toUpperCase())) {
+        return res.status(400).json({ success: false, message: 'Employee ID must look like EL107 (EL followed by three digits).' });
     }
     if (!isUpdate && finalId) req.body.employee_id = String(finalId).trim().toUpperCase();
 
