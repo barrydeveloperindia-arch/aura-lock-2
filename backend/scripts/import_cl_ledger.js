@@ -34,7 +34,7 @@ const val = (c) => { const x = c.value; if (x && typeof x === 'object') { if ('r
 const num = (x) => (x === null || x === undefined || x === '' ? null : Number(x));
 
 // Sheet spellings that differ from the employee record (checked against the staff list on 9 Sep 2026)
-const ALIASES = { KUWARLAL: 'EMP-008', SHUBHAM: 'EMP-006' };
+const ALIASES = { KUWARLAL: 'EL021', SHUBHAM: 'EL024' };
 /** Resolve a sheet name like "KUWARLAL" to one employee (active or disabled). */
 function resolveEmployee(sheetName, employees) {
     const key = String(sheetName).toUpperCase().replace(/[^A-Z]/g, '');

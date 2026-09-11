@@ -23,7 +23,7 @@ const validateIdentity = async (req, res, next) => {
 
     // New staff get the HR-format ID (EL###). Existing IDs are renamed by scripts/rename_employee_ids.js.
     if (!isUpdate && finalId && !isValidEmployeeId(String(finalId).trim().toUpperCase())) {
-        return res.status(400).json({ success: false, message: 'Employee ID must look like EL107 (EL followed by three digits).' });
+        return res.status(400).json({ success: false, message: 'Employee ID must look like EL107 (EL followed by 3 or 4 digits).' });
     }
     if (!isUpdate && finalId) req.body.employee_id = String(finalId).trim().toUpperCase();
 

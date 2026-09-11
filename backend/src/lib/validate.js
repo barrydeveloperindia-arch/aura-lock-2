@@ -17,9 +17,9 @@ function isValidEmail(value) {
     return v.length > 0 && v.length <= 254 && EMAIL_RE.test(v);
 }
 
-/** Company employee-ID format: EL101 … EL999 (HR format, upper-case, three digits).
+/** Company employee-ID format from the accounts (Tally) register: EL + 3 or 4 digits, e.g. EL107, EL1111.
  *  EMP-### is the interim format still carried by staff not yet renamed. */
-const EMPLOYEE_ID_RE = /^(EL\d{3}|EMP-\d{3})$/;
+const EMPLOYEE_ID_RE = /^(EL\d{3,4}|EMP-\d{3})$/;
 function isValidEmployeeId(value) {
     return typeof value === 'string' && EMPLOYEE_ID_RE.test(value.trim());
 }
