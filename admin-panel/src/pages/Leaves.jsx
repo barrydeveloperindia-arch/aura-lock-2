@@ -312,7 +312,7 @@ export default function Leaves() {
                                 const status = groupStatus(group);
                                 const dateLabel = group.length === 1
                                     ? format(new Date(first.date + 'T00:00:00'), 'EEE dd MMM')
-                                    : `${format(new Date(first.date + 'T00:00:00'), 'dd')}–${format(new Date(last.date + 'T00:00:00'), 'dd MMM')}`;
+                                    : `${format(new Date(first.date + 'T00:00:00'), 'EEE dd')} – ${format(new Date(last.date + 'T00:00:00'), 'EEE dd MMM')}`;
                                 return (
                                     <div key={group.map(g => g.id).join(',')} className="flex items-center gap-3 px-4 py-3">
                                         <button type="button" aria-label={`View leave for ${first.employee?.name}`} onClick={() => setViewGroup(group)} className="w-10 h-10 rounded-full border-2 border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center font-bold text-xs text-brand-navy shrink-0">
@@ -324,8 +324,8 @@ export default function Leaves() {
                                         </button>
                                         <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${TYPE_TONE[first.type] || 'bg-slate-100 text-slate-600'}`}>{first.type}</span>
                                         <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${STATUS_TONE[status]}`}>{status}</span>
-                                        <div className="text-right w-28 shrink-0">
-                                            <div className="font-mono text-xs text-slate-600">{dateLabel}</div>
+                                        <div className="text-right w-36 shrink-0">
+                                            <div className="font-mono text-xs text-slate-600 whitespace-nowrap">{dateLabel}</div>
                                             {group.length > 1 && <div className="text-[10px] text-slate-400">{group.length} days</div>}
                                         </div>
                                         {status === 'Pending' && (
