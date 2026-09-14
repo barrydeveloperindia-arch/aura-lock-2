@@ -445,6 +445,7 @@ export default function Attendance() {
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-50">
+                                <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Sr. No.</th>
                                 <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Employee</th>
                                 <th className="hidden lg:table-cell px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Department</th>
                                 <SortTh label="Date" col="date" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-center" />
@@ -459,7 +460,7 @@ export default function Attendance() {
                             {loading ? (
                                 Array(5).fill(0).map((_, i) => (
                                     <tr key={i} className="animate-pulse">
-                                        {Array(8).fill(0).map((_, j) => (
+                                        {Array(9).fill(0).map((_, j) => (
                                             <td key={j} className="px-6 py-4">
                                                 <div className="h-6 bg-white/[0.04] rounded-lg" />
                                             </td>
@@ -468,7 +469,7 @@ export default function Attendance() {
                                 ))
                             ) : attendance.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="px-8 py-20 text-center">
+                                    <td colSpan={9} className="px-8 py-20 text-center">
                                         <div className="flex flex-col items-center gap-4">
                                             <Calendar className="w-12 h-12 text-slate-800" />
                                             <div className="text-slate-500 text-xs font-black uppercase tracking-widest">
@@ -481,13 +482,17 @@ export default function Attendance() {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : attendance.map((rec) => {
+                            ) : attendance.map((rec, idx) => {
                                 const name = rec.employees?.name || '—';
                                 const initials = name.slice(0, 2).toUpperCase();
                                 return (
                                     <tr key={rec.id} 
                                         className="group hover:bg-slate-50 cursor-pointer transition-all border-l-2 border-l-transparent hover:border-l-blue-500"
                                         onClick={() => navigate(`/admin/attendance/employee/${rec.employees?.employee_id || rec.employee_id}`)}>
+                                        {/* Sr. No. */}
+                                        <td className="px-4 md:px-6 py-4 text-xs font-bold text-slate-500 tabular-nums">
+                                            {(page - 1) * PAGE_SIZE + idx + 1}
+                                        </td>
                                         {/* Employee */}
                                         <td className="px-4 md:px-6 py-4">
                                             <div className="flex items-center gap-3">
