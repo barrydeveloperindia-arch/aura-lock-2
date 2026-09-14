@@ -50,7 +50,7 @@ function ViewModal({ group, types, avatar, onShare, onApprove, onReject, onDelet
                     </div>
                     {first.note && (
                         <div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Note</div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Reason for requested leave</div>
                             <div className="text-sm text-slate-700">{first.note}</div>
                         </div>
                     )}
@@ -171,24 +171,32 @@ export default function Leaves() {
             setViewGroup(null);
         } catch (err) { setError(err?.response?.data?.error || `Could not ${status === 'Approved' ? 'approve' : 'reject'}`); }
     };
+    // Follows the printed Leave Application Form's own field order and labels
+    // (G:\Englabs Office Record\...\13_LEAVE APPLICATION FORM) so the WhatsApp message reads
+    // like the paper form. Designation isn't on the field's own line here — the attendance
+    // system has no "designation" field for staff, so it's left off rather than guessed.
     const shareText = (group) => {
         const first = group[0], last = group[group.length - 1];
-        const range = group.length === 1
-            ? format(new Date(first.date + 'T00:00:00'), 'EEE dd MMM yyyy')
-            : `${format(new Date(first.date + 'T00:00:00'), 'dd MMM')} – ${format(new Date(last.date + 'T00:00:00'), 'dd MMM yyyy')}`;
+        const fromLabel = format(new Date(first.date + 'T00:00:00'), 'dd MMM yyyy');
+        const toLabel = format(new Date(last.date + 'T00:00:00'), 'dd MMM yyyy');
         const lines = [
-            `*Leave update — ${first.employee?.name || ''}*`,
-            `${first.employee?.employee_id || ''} · ${first.employee?.department || ''}`,
-            `${types[first.type] || first.type}: ${range} (${group.length} day${group.length > 1 ? 's' : ''})`,
+            '*ENGLABS INDIA PVT. LTD. — Leave Application*',
+            '',
+            `Employee Name: ${first.employee?.name || ''} (${first.employee?.employee_id || ''})`,
+            `Department: ${first.employee?.department || ''}`,
+            `Date: ${format(first.created_at ? new Date(first.created_at) : new Date(), 'dd MMM yyyy')}`,
+            '',
+            `Leave Type: ${types[first.type] || first.type}`,
+            `Dates Requested: Leave From ${fromLabel} To ${toLabel} (${group.length} day${group.length > 1 ? 's' : ''})`,
+            `Reason for requested leave: ${first.note || '—'}`,
         ];
-        if (first.note) lines.push(`Note: ${first.note}`);
         // "Pending"/"Approved" already count against the CL balance, so the balance the app
         // shows right now is the AFTER value; add back this leave's days to get the BEFORE one.
         if (first.type === 'CL') {
             const cl = clByEmployeeId.get(first.employee?.employee_id);
             if (cl?.cl_balance != null) lines.push(`CL balance: ${cl.cl_balance + group.length} → ${cl.cl_balance}`);
         }
-        lines.push('', 'Sir/Mam, please approve this leave. 🙏');
+        lines.push('', 'Admin / Supervisor Approval:', 'Sir/Mam, please approve this leave. 🙏');
         return lines.join('\n');
     };
     const share = async (text) => {
@@ -290,8 +298,8 @@ export default function Leaves() {
                                 <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} aria-label="Leave type" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 outline-none focus:border-brand-navy">
                                     {Object.keys(types).map(k => <option key={k} value={k}>{k}</option>)}
                                 </select></label>
-                            <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Note</span>
-                                <input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="optional" aria-label="Note" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:border-brand-navy" /></label>
+                            <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reason</span>
+                                <input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="reason for leave" aria-label="Reason for requested leave" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:border-brand-navy" /></label>
                             <button type="submit" disabled={saving || setupNeeded} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-sm font-bold hover:bg-brand-navy-light disabled:opacity-50">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Add leave
                             </button>
