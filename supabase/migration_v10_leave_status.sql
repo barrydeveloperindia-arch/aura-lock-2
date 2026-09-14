@@ -4,9 +4,13 @@
 --
 -- Existing rows backfill to 'Approved' (they were already recorded as taken);
 -- new leaves the admin panel adds start as 'Pending' until approved or rejected.
+--
+-- Safe to run even if an earlier version of this column (without 'Rejected') already
+-- exists: the table has no real leave data yet, so this drops and recreates the column.
 
+ALTER TABLE public.leaves DROP COLUMN IF EXISTS status;
 ALTER TABLE public.leaves
-    ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'Approved'
+    ADD COLUMN status text NOT NULL DEFAULT 'Approved'
     CHECK (status IN ('Pending', 'Approved', 'Rejected'));
 
 NOTIFY pgrst, 'reload schema';
