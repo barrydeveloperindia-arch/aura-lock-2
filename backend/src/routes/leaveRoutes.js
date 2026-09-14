@@ -3,6 +3,9 @@
  *
  *   GET    /api/leaves?from=YYYY-MM-DD&to=YYYY-MM-DD   leaves in a range, with the employee
  *   POST   /api/leaves     { employee_id (EMP-### or uuid), date, type, note }  upsert (one per person per day)
+ *   POST   /api/leaves/range  { employee_id, from, to, type, note }  same, for 2+ days in a row —
+ *          Sundays and holidays inside the range are skipped automatically (the same rule the
+ *          monthly report already uses to count absence), so a leave never lands on a non-working day.
  *   DELETE /api/leaves/:id
  *   GET    /api/holidays?year=2026
  *   POST   /api/holidays   { date, name }
@@ -15,7 +18,7 @@
 const express = require('express');
 const supabase = require('../../supabase');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
-const { LEAVE_TYPES, isValidLeaveType, isValidDate } = require('../lib/leaves');
+const { LEAVE_TYPES, isValidLeaveType, isValidDate, workingDates } = require('../lib/leaves');
 
 const router = express.Router();
 const SETUP_HINT = 'Leave register is not set up yet: run supabase/migration_v8_leaves.sql in the Supabase SQL editor.';
@@ -62,6 +65,49 @@ router.post('/api/leaves', authenticateToken, isAdmin, async (req, res) => {
         if (error) throw error;
         res.status(201).json({ leave: { ...data, employee: emp } });
     } catch (err) { fail(res, err, 'save leave'); }
+});
+
+// One employee, 2+ days off in a row (e.g. a 4-day trip home): mark every WORKING day in
+// [from, to] with the same type/note in one call. Sundays and company holidays inside the
+// range are skipped, never written as a leave, and reported back so the admin can see them.
+router.post('/api/leaves/range', authenticateToken, isAdmin, async (req, res) => {
+    const { employee_id, from, to, type, note } = req.body || {};
+    if (!isValidDate(from) || !isValidDate(to)) return res.status(400).json({ error: 'from and to must be YYYY-MM-DD' });
+    if (to < from) return res.status(400).json({ error: '"to" must be on or after "from"' });
+    if (!isValidLeaveType(type)) return res.status(400).json({ error: `type must be one of ${Object.keys(LEAVE_TYPES).join(', ')}` });
+    const spanDays = (new Date(to + 'T00:00:00Z') - new Date(from + 'T00:00:00Z')) / 86400000 + 1;
+    if (spanDays > 62) return res.status(400).json({ error: 'Range is too long (max ~2 months); split it into smaller ranges.' });
+    try {
+        const emp = await resolveEmployee(employee_id);
+        if (!emp) return res.status(404).json({ error: 'Employee not found' });
+        const { data: holidayRows, error: hErr } = await supabase.from('holidays').select('date, name').gte('date', from).lte('date', to);
+        if (hErr) throw hErr;
+        const holidayByDate = new Map((holidayRows || []).map(h => [h.date, h.name]));
+        const working = workingDates(from, to, holidayRows || []);
+
+        const skipped = [];
+        const cursor = new Date(from + 'T00:00:00Z');
+        const end = new Date(to + 'T00:00:00Z');
+        while (cursor <= end) {
+            const iso = cursor.toISOString().slice(0, 10);
+            if (!working.has(iso)) skipped.push({ date: iso, reason: holidayByDate.has(iso) ? `holiday (${holidayByDate.get(iso)})` : 'Sunday' });
+            cursor.setUTCDate(cursor.getUTCDate() + 1);
+        }
+        if (working.size === 0) return res.status(400).json({ error: 'Every day in that range is a Sunday or a holiday — nothing to mark.' });
+
+        const upType = String(type).toUpperCase();
+        const trimmedNote = String(note || '').trim().slice(0, 200) || null;
+        const createdBy = req.user?.email || 'admin';
+        const rows = [...working].sort().map(date => ({ employee_id: emp.id, date, type: upType, note: trimmedNote, created_by: createdBy }));
+        const { data, error } = await supabase.from('leaves').upsert(rows, { onConflict: 'employee_id,date' }).select('id, date, type, note, created_by, created_at');
+        if (error) throw error;
+        res.status(201).json({
+            employee: emp,
+            leaves: (data || []).map(l => ({ ...l, employee: emp })),
+            created: (data || []).length,
+            skipped,
+        });
+    } catch (err) { fail(res, err, 'save leave range'); }
 });
 
 router.delete('/api/leaves/:id', authenticateToken, isAdmin, async (req, res) => {

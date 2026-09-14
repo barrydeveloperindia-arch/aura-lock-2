@@ -177,6 +177,7 @@ export const apiService = {
     getLeaveTypes: async () => (await api.get('/api/leaves/types')).data,
     getLeaves: async (from, to, employee_id) => (await api.get('/api/leaves', { params: { from, to, ...(employee_id ? { employee_id } : {}) } })).data,
     addLeave: async (leave) => (await api.post('/api/leaves', leave)).data,
+    addLeaveRange: async (leave) => (await api.post('/api/leaves/range', leave)).data,
     deleteLeave: async (id) => (await api.delete(`/api/leaves/${id}`)).data,
     getHolidays: async (year) => (await api.get('/api/holidays', { params: { year } })).data,
     addHoliday: async (holiday) => (await api.post('/api/holidays', holiday)).data,

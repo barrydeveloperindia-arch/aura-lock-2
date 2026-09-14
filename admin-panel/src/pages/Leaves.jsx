@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarOff, Plus, Trash2, Loader2, AlertTriangle, ChevronLeft, ChevronRight, Sun } from 'lucide-react';
+import { CalendarOff, Plus, Trash2, Loader2, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Sun, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiService } from '../services/api';
 import useAvatars from '../hooks/useAvatars';
@@ -8,6 +8,11 @@ import useAvatars from '../hooks/useAvatars';
  * Leave register: who is on CL / SL / EL / WFH / OD on which day, plus the
  * company holiday list. Both feed the monthly report (absent = working days
  * − present − leave) and the daily Attendance absent list.
+ *
+ * A leave can span several days (e.g. going home for a wedding): the admin
+ * picks a From/To range and every WORKING day in it is marked in one call —
+ * Sundays and company holidays inside the range are skipped automatically,
+ * the same rule the monthly report already uses to count absence.
  */
 const TYPE_TONE = {
     CL: 'bg-brand-navy/10 text-brand-navy', SL: 'bg-rose-500/10 text-rose-600', EL: 'bg-violet-500/10 text-violet-700',
@@ -23,10 +28,12 @@ export default function Leaves() {
     const [employees, setEmployees] = useState([]);
     const [leaves, setLeaves] = useState([]);
     const [holidays, setHolidays] = useState([]);
+    const [clRows, setClRows] = useState([]); // this month's per-employee CL from the monthly report — one source of truth, not re-derived here
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [notice, setNotice] = useState(null); // { text } after a successful multi-day save
     const [setupNeeded, setSetupNeeded] = useState(false);
-    const [form, setForm] = useState({ employee_id: '', date: todayISO(), type: 'CL', note: '' });
+    const [form, setForm] = useState({ employee_id: '', from: todayISO(), to: todayISO(), type: 'CL', note: '' });
     const [holForm, setHolForm] = useState({ date: '', name: '' });
     const [saving, setSaving] = useState(false);
 
@@ -43,6 +50,11 @@ export default function Leaves() {
             if (err?.response?.status === 503) setSetupNeeded(true);
             else setError(err?.response?.data?.error || 'Could not load leaves');
         } finally { setLoading(false); }
+        // CL balance doesn't need the leave tables to exist (it falls back to the imported
+        // ledger), so it's fetched separately and never blocks the rest of the page.
+        apiService.getMonthlyReport(month.getMonth() + 1, month.getFullYear())
+            .then(r => setClRows(r?.data || []))
+            .catch(() => setClRows([]));
     }, [from, to, month]);
 
     useEffect(() => { load(); }, [load]);
@@ -54,12 +66,22 @@ export default function Leaves() {
         apiService.getLeaveTypes().then(d => { if (d?.types) setTypes(d.types); }).catch(() => {});
     }, []);
 
+    const clByEmployeeId = useMemo(() => new Map(clRows.map(r => [r.employee_id, r])), [clRows]);
+
     const addLeave = async (e) => {
         e.preventDefault();
         if (!form.employee_id) { setError('Choose a staff member.'); return; }
-        setSaving(true); setError('');
-        try { await apiService.addLeave(form); setForm(f => ({ ...f, note: '' })); await load(); }
-        catch (err) { setError(err?.response?.data?.error || 'Could not save leave'); }
+        if (form.to < form.from) { setError('"To" date must be on or after "From".'); return; }
+        setSaving(true); setError(''); setNotice(null);
+        try {
+            const res = await apiService.addLeaveRange({ employee_id: form.employee_id, from: form.from, to: form.to, type: form.type, note: form.note });
+            const who = employees.find(e => e.employee_id === form.employee_id)?.name || form.employee_id;
+            const days = res.created === 1 ? '1 day' : `${res.created} days`;
+            const skipText = res.skipped?.length ? ` (skipped ${res.skipped.map(s => format(new Date(s.date + 'T00:00:00'), 'd MMM')).join(', ')} — ${res.skipped[0].reason.includes('Sunday') ? 'Sunday' : 'holiday'})` : '';
+            setNotice({ text: `Marked ${form.type} for ${who}: ${days}${skipText}.` });
+            setForm(f => ({ ...f, note: '' }));
+            await load();
+        } catch (err) { setError(err?.response?.data?.error || 'Could not save leave'); }
         finally { setSaving(false); }
     };
     const removeLeave = async (id) => {
@@ -81,6 +103,11 @@ export default function Leaves() {
 
     const counts = useMemo(() => { const c = {}; for (const l of leaves) c[l.type] = (c[l.type] || 0) + 1; return c; }, [leaves]);
     const monthHolidays = holidays.filter(h => h.date >= from && h.date <= to);
+    const dayCount = (() => {
+        if (!form.from || !form.to || form.to < form.from) return 0;
+        return Math.round((new Date(form.to + 'T00:00:00') - new Date(form.from + 'T00:00:00')) / 86400000) + 1;
+    })();
+    const selectedCl = form.employee_id ? clByEmployeeId.get(form.employee_id) : null;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
@@ -105,6 +132,7 @@ export default function Leaves() {
                 </div>
             )}
             {error && <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold"><AlertTriangle className="w-4 h-4" />{error}</div>}
+            {notice && <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold"><CheckCircle2 className="w-4 h-4 shrink-0" />{notice.text}</div>}
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {Object.entries(types).map(([k, label]) => (
@@ -117,23 +145,34 @@ export default function Leaves() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
-                    <form onSubmit={addLeave} className="p-5 rounded-2xl bg-white border border-slate-200 grid grid-cols-1 md:grid-cols-[1fr_150px_120px_1fr_auto] gap-3 items-end">
-                        <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Staff</span>
-                            <select value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))} aria-label="Staff" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 outline-none focus:border-brand-navy">
-                                <option value="">Choose…</option>
-                                {employees.map(e => <option key={e.employee_id} value={e.employee_id}>{e.name} · {e.employee_id}</option>)}
-                            </select></label>
-                        <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Date</span>
-                            <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} aria-label="Leave date" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono text-slate-800 outline-none focus:border-brand-navy" /></label>
-                        <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Type</span>
-                            <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} aria-label="Leave type" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 outline-none focus:border-brand-navy">
-                                {Object.keys(types).map(k => <option key={k} value={k}>{k}</option>)}
-                            </select></label>
-                        <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Note</span>
-                            <input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="optional" aria-label="Note" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:border-brand-navy" /></label>
-                        <button type="submit" disabled={saving || setupNeeded} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-sm font-bold hover:bg-brand-navy-light disabled:opacity-50">
-                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Add leave
-                        </button>
+                    <form onSubmit={addLeave} className="p-5 rounded-2xl bg-white border border-slate-200 space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-[1.3fr_110px_110px_100px_1fr_auto] gap-3 items-end">
+                            <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Staff</span>
+                                <select value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))} aria-label="Staff" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 outline-none focus:border-brand-navy">
+                                    <option value="">Choose…</option>
+                                    {employees.map(e => {
+                                        const cl = clByEmployeeId.get(e.employee_id);
+                                        return <option key={e.employee_id} value={e.employee_id}>{e.name} · {e.employee_id}{cl?.cl_balance != null ? ` · CL ${cl.cl_balance}` : ''}</option>;
+                                    })}
+                                </select></label>
+                            <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">From</span>
+                                <input type="date" value={form.from} onChange={e => setForm(f => ({ ...f, from: e.target.value, to: f.to < e.target.value ? e.target.value : f.to }))} aria-label="Leave from date" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono text-slate-800 outline-none focus:border-brand-navy" /></label>
+                            <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">To</span>
+                                <input type="date" value={form.to} min={form.from} onChange={e => setForm(f => ({ ...f, to: e.target.value }))} aria-label="Leave to date" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono text-slate-800 outline-none focus:border-brand-navy" /></label>
+                            <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Type</span>
+                                <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} aria-label="Leave type" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 outline-none focus:border-brand-navy">
+                                    {Object.keys(types).map(k => <option key={k} value={k}>{k}</option>)}
+                                </select></label>
+                            <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Note</span>
+                                <input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="optional" aria-label="Note" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:border-brand-navy" /></label>
+                            <button type="submit" disabled={saving || setupNeeded} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-sm font-bold hover:bg-brand-navy-light disabled:opacity-50">
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Add leave
+                            </button>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+                            <span>{dayCount > 1 ? `${dayCount} calendar days selected — ` : ''}Sundays and holidays in between are skipped automatically.</span>
+                            {selectedCl && <span className="font-semibold text-brand-navy">{selectedCl.name}'s CL balance: {selectedCl.cl_balance ?? '—'}{selectedCl.cl_balance != null && form.type === 'CL' && dayCount > 0 && selectedCl.cl_balance < dayCount ? ' — this request may exceed the balance' : ''}</span>}
+                        </div>
                     </form>
 
                     <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden">
@@ -160,6 +199,25 @@ export default function Leaves() {
                 </div>
 
                 <div className="space-y-4">
+                    <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500"><Wallet className="w-4 h-4 text-brand-navy" /> CL balance — {format(month, 'MMMM yyyy')}</div>
+                        <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                            {clRows.length === 0 && <div className="p-6 text-center text-slate-400 text-xs font-semibold">No CL data for this month yet.</div>}
+                            {[...clRows].sort((a, b) => a.name.localeCompare(b.name)).map(r => (
+                                <div key={r.employee_id} className="flex items-center gap-3 px-4 py-2.5">
+                                    <div className="min-w-0 flex-1">
+                                        <div className="text-xs font-bold text-slate-800 truncate">{r.name}</div>
+                                        <div className="text-[10px] text-slate-400 font-mono">{r.employee_id}{r.cl ? ` · ${r.cl} CL used` : ''}</div>
+                                    </div>
+                                    <span className={`text-sm font-black tabular-nums ${r.cl_balance == null ? 'text-slate-300' : r.cl_balance < 0 ? 'text-red-600' : r.cl_balance === 0 ? 'text-slate-500' : 'text-emerald-600'}`}>
+                                        {r.cl_balance == null ? '—' : r.cl_balance}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="px-4 py-2.5 border-t border-slate-100 text-[10px] text-slate-400">Add or remove a CL leave above to adjust a balance — it recalculates here automatically.</div>
+                    </div>
+
                     <form onSubmit={addHoliday} className="p-5 rounded-2xl bg-white border border-slate-200 space-y-3">
                         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500"><Sun className="w-4 h-4 text-amber-500" /> Holidays {month.getFullYear()}</div>
                         <input type="date" value={holForm.date} onChange={e => setHolForm(f => ({ ...f, date: e.target.value }))} aria-label="Holiday date" className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono outline-none focus:border-brand-navy" />
