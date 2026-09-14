@@ -138,21 +138,32 @@ describe('POST /api/leaves (single day)', () => {
 });
 
 describe('PATCH /api/leaves/:id', () => {
-    test('approves a leave day', async () => {
+    test('approves a leave day, recording who signed', async () => {
         const created = await request(app).post('/api/leaves/range').send({ employee_id: 'EL107', from: '2026-09-16', to: '2026-09-16', type: 'CL' });
         const id = created.body.leaves[0].id;
-        const res = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Approved' });
+        const res = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Approved', approved_by: 'Bharat sir' });
         expect(res.status).toBe(200);
         expect(res.body.leave.status).toBe('Approved');
+        expect(res.body.leave.approved_by).toBe('Bharat sir');
         expect(supabase.__state.leaves.find(l => l.id === id).status).toBe('Approved');
     });
 
     test('also accepts Rejected (matches the printed form: Approved / Rejected)', async () => {
         const created = await request(app).post('/api/leaves/range').send({ employee_id: 'EL107', from: '2026-09-16', to: '2026-09-16', type: 'CL' });
         const id = created.body.leaves[0].id;
-        const res = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Rejected' });
+        const res = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Rejected', approved_by: 'Salil sir' });
         expect(res.status).toBe(200);
         expect(res.body.leave.status).toBe('Rejected');
+        expect(res.body.leave.approved_by).toBe('Salil sir');
+    });
+
+    test('Approved/Rejected require approved_by to be one of the fixed signers', async () => {
+        const created = await request(app).post('/api/leaves/range').send({ employee_id: 'EL107', from: '2026-09-16', to: '2026-09-16', type: 'CL' });
+        const id = created.body.leaves[0].id;
+        const noSigner = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Approved' });
+        expect(noSigner.status).toBe(400);
+        const badSigner = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Approved', approved_by: 'Random Person' });
+        expect(badSigner.status).toBe(400);
     });
 
     test('rejects a status that is none of Pending/Approved/Rejected, and an unknown id', async () => {
@@ -160,7 +171,7 @@ describe('PATCH /api/leaves/:id', () => {
         const id = created.body.leaves[0].id;
         const bad = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Cancelled' });
         expect(bad.status).toBe(400);
-        const missing = await request(app).patch('/api/leaves/00000000-0000-0000-0000-000000000000').send({ status: 'Approved' });
+        const missing = await request(app).patch('/api/leaves/00000000-0000-0000-0000-000000000000').send({ status: 'Approved', approved_by: 'Admin' });
         expect(missing.status).toBe(404);
     });
 });
@@ -169,7 +180,7 @@ describe('leavesBetween (used by the monthly report and absent list)', () => {
     test('a Rejected leave is excluded — that day goes back to being a plain absence', async () => {
         const a = await request(app).post('/api/leaves/range').send({ employee_id: 'EL107', from: '2026-09-16', to: '2026-09-16', type: 'CL' });
         await request(app).post('/api/leaves/range').send({ employee_id: 'EL107', from: '2026-09-17', to: '2026-09-17', type: 'SL' });
-        await request(app).patch(`/api/leaves/${a.body.leaves[0].id}`).send({ status: 'Rejected' });
+        await request(app).patch(`/api/leaves/${a.body.leaves[0].id}`).send({ status: 'Rejected', approved_by: 'Shreya mam' });
         const rows = await leavesBetween('2026-09-01', '2026-09-30');
         expect(rows.map(r => r.date)).toEqual(['2026-09-17']);
         expect(rows.map(r => r.date)).not.toContain('2026-09-16');

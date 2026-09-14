@@ -6,7 +6,9 @@
  *   POST   /api/leaves/range  { employee_id, from, to, type, note }  same, for 2+ days in a row —
  *          Sundays and holidays inside the range are skipped automatically (the same rule the
  *          monthly report already uses to count absence), so a leave never lands on a non-working day.
- *   PATCH  /api/leaves/:id  { status: 'Pending' | 'Approved' | 'Rejected' }  one leave day
+ *   PATCH  /api/leaves/:id  { status: 'Pending' | 'Approved' | 'Rejected', approved_by }
+ *          approved_by is required for Approved/Rejected (one of APPROVERS below) — the
+ *          "Admin / Supervisor Approval ... Signature" line on the printed form.
  *   DELETE /api/leaves/:id
  *   GET    /api/holidays?year=2026
  *   POST   /api/holidays   { date, name }
@@ -29,6 +31,9 @@ const { LEAVE_TYPES, isValidLeaveType, isValidDate, workingDates } = require('..
 
 const router = express.Router();
 const LEAVE_STATUSES = ['Pending', 'Approved', 'Rejected']; // matches the printed Leave Application Form
+// Who is allowed to sign the "Admin / Supervisor Approval" line — kept as a fixed list (not a
+// free-text field) so it always reads as one of the actual people who can approve leave.
+const APPROVERS = ['Admin', 'Bharat sir', 'Salil sir', 'Shreya mam'];
 const SETUP_HINT = 'Leave register is not fully set up yet: run supabase/migration_v8_leaves.sql, then migration_v10_leave_status.sql, in the Supabase SQL editor.';
 const missingTable = (err) => /Could not find the table|does not exist|schema cache/i.test(err?.message || '');
 const fail = (res, err, what) => {
@@ -47,17 +52,18 @@ async function resolveEmployee(idOrUuid) {
 }
 
 router.get('/api/leaves/types', authenticateToken, (req, res) => res.json({ types: LEAVE_TYPES }));
+router.get('/api/leaves/approvers', authenticateToken, (req, res) => res.json({ approvers: APPROVERS }));
 
 router.get('/api/leaves', authenticateToken, isAdmin, async (req, res) => {
     const { from, to, employee_id } = req.query;
     if (!isValidDate(from) || !isValidDate(to)) return res.status(400).json({ error: 'from and to (YYYY-MM-DD) are required' });
     try {
-        let q = supabase.from('leaves').select('id, date, type, note, status, created_by, created_at, employees!inner(id, employee_id, name, department)')
+        let q = supabase.from('leaves').select('id, date, type, note, status, approved_by, created_by, created_at, employees!inner(id, employee_id, name, department)')
             .gte('date', from).lte('date', to).order('date', { ascending: false });
         if (employee_id) q = q.eq('employees.employee_id', String(employee_id).toUpperCase());
         const { data, error } = await q;
         if (error) throw error;
-        res.json({ from, to, leaves: (data || []).map(l => ({ id: l.id, date: l.date, type: l.type, note: l.note, status: l.status || 'Approved', created_by: l.created_by, created_at: l.created_at, employee: l.employees })) });
+        res.json({ from, to, leaves: (data || []).map(l => ({ id: l.id, date: l.date, type: l.type, note: l.note, status: l.status || 'Approved', approved_by: l.approved_by || null, created_by: l.created_by, created_at: l.created_at, employee: l.employees })) });
     } catch (err) { fail(res, err, 'load leaves'); }
 });
 
@@ -69,7 +75,7 @@ router.post('/api/leaves', authenticateToken, isAdmin, async (req, res) => {
         const emp = await resolveEmployee(employee_id);
         if (!emp) return res.status(404).json({ error: 'Employee not found' });
         const row = { employee_id: emp.id, date, type: String(type).toUpperCase(), note: String(note || '').trim().slice(0, 200) || null, status: 'Pending', created_by: req.user?.email || 'admin' };
-        const { data, error } = await supabase.from('leaves').upsert(row, { onConflict: 'employee_id,date' }).select('id, date, type, note, status, created_by, created_at').single();
+        const { data, error } = await supabase.from('leaves').upsert(row, { onConflict: 'employee_id,date' }).select('id, date, type, note, status, approved_by, created_by, created_at').single();
         if (error) throw error;
         res.status(201).json({ leave: { ...data, employee: emp } });
     } catch (err) { fail(res, err, 'save leave'); }
@@ -107,7 +113,7 @@ router.post('/api/leaves/range', authenticateToken, isAdmin, async (req, res) =>
         const trimmedNote = String(note || '').trim().slice(0, 200) || null;
         const createdBy = req.user?.email || 'admin';
         const rows = [...working].sort().map(date => ({ employee_id: emp.id, date, type: upType, note: trimmedNote, status: 'Pending', created_by: createdBy }));
-        const { data, error } = await supabase.from('leaves').upsert(rows, { onConflict: 'employee_id,date' }).select('id, date, type, note, status, created_by, created_at');
+        const { data, error } = await supabase.from('leaves').upsert(rows, { onConflict: 'employee_id,date' }).select('id, date, type, note, status, approved_by, created_by, created_at');
         if (error) throw error;
         res.status(201).json({
             employee: emp,
@@ -122,8 +128,14 @@ router.patch('/api/leaves/:id', authenticateToken, isAdmin, async (req, res) => 
     if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
     const status = String(req.body?.status || '');
     if (!LEAVE_STATUSES.includes(status)) return res.status(400).json({ error: `status must be one of ${LEAVE_STATUSES.join(', ')}` });
+    const patch = { status };
+    if (status === 'Approved' || status === 'Rejected') {
+        const approvedBy = String(req.body?.approved_by || '');
+        if (!APPROVERS.includes(approvedBy)) return res.status(400).json({ error: `approved_by must be one of ${APPROVERS.join(', ')}` });
+        patch.approved_by = approvedBy;
+    }
     try {
-        const { data, error } = await supabase.from('leaves').update({ status }).eq('id', req.params.id).select('id, date, type, note, status, created_by, created_at').maybeSingle();
+        const { data, error } = await supabase.from('leaves').update(patch).eq('id', req.params.id).select('id, date, type, note, status, approved_by, created_by, created_at').maybeSingle();
         if (error) throw error;
         if (!data) return res.status(404).json({ error: 'Leave not found' });
         res.json({ leave: data });

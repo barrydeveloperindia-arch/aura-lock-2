@@ -10,8 +10,40 @@ const STATUS_TONE = { Pending: 'bg-amber-500/10 text-amber-700', Approved: 'bg-e
 // matches the "Admin / Supervisor Approval: Approved / Rejected" box on the printed form.
 const groupStatus = (group) => (group.some(l => l.status === 'Rejected') ? 'Rejected' : group.every(l => l.status === 'Approved') ? 'Approved' : 'Pending');
 
+// "Who is approving/rejecting?" — the printed form's "Admin / Supervisor Approval ...
+// Signature" line, kept as a fixed pick list rather than free text.
+function ApproverModal({ decision, approvers, types, onPick, onClose }) {
+    if (!decision) return null;
+    const { group, status } = decision;
+    const first = group[0];
+    return (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center px-4" onClick={onClose}>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <div className="relative z-10 w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-5 border-b border-slate-100">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                        {status === 'Approved' ? 'Approve' : 'Reject'} leave — who is signing?
+                    </div>
+                    <div className="text-sm font-bold text-slate-900">{first.employee?.name} · {types[first.type] || first.type}</div>
+                </div>
+                <div className="p-3 grid grid-cols-1 gap-1.5">
+                    {approvers.map(name => (
+                        <button key={name} type="button" onClick={() => onPick(name)}
+                            className={`text-left px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100 ${status === 'Approved' ? 'text-emerald-700' : 'text-rose-700'}`}>
+                            {name}
+                        </button>
+                    ))}
+                </div>
+                <div className="p-3 pt-0">
+                    <button type="button" onClick={onClose} className="w-full px-4 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100">Cancel</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // Light-themed modal (the rest of this page is light; the dark shell in Users.jsx doesn't fit here).
-function ViewModal({ group, types, avatar, onShare, onApprove, onReject, onDelete, onClose }) {
+function ViewModal({ group, types, avatar, onShare, onDecide, onDelete, onClose }) {
     if (!group) return null;
     const first = group[0];
     const status = groupStatus(group);
@@ -58,12 +90,17 @@ function ViewModal({ group, types, avatar, onShare, onApprove, onReject, onDelet
                         <UserIcon className="w-3.5 h-3.5" />
                         Added by {first.created_by || 'admin'}{first.created_at ? ` · ${format(new Date(first.created_at), 'dd MMM, HH:mm')}` : ''}
                     </div>
+                    {status !== 'Pending' && first.approved_by && (
+                        <div className={`text-[11px] font-semibold ${status === 'Approved' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            {status} by {first.approved_by}
+                        </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-2 p-5 pt-0 flex-wrap">
                     {status === 'Pending' && (
                         <>
-                            <button type="button" onClick={onApprove} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-500"><CheckCircle2 className="w-4 h-4" /> Approve</button>
-                            <button type="button" onClick={onReject} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold hover:bg-rose-100"><XCircle className="w-4 h-4" /> Reject</button>
+                            <button type="button" onClick={() => onDecide('Approved')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-500"><CheckCircle2 className="w-4 h-4" /> Approve</button>
+                            <button type="button" onClick={() => onDecide('Rejected')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold hover:bg-rose-100"><XCircle className="w-4 h-4" /> Reject</button>
                         </>
                     )}
                     <button type="button" onClick={onShare} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-sm font-bold hover:bg-brand-navy-light"><Share2 className="w-4 h-4" /> Share</button>
@@ -108,6 +145,8 @@ export default function Leaves() {
     const [holForm, setHolForm] = useState({ date: '', name: '' });
     const [saving, setSaving] = useState(false);
     const [viewGroup, setViewGroup] = useState(null);
+    const [approvers, setApprovers] = useState(['Admin', 'Bharat sir', 'Salil sir', 'Shreya mam']);
+    const [decision, setDecision] = useState(null); // { group, status } while picking who is signing
 
     const from = `${monthKey(month)}-01`;
     const to = format(new Date(month.getFullYear(), month.getMonth() + 1, 0), 'yyyy-MM-dd');
@@ -136,6 +175,7 @@ export default function Leaves() {
             setEmployees(arr.filter(u => u.status === 'Active' && !u.is_deleted).sort((a, b) => a.name.localeCompare(b.name)));
         }).catch(() => {});
         apiService.getLeaveTypes().then(d => { if (d?.types) setTypes(d.types); }).catch(() => {});
+        apiService.getLeaveApprovers().then(d => { if (d?.approvers?.length) setApprovers(d.approvers); }).catch(() => {});
     }, []);
 
     const clByEmployeeId = useMemo(() => new Map(clRows.map(r => [r.employee_id, r])), [clRows]);
@@ -164,13 +204,16 @@ export default function Leaves() {
         try { await Promise.all(group.map(l => apiService.deleteLeave(l.id))); setLeaves(ls => ls.filter(l => !group.some(g => g.id === l.id))); setViewGroup(null); }
         catch (err) { setError(err?.response?.data?.error || 'Could not delete'); }
     };
-    const setGroupStatus = async (group, status) => {
+    const setGroupStatus = async (group, status, approvedBy) => {
         try {
-            await Promise.all(group.map(l => apiService.setLeaveStatus(l.id, status)));
-            setLeaves(ls => ls.map(l => (group.some(g => g.id === l.id) ? { ...l, status } : l)));
+            await Promise.all(group.map(l => apiService.setLeaveStatus(l.id, status, approvedBy)));
+            setLeaves(ls => ls.map(l => (group.some(g => g.id === l.id) ? { ...l, status, approved_by: approvedBy || l.approved_by } : l)));
             setViewGroup(null);
         } catch (err) { setError(err?.response?.data?.error || `Could not ${status === 'Approved' ? 'approve' : 'reject'}`); }
     };
+    // Approve/Reject always asks who is signing first (the printed form's "Admin / Supervisor
+    // Approval ... Signature" line) — a bare click never changes status on its own.
+    const askDecision = (group, status) => setDecision({ group, status });
     // Follows the printed Leave Application Form's own field order and labels
     // (G:\Englabs Office Record\...\13_LEAVE APPLICATION FORM) so the WhatsApp message reads
     // like the paper form. Designation isn't on the field's own line here — the attendance
@@ -197,7 +240,9 @@ export default function Leaves() {
             if (cl?.cl_balance != null) lines.push(`CL balance: ${cl.cl_balance + group.length} → ${cl.cl_balance}`);
         }
         const status = groupStatus(group);
-        lines.push('', 'Admin / Supervisor Approval:', `Current status: ${status === 'Pending' ? 'On hold' : status}`, 'Sir/Mam, please confirm — Approved, Rejected, or on Hold? 🙏');
+        lines.push('', 'Admin / Supervisor Approval:');
+        if (status === 'Pending') lines.push('Current status: On hold', 'Sir/Mam, please confirm — Approved, Rejected, or on Hold? 🙏');
+        else lines.push(`${status} by ${first.approved_by || '—'}`);
         return lines.join('\n');
     };
     const share = async (text) => {
@@ -282,8 +327,8 @@ export default function Leaves() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                     <form onSubmit={addLeave} className="p-5 rounded-2xl bg-white border border-slate-200 space-y-3">
-                        <div className="grid grid-cols-1 md:grid-cols-[1.3fr_110px_110px_100px_1fr_auto] gap-3 items-end">
-                            <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Staff</span>
+                        <div className="flex flex-wrap gap-3 items-end">
+                            <label className="block flex-[2] min-w-[190px]"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Staff</span>
                                 <select value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))} aria-label="Staff" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 outline-none focus:border-brand-navy">
                                     <option value="">Choose…</option>
                                     {employees.map(e => {
@@ -291,17 +336,17 @@ export default function Leaves() {
                                         return <option key={e.employee_id} value={e.employee_id}>{e.name} · {e.employee_id}{cl?.cl_balance != null ? ` · CL ${cl.cl_balance}` : ''}</option>;
                                     })}
                                 </select></label>
-                            <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">From</span>
+                            <label className="block w-[128px]"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">From</span>
                                 <input type="date" value={form.from} onChange={e => setForm(f => ({ ...f, from: e.target.value, to: f.to < e.target.value ? e.target.value : f.to }))} aria-label="Leave from date" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono text-slate-800 outline-none focus:border-brand-navy" /></label>
-                            <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">To</span>
+                            <label className="block w-[128px]"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">To</span>
                                 <input type="date" value={form.to} min={form.from} onChange={e => setForm(f => ({ ...f, to: e.target.value }))} aria-label="Leave to date" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono text-slate-800 outline-none focus:border-brand-navy" /></label>
-                            <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Type</span>
+                            <label className="block w-[112px]"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Type</span>
                                 <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} aria-label="Leave type" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 outline-none focus:border-brand-navy">
                                     {Object.keys(types).map(k => <option key={k} value={k}>{k}</option>)}
                                 </select></label>
-                            <label className="block"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reason</span>
+                            <label className="block flex-[3] min-w-[160px]"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reason</span>
                                 <input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="reason for leave" aria-label="Reason for requested leave" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:border-brand-navy" /></label>
-                            <button type="submit" disabled={saving || setupNeeded} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-sm font-bold hover:bg-brand-navy-light disabled:opacity-50">
+                            <button type="submit" disabled={saving || setupNeeded} className="shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-sm font-bold hover:bg-brand-navy-light disabled:opacity-50">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Add leave
                             </button>
                         </div>
@@ -346,8 +391,8 @@ export default function Leaves() {
                                         </div>
                                         {status === 'Pending' && (
                                             <>
-                                                <button type="button" aria-label={`Approve leave for ${first.employee?.name}`} onClick={() => setGroupStatus(group, 'Approved')} className="w-8 h-8 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 flex items-center justify-center"><CheckCircle2 className="w-4 h-4" /></button>
-                                                <button type="button" aria-label={`Reject leave for ${first.employee?.name}`} onClick={() => setGroupStatus(group, 'Rejected')} className="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center"><XCircle className="w-4 h-4" /></button>
+                                                <button type="button" aria-label={`Approve leave for ${first.employee?.name}`} onClick={() => askDecision(group, 'Approved')} className="w-8 h-8 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 flex items-center justify-center"><CheckCircle2 className="w-4 h-4" /></button>
+                                                <button type="button" aria-label={`Reject leave for ${first.employee?.name}`} onClick={() => askDecision(group, 'Rejected')} className="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center"><XCircle className="w-4 h-4" /></button>
                                             </>
                                         )}
                                         <button type="button" aria-label={`View leave for ${first.employee?.name}`} onClick={() => setViewGroup(group)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-brand-navy hover:bg-slate-100 flex items-center justify-center"><Eye className="w-4 h-4" /></button>
@@ -403,10 +448,16 @@ export default function Leaves() {
                 types={types}
                 avatar={viewGroup ? avatars[viewGroup[0].employee?.employee_id] : null}
                 onShare={() => share(shareText(viewGroup))}
-                onApprove={() => setGroupStatus(viewGroup, 'Approved')}
-                onReject={() => setGroupStatus(viewGroup, 'Rejected')}
+                onDecide={status => askDecision(viewGroup, status)}
                 onDelete={() => removeGroup(viewGroup)}
                 onClose={() => setViewGroup(null)}
+            />
+            <ApproverModal
+                decision={decision}
+                approvers={approvers}
+                types={types}
+                onPick={name => setGroupStatus(decision.group, decision.status, name)}
+                onClose={() => setDecision(null)}
             />
         </div>
     );

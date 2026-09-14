@@ -175,10 +175,11 @@ export const apiService = {
 
     // Leave register + holidays
     getLeaveTypes: async () => (await api.get('/api/leaves/types')).data,
+    getLeaveApprovers: async () => (await api.get('/api/leaves/approvers')).data,
     getLeaves: async (from, to, employee_id) => (await api.get('/api/leaves', { params: { from, to, ...(employee_id ? { employee_id } : {}) } })).data,
     addLeave: async (leave) => (await api.post('/api/leaves', leave)).data,
     addLeaveRange: async (leave) => (await api.post('/api/leaves/range', leave)).data,
-    setLeaveStatus: async (id, status) => (await api.patch(`/api/leaves/${id}`, { status })).data,
+    setLeaveStatus: async (id, status, approved_by) => (await api.patch(`/api/leaves/${id}`, { status, ...(approved_by ? { approved_by } : {}) })).data,
     deleteLeave: async (id) => (await api.delete(`/api/leaves/${id}`)).data,
     getHolidays: async (year) => (await api.get('/api/holidays', { params: { year } })).data,
     addHoliday: async (holiday) => (await api.post('/api/holidays', holiday)).data,
