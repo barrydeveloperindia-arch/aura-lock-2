@@ -182,6 +182,13 @@ export default function Leaves() {
             `${types[first.type] || first.type}: ${range} (${group.length} day${group.length > 1 ? 's' : ''})`,
         ];
         if (first.note) lines.push(`Note: ${first.note}`);
+        // "Pending"/"Approved" already count against the CL balance, so the balance the app
+        // shows right now is the AFTER value; add back this leave's days to get the BEFORE one.
+        if (first.type === 'CL') {
+            const cl = clByEmployeeId.get(first.employee?.employee_id);
+            if (cl?.cl_balance != null) lines.push(`CL balance: ${cl.cl_balance + group.length} → ${cl.cl_balance}`);
+        }
+        lines.push('', 'Sir/Mam, please approve this leave. 🙏');
         return lines.join('\n');
     };
     const share = async (text) => {
