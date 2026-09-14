@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarOff, Plus, Trash2, Loader2, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Sun, Wallet } from 'lucide-react';
+import { CalendarOff, Plus, Trash2, Loader2, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Sun, Wallet, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiService } from '../services/api';
 import useAvatars from '../hooks/useAvatars';
@@ -84,9 +84,30 @@ export default function Leaves() {
         } catch (err) { setError(err?.response?.data?.error || 'Could not save leave'); }
         finally { setSaving(false); }
     };
-    const removeLeave = async (id) => {
-        try { await apiService.deleteLeave(id); setLeaves(ls => ls.filter(l => l.id !== id)); }
+    // A multi-day leave is several rows in the DB (one per working day, so absence maths
+    // stays correct) but reads as ONE trip: same person + same type + same note, no more than
+    // a 2-day gap between them (covers one skipped Sunday or holiday). Group them for display,
+    // and delete/share the whole group as a unit.
+    const removeGroup = async (group) => {
+        try { await Promise.all(group.map(l => apiService.deleteLeave(l.id))); setLeaves(ls => ls.filter(l => !group.some(g => g.id === l.id))); }
         catch (err) { setError(err?.response?.data?.error || 'Could not delete'); }
+    };
+    const shareText = (group) => {
+        const first = group[0], last = group[group.length - 1];
+        const range = group.length === 1
+            ? format(new Date(first.date + 'T00:00:00'), 'EEE dd MMM yyyy')
+            : `${format(new Date(first.date + 'T00:00:00'), 'dd MMM')} – ${format(new Date(last.date + 'T00:00:00'), 'dd MMM yyyy')}`;
+        const lines = [
+            `*Leave update — ${first.employee?.name || ''}*`,
+            `${first.employee?.employee_id || ''} · ${first.employee?.department || ''}`,
+            `${types[first.type] || first.type}: ${range} (${group.length} day${group.length > 1 ? 's' : ''})`,
+        ];
+        if (first.note) lines.push(`Note: ${first.note}`);
+        return lines.join('\n');
+    };
+    const share = async (text) => {
+        if (navigator.share) { try { await navigator.share({ text }); return; } catch { /* cancelled — fall through to WhatsApp */ } }
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
     };
     const addHoliday = async (e) => {
         e.preventDefault();
@@ -102,6 +123,26 @@ export default function Leaves() {
     };
 
     const counts = useMemo(() => { const c = {}; for (const l of leaves) c[l.type] = (c[l.type] || 0) + 1; return c; }, [leaves]);
+    const leaveGroups = useMemo(() => {
+        const byKey = new Map();
+        for (const l of leaves) {
+            const key = `${l.employee?.employee_id || l.employee_id}|${l.type}|${l.note || ''}`;
+            if (!byKey.has(key)) byKey.set(key, []);
+            byKey.get(key).push(l);
+        }
+        const groups = [];
+        for (const rows of byKey.values()) {
+            const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date));
+            let run = [sorted[0]];
+            for (let i = 1; i < sorted.length; i++) {
+                const gapDays = Math.round((new Date(sorted[i].date + 'T00:00:00') - new Date(run[run.length - 1].date + 'T00:00:00')) / 86400000);
+                if (gapDays <= 2) run.push(sorted[i]);
+                else { groups.push(run); run = [sorted[i]]; }
+            }
+            groups.push(run);
+        }
+        return groups.sort((a, b) => b[b.length - 1].date.localeCompare(a[a.length - 1].date));
+    }, [leaves]);
     const monthHolidays = holidays.filter(h => h.date >= from && h.date <= to);
     const dayCount = (() => {
         if (!form.from || !form.to || form.to < form.from) return 0;
@@ -176,24 +217,41 @@ export default function Leaves() {
                     </form>
 
                     <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden">
-                        <div className="px-5 py-3 border-b border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-500">Leaves in {format(month, 'MMMM')}</div>
+                        <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between gap-3">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Leaves in {format(month, 'MMMM')}</span>
+                            {leaveGroups.length > 0 && (
+                                <button type="button" onClick={() => share(leaveGroups.map(shareText).join('\n\n'))} className="flex items-center gap-1.5 text-[11px] font-bold text-brand-navy hover:underline">
+                                    <Share2 className="w-3.5 h-3.5" /> Share list
+                                </button>
+                            )}
+                        </div>
                         <div className="divide-y divide-slate-100">
                             {loading && <div className="p-8 text-center text-slate-400 text-xs font-semibold"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>}
                             {!loading && leaves.length === 0 && <div className="p-8 text-center text-slate-400 text-xs font-semibold flex flex-col items-center gap-2"><CalendarOff className="w-6 h-6" />No leaves recorded this month.</div>}
-                            {leaves.map(l => (
-                                <div key={l.id} className="flex items-center gap-3 px-4 py-3">
-                                    <div className="w-10 h-10 rounded-full border-2 border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center font-bold text-xs text-brand-navy shrink-0">
-                                        {avatars[l.employee?.employee_id] ? <img src={avatars[l.employee.employee_id]} alt="" className="w-full h-full object-cover" /> : initials(l.employee?.name)}
+                            {leaveGroups.map(group => {
+                                const first = group[0], last = group[group.length - 1];
+                                const dateLabel = group.length === 1
+                                    ? format(new Date(first.date + 'T00:00:00'), 'EEE dd MMM')
+                                    : `${format(new Date(first.date + 'T00:00:00'), 'dd')}–${format(new Date(last.date + 'T00:00:00'), 'dd MMM')}`;
+                                return (
+                                    <div key={group.map(g => g.id).join(',')} className="flex items-center gap-3 px-4 py-3">
+                                        <div className="w-10 h-10 rounded-full border-2 border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center font-bold text-xs text-brand-navy shrink-0">
+                                            {avatars[first.employee?.employee_id] ? <img src={avatars[first.employee.employee_id]} alt="" className="w-full h-full object-cover" /> : initials(first.employee?.name)}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="text-sm font-bold text-slate-900 truncate">{first.employee?.name}</div>
+                                            <div className="text-[11px] text-slate-500 truncate">{first.employee?.department} · <span className="font-mono">{first.employee?.employee_id}</span>{first.note ? ` · ${first.note}` : ''}</div>
+                                        </div>
+                                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${TYPE_TONE[first.type] || 'bg-slate-100 text-slate-600'}`}>{first.type}</span>
+                                        <div className="text-right w-28 shrink-0">
+                                            <div className="font-mono text-xs text-slate-600">{dateLabel}</div>
+                                            {group.length > 1 && <div className="text-[10px] text-slate-400">{group.length} days</div>}
+                                        </div>
+                                        <button type="button" aria-label={`Share leave for ${first.employee?.name}`} onClick={() => share(shareText(group))} className="w-8 h-8 rounded-lg text-slate-400 hover:text-brand-navy hover:bg-slate-100 flex items-center justify-center"><Share2 className="w-4 h-4" /></button>
+                                        <button type="button" aria-label={`Delete leave for ${first.employee?.name}`} onClick={() => removeGroup(group)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-4 h-4" /></button>
                                     </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="text-sm font-bold text-slate-900 truncate">{l.employee?.name}</div>
-                                        <div className="text-[11px] text-slate-500 truncate">{l.employee?.department} · <span className="font-mono">{l.employee?.employee_id}</span>{l.note ? ` · ${l.note}` : ''}</div>
-                                    </div>
-                                    <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${TYPE_TONE[l.type] || 'bg-slate-100 text-slate-600'}`}>{l.type}</span>
-                                    <span className="font-mono text-xs text-slate-600 w-24 text-right">{format(new Date(l.date + 'T00:00:00'), 'EEE dd MMM')}</span>
-                                    <button type="button" aria-label={`Delete leave for ${l.employee?.name}`} onClick={() => removeLeave(l.id)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-4 h-4" /></button>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
