@@ -196,7 +196,8 @@ export default function Leaves() {
             const cl = clByEmployeeId.get(first.employee?.employee_id);
             if (cl?.cl_balance != null) lines.push(`CL balance: ${cl.cl_balance + group.length} → ${cl.cl_balance}`);
         }
-        lines.push('', 'Admin / Supervisor Approval:', 'Sir/Mam, please approve this leave. 🙏');
+        const status = groupStatus(group);
+        lines.push('', 'Admin / Supervisor Approval:', `Current status: ${status === 'Pending' ? 'On hold' : status}`, 'Sir/Mam, please confirm — Approved, Rejected, or on Hold? 🙏');
         return lines.join('\n');
     };
     const share = async (text) => {
