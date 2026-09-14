@@ -8,12 +8,15 @@
  *   leave   = leave dates that fall on working days (a leave on a Sunday is not counted)
  *   absent  = working days − present − leave (never below 0)
  */
+// Matches the company's printed Leave Application Form exactly (Englabs India Pvt. Ltd.,
+// G:\Englabs Office Record\...\13_LEAVE APPLICATION FORM): Sick / Casual / Emergency /
+// Urgent Work / Other. "EL" means Emergency leave here, not Earned leave.
 const LEAVE_TYPES = {
     CL: 'Casual leave',
     SL: 'Sick leave',
-    EL: 'Earned leave',
-    WFH: 'Work from home',
-    OD: 'On duty (site / client visit)',
+    EL: 'Emergency leave',
+    UWL: 'Urgent work leave',
+    OTH: 'Other',
 };
 const DEFAULT_WEEKEND = [0]; // Sunday only: EngLabs works Saturdays (payroll sheet: 26 working days in a 30-day month)
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;

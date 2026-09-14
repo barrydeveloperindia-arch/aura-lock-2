@@ -1,16 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarOff, Plus, Trash2, Loader2, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Sun, Wallet, Share2, Eye, X, User as UserIcon } from 'lucide-react';
+import { CalendarOff, Plus, Trash2, Loader2, AlertTriangle, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Sun, Wallet, Share2, Eye, X, User as UserIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiService } from '../services/api';
 import useAvatars from '../hooks/useAvatars';
 
-const STATUS_TONE = { Pending: 'bg-amber-500/10 text-amber-700', Approved: 'bg-emerald-500/10 text-emerald-700' };
+const STATUS_TONE = { Pending: 'bg-amber-500/10 text-amber-700', Approved: 'bg-emerald-500/10 text-emerald-700', Rejected: 'bg-rose-500/10 text-rose-700' };
+// A group is several rows approved/rejected together, so any Rejected row makes the whole
+// group Rejected; otherwise it's Approved only once every row is, else still Pending —
+// matches the "Admin / Supervisor Approval: Approved / Rejected" box on the printed form.
+const groupStatus = (group) => (group.some(l => l.status === 'Rejected') ? 'Rejected' : group.every(l => l.status === 'Approved') ? 'Approved' : 'Pending');
 
 // Light-themed modal (the rest of this page is light; the dark shell in Users.jsx doesn't fit here).
-function ViewModal({ group, types, avatar, onShare, onApprove, onDelete, onClose }) {
+function ViewModal({ group, types, avatar, onShare, onApprove, onReject, onDelete, onClose }) {
     if (!group) return null;
     const first = group[0];
-    const isPending = group.some(l => l.status !== 'Approved');
+    const status = groupStatus(group);
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" onClick={onClose}>
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
@@ -30,7 +34,7 @@ function ViewModal({ group, types, avatar, onShare, onApprove, onDelete, onClose
                 <div className="p-5 space-y-4">
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${TYPE_TONE[first.type] || 'bg-slate-100 text-slate-600'}`}>{first.type}</span>
-                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${STATUS_TONE[isPending ? 'Pending' : 'Approved']}`}>{isPending ? 'Pending' : 'Approved'}</span>
+                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${STATUS_TONE[status]}`}>{status}</span>
                         <span className="text-sm font-semibold text-slate-700">{types[first.type] || first.type}</span>
                         <span className="text-sm text-slate-400">· {group.length} day{group.length > 1 ? 's' : ''}</span>
                     </div>
@@ -55,9 +59,12 @@ function ViewModal({ group, types, avatar, onShare, onApprove, onDelete, onClose
                         Added by {first.created_by || 'admin'}{first.created_at ? ` · ${format(new Date(first.created_at), 'dd MMM, HH:mm')}` : ''}
                     </div>
                 </div>
-                <div className="flex items-center gap-2 p-5 pt-0">
-                    {isPending && (
-                        <button type="button" onClick={onApprove} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-500"><CheckCircle2 className="w-4 h-4" /> Approve</button>
+                <div className="flex items-center gap-2 p-5 pt-0 flex-wrap">
+                    {status === 'Pending' && (
+                        <>
+                            <button type="button" onClick={onApprove} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-500"><CheckCircle2 className="w-4 h-4" /> Approve</button>
+                            <button type="button" onClick={onReject} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold hover:bg-rose-100"><XCircle className="w-4 h-4" /> Reject</button>
+                        </>
                     )}
                     <button type="button" onClick={onShare} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-sm font-bold hover:bg-brand-navy-light"><Share2 className="w-4 h-4" /> Share</button>
                     <button type="button" onClick={onDelete} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm font-bold hover:bg-red-100"><Trash2 className="w-4 h-4" /> Delete</button>
@@ -68,9 +75,10 @@ function ViewModal({ group, types, avatar, onShare, onApprove, onDelete, onClose
 }
 
 /**
- * Leave register: who is on CL / SL / EL / WFH / OD on which day, plus the
- * company holiday list. Both feed the monthly report (absent = working days
- * − present − leave) and the daily Attendance absent list.
+ * Leave register: who is on CL / SL / EL / UWL / Other on which day, plus the company
+ * holiday list — matching the printed Leave Application Form (Sick, Casual, Emergency,
+ * Urgent Work, Other leave; Admin/Supervisor Approval: Approved / Rejected). Both feed the
+ * monthly report (absent = working days − present − leave) and the daily Attendance absent list.
  *
  * A leave can span several days (e.g. going home for a wedding): the admin
  * picks a From/To range and every WORKING day in it is marked in one call —
@@ -78,8 +86,8 @@ function ViewModal({ group, types, avatar, onShare, onApprove, onDelete, onClose
  * the same rule the monthly report already uses to count absence.
  */
 const TYPE_TONE = {
-    CL: 'bg-brand-navy/10 text-brand-navy', SL: 'bg-rose-500/10 text-rose-600', EL: 'bg-violet-500/10 text-violet-700',
-    WFH: 'bg-brand-teal/15 text-emerald-700', OD: 'bg-amber-500/10 text-amber-700',
+    CL: 'bg-brand-navy/10 text-brand-navy', SL: 'bg-rose-500/10 text-rose-600', EL: 'bg-orange-500/10 text-orange-700',
+    UWL: 'bg-violet-500/10 text-violet-700', OTH: 'bg-slate-500/10 text-slate-600',
 };
 const initials = (name) => (name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
 const monthKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -87,7 +95,7 @@ const todayISO = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkat
 
 export default function Leaves() {
     const [month, setMonth] = useState(() => new Date());
-    const [types, setTypes] = useState({ CL: 'Casual leave', SL: 'Sick leave', EL: 'Earned leave', WFH: 'Work from home', OD: 'On duty (site / client visit)' });
+    const [types, setTypes] = useState({ CL: 'Casual leave', SL: 'Sick leave', EL: 'Emergency leave', UWL: 'Urgent work leave', OTH: 'Other' });
     const [employees, setEmployees] = useState([]);
     const [leaves, setLeaves] = useState([]);
     const [holidays, setHolidays] = useState([]);
@@ -156,12 +164,12 @@ export default function Leaves() {
         try { await Promise.all(group.map(l => apiService.deleteLeave(l.id))); setLeaves(ls => ls.filter(l => !group.some(g => g.id === l.id))); setViewGroup(null); }
         catch (err) { setError(err?.response?.data?.error || 'Could not delete'); }
     };
-    const approveGroup = async (group) => {
+    const setGroupStatus = async (group, status) => {
         try {
-            await Promise.all(group.map(l => apiService.setLeaveStatus(l.id, 'Approved')));
-            setLeaves(ls => ls.map(l => (group.some(g => g.id === l.id) ? { ...l, status: 'Approved' } : l)));
+            await Promise.all(group.map(l => apiService.setLeaveStatus(l.id, status)));
+            setLeaves(ls => ls.map(l => (group.some(g => g.id === l.id) ? { ...l, status } : l)));
             setViewGroup(null);
-        } catch (err) { setError(err?.response?.data?.error || 'Could not approve'); }
+        } catch (err) { setError(err?.response?.data?.error || `Could not ${status === 'Approved' ? 'approve' : 'reject'}`); }
     };
     const shareText = (group) => {
         const first = group[0], last = group[group.length - 1];
@@ -301,7 +309,7 @@ export default function Leaves() {
                             {!loading && leaves.length === 0 && <div className="p-8 text-center text-slate-400 text-xs font-semibold flex flex-col items-center gap-2"><CalendarOff className="w-6 h-6" />No leaves recorded this month.</div>}
                             {leaveGroups.map(group => {
                                 const first = group[0], last = group[group.length - 1];
-                                const isPending = group.some(l => l.status !== 'Approved');
+                                const status = groupStatus(group);
                                 const dateLabel = group.length === 1
                                     ? format(new Date(first.date + 'T00:00:00'), 'EEE dd MMM')
                                     : `${format(new Date(first.date + 'T00:00:00'), 'dd')}–${format(new Date(last.date + 'T00:00:00'), 'dd MMM')}`;
@@ -315,13 +323,16 @@ export default function Leaves() {
                                             <div className="text-[11px] text-slate-500 truncate">{first.employee?.department} · <span className="font-mono">{first.employee?.employee_id}</span>{first.note ? ` · ${first.note}` : ''}</div>
                                         </button>
                                         <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${TYPE_TONE[first.type] || 'bg-slate-100 text-slate-600'}`}>{first.type}</span>
-                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${STATUS_TONE[isPending ? 'Pending' : 'Approved']}`}>{isPending ? 'Pending' : 'Approved'}</span>
+                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${STATUS_TONE[status]}`}>{status}</span>
                                         <div className="text-right w-28 shrink-0">
                                             <div className="font-mono text-xs text-slate-600">{dateLabel}</div>
                                             {group.length > 1 && <div className="text-[10px] text-slate-400">{group.length} days</div>}
                                         </div>
-                                        {isPending && (
-                                            <button type="button" aria-label={`Approve leave for ${first.employee?.name}`} onClick={() => approveGroup(group)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 flex items-center justify-center"><CheckCircle2 className="w-4 h-4" /></button>
+                                        {status === 'Pending' && (
+                                            <>
+                                                <button type="button" aria-label={`Approve leave for ${first.employee?.name}`} onClick={() => setGroupStatus(group, 'Approved')} className="w-8 h-8 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 flex items-center justify-center"><CheckCircle2 className="w-4 h-4" /></button>
+                                                <button type="button" aria-label={`Reject leave for ${first.employee?.name}`} onClick={() => setGroupStatus(group, 'Rejected')} className="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center"><XCircle className="w-4 h-4" /></button>
+                                            </>
                                         )}
                                         <button type="button" aria-label={`View leave for ${first.employee?.name}`} onClick={() => setViewGroup(group)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-brand-navy hover:bg-slate-100 flex items-center justify-center"><Eye className="w-4 h-4" /></button>
                                         <button type="button" aria-label={`Share leave for ${first.employee?.name}`} onClick={() => share(shareText(group))} className="w-8 h-8 rounded-lg text-slate-400 hover:text-brand-navy hover:bg-slate-100 flex items-center justify-center"><Share2 className="w-4 h-4" /></button>
@@ -376,7 +387,8 @@ export default function Leaves() {
                 types={types}
                 avatar={viewGroup ? avatars[viewGroup[0].employee?.employee_id] : null}
                 onShare={() => share(shareText(viewGroup))}
-                onApprove={() => approveGroup(viewGroup)}
+                onApprove={() => setGroupStatus(viewGroup, 'Approved')}
+                onReject={() => setGroupStatus(viewGroup, 'Rejected')}
                 onDelete={() => removeGroup(viewGroup)}
                 onClose={() => setViewGroup(null)}
             />

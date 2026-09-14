@@ -6,17 +6,17 @@
  *   POST   /api/leaves/range  { employee_id, from, to, type, note }  same, for 2+ days in a row —
  *          Sundays and holidays inside the range are skipped automatically (the same rule the
  *          monthly report already uses to count absence), so a leave never lands on a non-working day.
- *   PATCH  /api/leaves/:id  { status: 'Pending' | 'Approved' }  approve (or unapprove) one leave day
+ *   PATCH  /api/leaves/:id  { status: 'Pending' | 'Approved' | 'Rejected' }  one leave day
  *   DELETE /api/leaves/:id
  *   GET    /api/holidays?year=2026
  *   POST   /api/holidays   { date, name }
  *   DELETE /api/holidays/:date
  *   GET    /api/leaves/types
  *
- * A leave starts life as 'Pending' and the admin approves it from the panel (a group of
- * consecutive days is approved together). Approval is a tracking flag only — a Pending leave
- * still counts as taken in the monthly report and CL balance, same as an Approved one, so a
- * forgotten approval never distorts payroll.
+ * Status matches the company's printed Leave Application Form (Admin/Supervisor Approval:
+ * Approved / Rejected). A leave starts life as 'Pending'; Pending and Approved both count as
+ * taken in the monthly report and CL balance (the day was still off, whether or not the
+ * paperwork is signed yet); Rejected does not — that day goes back to being a plain absence.
  *
  * Tables come from supabase/migration_v8_leaves.sql, and the status column from
  * migration_v10_leave_status.sql (the user runs each once in the Supabase SQL editor).
@@ -28,7 +28,7 @@ const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { LEAVE_TYPES, isValidLeaveType, isValidDate, workingDates } = require('../lib/leaves');
 
 const router = express.Router();
-const LEAVE_STATUSES = ['Pending', 'Approved'];
+const LEAVE_STATUSES = ['Pending', 'Approved', 'Rejected']; // matches the printed Leave Application Form
 const SETUP_HINT = 'Leave register is not fully set up yet: run supabase/migration_v8_leaves.sql, then migration_v10_leave_status.sql, in the Supabase SQL editor.';
 const missingTable = (err) => /Could not find the table|does not exist|schema cache/i.test(err?.message || '');
 const fail = (res, err, what) => {
@@ -183,9 +183,9 @@ router.delete('/api/holidays/:date', authenticateToken, isAdmin, async (req, res
 /** Helpers for the monthly report and the daily absent list (tables may not exist yet -> empty). */
 async function leavesBetween(from, to) {
     try {
-        const { data, error } = await supabase.from('leaves').select('employee_id, date, type').gte('date', from).lte('date', to);
+        const { data, error } = await supabase.from('leaves').select('employee_id, date, type, status').gte('date', from).lte('date', to);
         if (error) throw error;
-        return data || [];
+        return (data || []).filter(l => l.status !== 'Rejected'); // a rejected leave is a plain absence again
     } catch (err) { if (!missingTable(err)) console.warn('[Leaves] read failed:', err.message); return []; }
 }
 /** Monthly CL ledger rows (first-of-month dates) between two months; missing table -> []. */
