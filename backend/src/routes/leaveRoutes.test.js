@@ -19,6 +19,7 @@ jest.mock('../../supabase', () => {
             select() { return api; },
             insert(rows) { q.op = 'insert'; q.payload = rows; return api; },
             upsert(rows, opts) { q.op = 'upsert'; q.payload = rows; q.conflict = opts?.onConflict; return api; },
+            update(row) { q.op = 'update'; q.payload = row; return api; },
             delete() { q.op = 'delete'; return api; },
             eq(col, val) { q.filters.push(r => r[col] === val); return api; },
             ilike(col, val) { q.filters.push(r => String(r[col]).toLowerCase() === String(val).toLowerCase()); return api; },
@@ -38,10 +39,16 @@ jest.mock('../../supabase', () => {
                     const existing = rows.find(r => conflictCols.every(c => r[c] === row[c]));
                     const saved = existing
                         ? Object.assign(existing, clone(row))
-                        : (() => { const n = { id: `leave-${rows.length + 1}`, created_at: new Date().toISOString(), ...clone(row) }; rows.push(n); return n; })();
+                        : (() => { const n = { id: `00000000-0000-0000-0000-${String(rows.length + 1).padStart(12, '0')}`, created_at: new Date().toISOString(), ...clone(row) }; rows.push(n); return n; })();
                     return clone(saved);
                 });
                 return { data: q.single ? out[0] : out, error: null };
+            }
+            if (q.op === 'update') {
+                const hits = rows.filter(r => q.filters.every(f => f(r)));
+                for (const h of hits) Object.assign(h, clone(q.payload));
+                if (q.single || q.maybe) return { data: hits[0] ? clone(hits[0]) : null, error: null };
+                return { data: clone(hits), error: null };
             }
             if (q.op === 'delete') {
                 const hits = rows.filter(r => q.filters.every(f => f(r)));
@@ -113,5 +120,38 @@ describe('POST /api/leaves/range', () => {
         expect(res.status).toBe(201);
         expect(supabase.__state.leaves.filter(l => l.date === '2026-09-21' || l.date === '2026-09-22')).toHaveLength(2);
         expect(res.body.leaves.every(l => l.type === 'SL')).toBe(true);
+    });
+
+    test('a new range starts Pending, not Approved', async () => {
+        const res = await request(app).post('/api/leaves/range').send({ employee_id: 'EL107', from: '2026-09-16', to: '2026-09-17', type: 'CL' });
+        expect(res.body.leaves.every(l => l.status === 'Pending')).toBe(true);
+    });
+});
+
+describe('POST /api/leaves (single day)', () => {
+    test('also starts Pending', async () => {
+        const res = await request(app).post('/api/leaves').send({ employee_id: 'EL107', date: '2026-09-10', type: 'SL' });
+        expect(res.status).toBe(201);
+        expect(res.body.leave.status).toBe('Pending');
+    });
+});
+
+describe('PATCH /api/leaves/:id', () => {
+    test('approves a leave day', async () => {
+        const created = await request(app).post('/api/leaves/range').send({ employee_id: 'EL107', from: '2026-09-16', to: '2026-09-16', type: 'CL' });
+        const id = created.body.leaves[0].id;
+        const res = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Approved' });
+        expect(res.status).toBe(200);
+        expect(res.body.leave.status).toBe('Approved');
+        expect(supabase.__state.leaves.find(l => l.id === id).status).toBe('Approved');
+    });
+
+    test('rejects an invalid status and an unknown id', async () => {
+        const created = await request(app).post('/api/leaves/range').send({ employee_id: 'EL107', from: '2026-09-16', to: '2026-09-16', type: 'CL' });
+        const id = created.body.leaves[0].id;
+        const bad = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Rejected' });
+        expect(bad.status).toBe(400);
+        const missing = await request(app).patch('/api/leaves/00000000-0000-0000-0000-000000000000').send({ status: 'Approved' });
+        expect(missing.status).toBe(404);
     });
 });

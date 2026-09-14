@@ -1,8 +1,71 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarOff, Plus, Trash2, Loader2, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Sun, Wallet, Share2 } from 'lucide-react';
+import { CalendarOff, Plus, Trash2, Loader2, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Sun, Wallet, Share2, Eye, X, User as UserIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiService } from '../services/api';
 import useAvatars from '../hooks/useAvatars';
+
+const STATUS_TONE = { Pending: 'bg-amber-500/10 text-amber-700', Approved: 'bg-emerald-500/10 text-emerald-700' };
+
+// Light-themed modal (the rest of this page is light; the dark shell in Users.jsx doesn't fit here).
+function ViewModal({ group, types, avatar, onShare, onApprove, onDelete, onClose }) {
+    if (!group) return null;
+    const first = group[0];
+    const isPending = group.some(l => l.status !== 'Approved');
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" onClick={onClose}>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <div className="relative z-10 w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="flex items-start justify-between gap-3 p-5 border-b border-slate-100">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-12 h-12 rounded-full border-2 border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center font-bold text-sm text-brand-navy shrink-0">
+                            {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" /> : initials(first.employee?.name)}
+                        </div>
+                        <div className="min-w-0">
+                            <div className="text-base font-black text-slate-900 truncate">{first.employee?.name}</div>
+                            <div className="text-[11px] text-slate-500 truncate">{first.employee?.department} · <span className="font-mono">{first.employee?.employee_id}</span></div>
+                        </div>
+                    </div>
+                    <button type="button" aria-label="Close" onClick={onClose} className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center shrink-0"><X className="w-4 h-4" /></button>
+                </div>
+                <div className="p-5 space-y-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${TYPE_TONE[first.type] || 'bg-slate-100 text-slate-600'}`}>{first.type}</span>
+                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${STATUS_TONE[isPending ? 'Pending' : 'Approved']}`}>{isPending ? 'Pending' : 'Approved'}</span>
+                        <span className="text-sm font-semibold text-slate-700">{types[first.type] || first.type}</span>
+                        <span className="text-sm text-slate-400">· {group.length} day{group.length > 1 ? 's' : ''}</span>
+                    </div>
+                    <div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Dates</div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {group.map(l => (
+                                <span key={l.id} className="font-mono text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-700">
+                                    {format(new Date(l.date + 'T00:00:00'), 'EEE dd MMM')}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                    {first.note && (
+                        <div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Note</div>
+                            <div className="text-sm text-slate-700">{first.note}</div>
+                        </div>
+                    )}
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400 pt-1 border-t border-slate-100">
+                        <UserIcon className="w-3.5 h-3.5" />
+                        Added by {first.created_by || 'admin'}{first.created_at ? ` · ${format(new Date(first.created_at), 'dd MMM, HH:mm')}` : ''}
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 p-5 pt-0">
+                    {isPending && (
+                        <button type="button" onClick={onApprove} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-500"><CheckCircle2 className="w-4 h-4" /> Approve</button>
+                    )}
+                    <button type="button" onClick={onShare} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-sm font-bold hover:bg-brand-navy-light"><Share2 className="w-4 h-4" /> Share</button>
+                    <button type="button" onClick={onDelete} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm font-bold hover:bg-red-100"><Trash2 className="w-4 h-4" /> Delete</button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 /**
  * Leave register: who is on CL / SL / EL / WFH / OD on which day, plus the
@@ -36,6 +99,7 @@ export default function Leaves() {
     const [form, setForm] = useState({ employee_id: '', from: todayISO(), to: todayISO(), type: 'CL', note: '' });
     const [holForm, setHolForm] = useState({ date: '', name: '' });
     const [saving, setSaving] = useState(false);
+    const [viewGroup, setViewGroup] = useState(null);
 
     const from = `${monthKey(month)}-01`;
     const to = format(new Date(month.getFullYear(), month.getMonth() + 1, 0), 'yyyy-MM-dd');
@@ -89,8 +153,15 @@ export default function Leaves() {
     // a 2-day gap between them (covers one skipped Sunday or holiday). Group them for display,
     // and delete/share the whole group as a unit.
     const removeGroup = async (group) => {
-        try { await Promise.all(group.map(l => apiService.deleteLeave(l.id))); setLeaves(ls => ls.filter(l => !group.some(g => g.id === l.id))); }
+        try { await Promise.all(group.map(l => apiService.deleteLeave(l.id))); setLeaves(ls => ls.filter(l => !group.some(g => g.id === l.id))); setViewGroup(null); }
         catch (err) { setError(err?.response?.data?.error || 'Could not delete'); }
+    };
+    const approveGroup = async (group) => {
+        try {
+            await Promise.all(group.map(l => apiService.setLeaveStatus(l.id, 'Approved')));
+            setLeaves(ls => ls.map(l => (group.some(g => g.id === l.id) ? { ...l, status: 'Approved' } : l)));
+            setViewGroup(null);
+        } catch (err) { setError(err?.response?.data?.error || 'Could not approve'); }
     };
     const shareText = (group) => {
         const first = group[0], last = group[group.length - 1];
@@ -230,23 +301,29 @@ export default function Leaves() {
                             {!loading && leaves.length === 0 && <div className="p-8 text-center text-slate-400 text-xs font-semibold flex flex-col items-center gap-2"><CalendarOff className="w-6 h-6" />No leaves recorded this month.</div>}
                             {leaveGroups.map(group => {
                                 const first = group[0], last = group[group.length - 1];
+                                const isPending = group.some(l => l.status !== 'Approved');
                                 const dateLabel = group.length === 1
                                     ? format(new Date(first.date + 'T00:00:00'), 'EEE dd MMM')
                                     : `${format(new Date(first.date + 'T00:00:00'), 'dd')}–${format(new Date(last.date + 'T00:00:00'), 'dd MMM')}`;
                                 return (
                                     <div key={group.map(g => g.id).join(',')} className="flex items-center gap-3 px-4 py-3">
-                                        <div className="w-10 h-10 rounded-full border-2 border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center font-bold text-xs text-brand-navy shrink-0">
+                                        <button type="button" aria-label={`View leave for ${first.employee?.name}`} onClick={() => setViewGroup(group)} className="w-10 h-10 rounded-full border-2 border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center font-bold text-xs text-brand-navy shrink-0">
                                             {avatars[first.employee?.employee_id] ? <img src={avatars[first.employee.employee_id]} alt="" className="w-full h-full object-cover" /> : initials(first.employee?.name)}
-                                        </div>
-                                        <div className="min-w-0 flex-1">
+                                        </button>
+                                        <button type="button" onClick={() => setViewGroup(group)} className="min-w-0 flex-1 text-left">
                                             <div className="text-sm font-bold text-slate-900 truncate">{first.employee?.name}</div>
                                             <div className="text-[11px] text-slate-500 truncate">{first.employee?.department} · <span className="font-mono">{first.employee?.employee_id}</span>{first.note ? ` · ${first.note}` : ''}</div>
-                                        </div>
+                                        </button>
                                         <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${TYPE_TONE[first.type] || 'bg-slate-100 text-slate-600'}`}>{first.type}</span>
+                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${STATUS_TONE[isPending ? 'Pending' : 'Approved']}`}>{isPending ? 'Pending' : 'Approved'}</span>
                                         <div className="text-right w-28 shrink-0">
                                             <div className="font-mono text-xs text-slate-600">{dateLabel}</div>
                                             {group.length > 1 && <div className="text-[10px] text-slate-400">{group.length} days</div>}
                                         </div>
+                                        {isPending && (
+                                            <button type="button" aria-label={`Approve leave for ${first.employee?.name}`} onClick={() => approveGroup(group)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 flex items-center justify-center"><CheckCircle2 className="w-4 h-4" /></button>
+                                        )}
+                                        <button type="button" aria-label={`View leave for ${first.employee?.name}`} onClick={() => setViewGroup(group)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-brand-navy hover:bg-slate-100 flex items-center justify-center"><Eye className="w-4 h-4" /></button>
                                         <button type="button" aria-label={`Share leave for ${first.employee?.name}`} onClick={() => share(shareText(group))} className="w-8 h-8 rounded-lg text-slate-400 hover:text-brand-navy hover:bg-slate-100 flex items-center justify-center"><Share2 className="w-4 h-4" /></button>
                                         <button type="button" aria-label={`Delete leave for ${first.employee?.name}`} onClick={() => removeGroup(group)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-4 h-4" /></button>
                                     </div>
@@ -294,6 +371,15 @@ export default function Leaves() {
                     </div>
                 </div>
             </div>
+            <ViewModal
+                group={viewGroup}
+                types={types}
+                avatar={viewGroup ? avatars[viewGroup[0].employee?.employee_id] : null}
+                onShare={() => share(shareText(viewGroup))}
+                onApprove={() => approveGroup(viewGroup)}
+                onDelete={() => removeGroup(viewGroup)}
+                onClose={() => setViewGroup(null)}
+            />
         </div>
     );
 }

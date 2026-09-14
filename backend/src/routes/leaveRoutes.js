@@ -6,14 +6,21 @@
  *   POST   /api/leaves/range  { employee_id, from, to, type, note }  same, for 2+ days in a row —
  *          Sundays and holidays inside the range are skipped automatically (the same rule the
  *          monthly report already uses to count absence), so a leave never lands on a non-working day.
+ *   PATCH  /api/leaves/:id  { status: 'Pending' | 'Approved' }  approve (or unapprove) one leave day
  *   DELETE /api/leaves/:id
  *   GET    /api/holidays?year=2026
  *   POST   /api/holidays   { date, name }
  *   DELETE /api/holidays/:date
  *   GET    /api/leaves/types
  *
- * Tables come from supabase/migration_v8_leaves.sql (the user runs it in the
- * Supabase SQL editor). Until then every route answers 503 with that hint.
+ * A leave starts life as 'Pending' and the admin approves it from the panel (a group of
+ * consecutive days is approved together). Approval is a tracking flag only — a Pending leave
+ * still counts as taken in the monthly report and CL balance, same as an Approved one, so a
+ * forgotten approval never distorts payroll.
+ *
+ * Tables come from supabase/migration_v8_leaves.sql, and the status column from
+ * migration_v10_leave_status.sql (the user runs each once in the Supabase SQL editor).
+ * Until then every route answers 503 with that hint.
  */
 const express = require('express');
 const supabase = require('../../supabase');
@@ -21,7 +28,8 @@ const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { LEAVE_TYPES, isValidLeaveType, isValidDate, workingDates } = require('../lib/leaves');
 
 const router = express.Router();
-const SETUP_HINT = 'Leave register is not set up yet: run supabase/migration_v8_leaves.sql in the Supabase SQL editor.';
+const LEAVE_STATUSES = ['Pending', 'Approved'];
+const SETUP_HINT = 'Leave register is not fully set up yet: run supabase/migration_v8_leaves.sql, then migration_v10_leave_status.sql, in the Supabase SQL editor.';
 const missingTable = (err) => /Could not find the table|does not exist|schema cache/i.test(err?.message || '');
 const fail = (res, err, what) => {
     if (missingTable(err)) return res.status(503).json({ error: SETUP_HINT });
@@ -44,12 +52,12 @@ router.get('/api/leaves', authenticateToken, isAdmin, async (req, res) => {
     const { from, to, employee_id } = req.query;
     if (!isValidDate(from) || !isValidDate(to)) return res.status(400).json({ error: 'from and to (YYYY-MM-DD) are required' });
     try {
-        let q = supabase.from('leaves').select('id, date, type, note, created_by, created_at, employees!inner(id, employee_id, name, department)')
+        let q = supabase.from('leaves').select('id, date, type, note, status, created_by, created_at, employees!inner(id, employee_id, name, department)')
             .gte('date', from).lte('date', to).order('date', { ascending: false });
         if (employee_id) q = q.eq('employees.employee_id', String(employee_id).toUpperCase());
         const { data, error } = await q;
         if (error) throw error;
-        res.json({ from, to, leaves: (data || []).map(l => ({ id: l.id, date: l.date, type: l.type, note: l.note, created_by: l.created_by, created_at: l.created_at, employee: l.employees })) });
+        res.json({ from, to, leaves: (data || []).map(l => ({ id: l.id, date: l.date, type: l.type, note: l.note, status: l.status || 'Approved', created_by: l.created_by, created_at: l.created_at, employee: l.employees })) });
     } catch (err) { fail(res, err, 'load leaves'); }
 });
 
@@ -60,8 +68,8 @@ router.post('/api/leaves', authenticateToken, isAdmin, async (req, res) => {
     try {
         const emp = await resolveEmployee(employee_id);
         if (!emp) return res.status(404).json({ error: 'Employee not found' });
-        const row = { employee_id: emp.id, date, type: String(type).toUpperCase(), note: String(note || '').trim().slice(0, 200) || null, created_by: req.user?.email || 'admin' };
-        const { data, error } = await supabase.from('leaves').upsert(row, { onConflict: 'employee_id,date' }).select('id, date, type, note, created_by, created_at').single();
+        const row = { employee_id: emp.id, date, type: String(type).toUpperCase(), note: String(note || '').trim().slice(0, 200) || null, status: 'Pending', created_by: req.user?.email || 'admin' };
+        const { data, error } = await supabase.from('leaves').upsert(row, { onConflict: 'employee_id,date' }).select('id, date, type, note, status, created_by, created_at').single();
         if (error) throw error;
         res.status(201).json({ leave: { ...data, employee: emp } });
     } catch (err) { fail(res, err, 'save leave'); }
@@ -98,8 +106,8 @@ router.post('/api/leaves/range', authenticateToken, isAdmin, async (req, res) =>
         const upType = String(type).toUpperCase();
         const trimmedNote = String(note || '').trim().slice(0, 200) || null;
         const createdBy = req.user?.email || 'admin';
-        const rows = [...working].sort().map(date => ({ employee_id: emp.id, date, type: upType, note: trimmedNote, created_by: createdBy }));
-        const { data, error } = await supabase.from('leaves').upsert(rows, { onConflict: 'employee_id,date' }).select('id, date, type, note, created_by, created_at');
+        const rows = [...working].sort().map(date => ({ employee_id: emp.id, date, type: upType, note: trimmedNote, status: 'Pending', created_by: createdBy }));
+        const { data, error } = await supabase.from('leaves').upsert(rows, { onConflict: 'employee_id,date' }).select('id, date, type, note, status, created_by, created_at');
         if (error) throw error;
         res.status(201).json({
             employee: emp,
@@ -108,6 +116,18 @@ router.post('/api/leaves/range', authenticateToken, isAdmin, async (req, res) =>
             skipped,
         });
     } catch (err) { fail(res, err, 'save leave range'); }
+});
+
+router.patch('/api/leaves/:id', authenticateToken, isAdmin, async (req, res) => {
+    if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
+    const status = String(req.body?.status || '');
+    if (!LEAVE_STATUSES.includes(status)) return res.status(400).json({ error: `status must be one of ${LEAVE_STATUSES.join(', ')}` });
+    try {
+        const { data, error } = await supabase.from('leaves').update({ status }).eq('id', req.params.id).select('id, date, type, note, status, created_by, created_at').maybeSingle();
+        if (error) throw error;
+        if (!data) return res.status(404).json({ error: 'Leave not found' });
+        res.json({ leave: data });
+    } catch (err) { fail(res, err, 'update leave status'); }
 });
 
 router.delete('/api/leaves/:id', authenticateToken, isAdmin, async (req, res) => {
