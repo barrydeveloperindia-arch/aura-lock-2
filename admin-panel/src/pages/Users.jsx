@@ -15,7 +15,7 @@ const DEPARTMENTS = [
     'Paint', 'Sanding', 'Packing', 'Maintenance', 'House Keeping', 'Cleaning', 'Driver',
     'Accounts', 'Management', 'CEO', 'MD', 'General',
 ];
-const EMPTY_FORM = { name: '', email: '', employee_id: '', department: 'Mechanical Engineering', role: 'employee' };
+const EMPTY_FORM = { name: '', email: '', employee_id: '', department: 'Mechanical Engineering', role: 'employee', designation: '', joining_date: '' };
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function Toast({ toasts, dismiss }) {
@@ -153,6 +153,10 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                     <datalist id="departments-list">
                         {departments.map(d => <option key={d} value={d} />)}
                     </datalist>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    {field('Designation', 'designation', 'text', 'e.g. Mechanical Engineer')}
+                    {field('Joining Date', 'joining_date', 'date')}
                 </div>
                 {err && <p className="text-xs font-bold text-red-400 bg-red-500/10 px-3 py-2 rounded-xl border border-red-500/20">{err}</p>}
                 
@@ -425,6 +429,81 @@ function FaceEnrollModal({ user, onDone, onClose }) {
     );
 }
 
+// ── Staff Profile Modal ───────────────────────────────────────────────────────
+function StaffProfileModal({ user, onClose, onEdit }) {
+    if (!user) return null;
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not added';
+    return (
+        <Modal open onClose={onClose} maxW="max-w-xl">
+            <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600/30 to-indigo-600/30 border border-blue-500/20 flex items-center justify-center text-lg font-black text-emerald-500 overflow-hidden shrink-0">
+                        {user.image_url ? <img src={user.image_url} alt="" className="w-full h-full object-cover" /> : (user.name || '?').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-white">{user.name}</h2>
+                        <p className="text-xs text-slate-500 font-mono mt-0.5">{user.employee_id}</p>
+                    </div>
+                </div>
+                <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="space-y-5">
+                <div>
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Identity</div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <InfoRow label="Email" value={user.email || '—'} mono />
+                        <InfoRow label="Role" value={user.role === 'admin' ? 'Admin' : 'Employee'} />
+                        <InfoRow label="Status" value={user.status || 'Active'} />
+                        <InfoRow label="Employee ID" value={user.employee_id} mono />
+                    </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/[0.06]">
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Employment</div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <InfoRow label="Department" value={user.department || 'General'} />
+                        <InfoRow label="Designation" value={user.designation || 'Not added'} />
+                        <InfoRow label="Joining Date" value={fmtDate(user.joining_date)} />
+                        <InfoRow label="Record Created" value={fmtDate(user.created_at)} />
+                    </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/[0.06]">
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Government ID</div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <InfoRow label="PAN Number" value={user.pan_number || 'Not added'} mono />
+                        <InfoRow label="Aadhaar Number" value={user.aadhaar_number || 'Not added'} mono />
+                    </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/[0.06]">
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Biometrics</div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black ${user.face_registered ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'}`}>
+                            <ScanFace className="w-3 h-3" /> {user.face_registered ? 'Face Enrolled' : 'Face Not Enrolled'}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black ${user.fingerprint_registered ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'}`}>
+                            <Fingerprint className="w-3 h-3" /> {user.fingerprint_registered ? 'Fingerprint Enrolled' : 'Fingerprint Not Enrolled'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex gap-3 pt-6 mt-2">
+                <button onClick={onClose}
+                    className="flex-1 py-3 rounded-xl border border-white/10 text-slate-400 hover:text-white text-sm font-bold transition-all">
+                    Close
+                </button>
+                <button onClick={() => onEdit(user)}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-black transition-all shadow-lg shadow-blue-600/20">
+                    <Edit2 className="w-4 h-4" /> Edit Details
+                </button>
+            </div>
+        </Modal>
+    );
+}
+
 function InfoRow({ label, value, mono = false }) {
     return (
         <div>
@@ -598,6 +677,7 @@ export default function Users() {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [faceTarget, setFaceTarget] = useState(null);   // user for face enrollment
     const [fpTarget, setFpTarget] = useState(null);   // user for fingerprint enrollment
+    const [profileTarget, setProfileTarget] = useState(null);   // user for the full profile view
     const [actionLoading, setActionLoading] = useState(null);
 
     const { toasts, add: addToast, dismiss } = useToast();
@@ -720,6 +800,7 @@ export default function Users() {
             {editTarget && <EmployeeModal departments={allDepartments} mode="edit" initialData={editTarget} onSave={handleEdit} onClose={() => setEditTarget(null)} onEnrollFace={setFaceTarget} onEnrollFP={setFpTarget} />}
             {faceTarget && <FaceEnrollModal user={faceTarget} onDone={handleFaceEnrolled} onClose={() => setFaceTarget(null)} />}
             {fpTarget && <FingerprintEnrollModal user={fpTarget} onDone={handleFPEnrolled} onClose={() => setFpTarget(null)} />}
+            {profileTarget && <StaffProfileModal user={profileTarget} onClose={() => setProfileTarget(null)} onEdit={(u) => { setProfileTarget(null); setEditTarget(u); }} />}
             <DeleteDialog user={deleteTarget} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteTarget(null)} />
 
             {/* ── Header ── */}
@@ -775,7 +856,7 @@ export default function Users() {
                                 <th className="hidden md:table-cell px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Department</th>
                                 <th className="px-4 md:px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</th>
                                 <th className="hidden lg:table-cell px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Biometrics</th>
-                                <th className="hidden xl:table-cell px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Created</th>
+                                <th className="hidden xl:table-cell px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Created / Joined</th>
                                 <th className="px-4 md:px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
@@ -799,23 +880,27 @@ export default function Users() {
                                 const createdAt = user.created_at
                                     ? new Date(user.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
                                     : '—';
+                                const joinedAt = user.joining_date
+                                    ? new Date(user.joining_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                                    : null;
                                 return (
                                     <tr key={user.id}
                                         className={`group transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-slate-50'}`}>
 
                                         {/* Employee */}
                                         <td className="px-4 md:px-8 py-4">
-                                            <div className="flex items-center gap-3">
+                                            <button onClick={() => setProfileTarget(user)} title="View full profile"
+                                                className="flex items-center gap-3 text-left group/row">
                                                 <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/30 to-indigo-600/30 border border-blue-500/20 flex items-center justify-center text-[10px] md:text-xs font-black text-emerald-500 overflow-hidden">
                                                     {(avatars[user.employee_id] || user.image_url)
                                                         ? <img src={avatars[user.employee_id] || user.image_url} alt="" className="w-full h-full object-cover" />
                                                         : initials}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <div className="text-sm font-bold text-slate-900 truncate">{user.name}</div>
+                                                    <div className="text-sm font-bold text-slate-900 truncate group-hover/row:text-blue-600 transition-colors">{user.name}</div>
                                                     <div className="text-[9px] md:text-[10px] text-slate-500 font-mono truncate">{user.employee_id || user.email}</div>
                                                 </div>
-                                            </div>
+                                            </button>
                                         </td>
                                         
                                         {/* Department */}
@@ -824,6 +909,9 @@ export default function Users() {
                                                 <Briefcase className="w-3 h-3 text-slate-600" />
                                                 {user.department || 'General'}
                                             </div>
+                                            {user.designation && (
+                                                <div className="text-[10px] text-slate-500 mt-0.5 truncate">{user.designation}</div>
+                                            )}
                                         </td>
 
                                         {/* Status */}
@@ -843,6 +931,9 @@ export default function Users() {
                                         {/* Created */}
                                         <td className="hidden xl:table-cell px-8 py-4">
                                             <span className="text-xs text-slate-500 tabular-nums">{createdAt}</span>
+                                            {joinedAt && (
+                                                <div className="text-[10px] text-slate-600 tabular-nums mt-0.5">Joined {joinedAt}</div>
+                                            )}
                                         </td>
 
                                         {/* Actions */}

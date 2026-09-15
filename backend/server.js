@@ -617,6 +617,7 @@ app.get('/api/users', authenticateToken, isAdmin, async (req, res) => {
         // Select only real DB columns and join with biometric status
         let query = supabase.from('employees').select(`
             id, employee_id, name, email, role, department, status,
+            designation, joining_date,
             image_url, created_at, updated_at, is_deleted,
             face_encodings(id),
             fingerprints(id)
@@ -676,7 +677,8 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
         // Silently drop any frontend-only fields to prevent Supabase errors.
         const ALLOWED_COLUMNS = new Set([
             'name', 'email', 'role', 'department', 'status',
-            'employee_id', 'image_url', 'is_deleted', 'face_embedding'
+            'employee_id', 'image_url', 'is_deleted', 'face_embedding',
+            'designation', 'joining_date'
         ]);
         
         const updates = Object.fromEntries(
@@ -705,7 +707,7 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
                 .from('employees')
                 .update(updates)
                 .eq('id', id)
-                .select('id, employee_id, name, email, role, department, status, image_url, created_at, updated_at, is_deleted, face_embedding')
+                .select('id, employee_id, name, email, role, department, status, designation, joining_date, image_url, created_at, updated_at, is_deleted, face_embedding')
                 .single();
 
             if (error) {
@@ -758,7 +760,7 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
 
 app.post('/api/users', authenticateToken, validateIdentity, async (req, res) => {
     try {
-        const { employeeId, employee_id, name, email, role, faceEncoding, image_url, rfid, fingerprint_id, department } = req.body;
+        const { employeeId, employee_id, name, email, role, faceEncoding, image_url, rfid, fingerprint_id, department, designation, joining_date } = req.body;
         const finalId = employeeId || employee_id;
 
         const { data: newUser, error } = await supabase
@@ -769,6 +771,8 @@ app.post('/api/users', authenticateToken, validateIdentity, async (req, res) => 
                 email,
                 role: role === 'admin' ? 'admin' : 'employee',
                 department: department || 'General',
+                designation,
+                joining_date,
                 face_embedding: faceEncoding,
                 image_url
             }, { onConflict: 'employee_id' })
