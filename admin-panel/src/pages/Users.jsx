@@ -453,7 +453,7 @@ function SectionHeading({ icon: Icon, children }) {
 }
 
 // ── Staff Profile Modal ───────────────────────────────────────────────────────
-function StaffProfileModal({ user, onClose, onEdit, onViewCard }) {
+function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
     if (!user) return null;
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not added';
     return (
@@ -469,7 +469,7 @@ function StaffProfileModal({ user, onClose, onEdit, onViewCard }) {
                 </button>
                 <div className="px-5 md:px-8 -mt-10 flex items-end gap-4 pb-5">
                     <div className="w-20 h-20 shrink-0 rounded-2xl bg-gradient-to-br from-blue-600/40 to-indigo-600/40 border-4 border-[#0a0f1e] flex items-center justify-center text-xl font-black text-emerald-400 overflow-hidden shadow-xl">
-                        {user.image_url ? <img src={user.image_url} alt="" className="w-full h-full object-cover" /> : (user.name || '?').slice(0, 2).toUpperCase()}
+                        {photoUrl ? <img src={photoUrl} alt="" className="w-full h-full object-cover" /> : (user.name || '?').slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0 pb-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -543,7 +543,7 @@ function StaffProfileModal({ user, onClose, onEdit, onViewCard }) {
 }
 
 // ── ID Card ────────────────────────────────────────────────────────────────
-function IdCardModal({ user, onClose }) {
+function IdCardModal({ user, photoUrl, onClose }) {
     if (!user) return null;
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
     const initials = (user.name || '?').slice(0, 2).toUpperCase();
@@ -577,8 +577,8 @@ function IdCardModal({ user, onClose }) {
                 </div>
 
                 <div className="flex-1 flex gap-3 px-3 py-2.5">
-                    <div className="w-[0.85in] h-[0.85in] shrink-0 rounded-lg overflow-hidden border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-slate-500 font-black text-lg">
-                        {user.image_url ? <img src={user.image_url} alt="" className="w-full h-full object-cover" /> : initials}
+                    <div className="w-[0.95in] h-[1in] shrink-0 rounded-lg overflow-hidden border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xl">
+                        {photoUrl ? <img src={photoUrl} alt="" className="w-full h-full object-cover" /> : initials}
                     </div>
                     <div className="min-w-0 flex-1 leading-tight">
                         <div className="text-[13px] font-black truncate">{user.name}</div>
@@ -587,6 +587,8 @@ function IdCardModal({ user, onClose }) {
                             <div><span className="font-bold text-slate-500">ID: </span><span className="font-mono">{user.employee_id}</span></div>
                             <div><span className="font-bold text-slate-500">Dept: </span>{user.department || 'General'}</div>
                             <div><span className="font-bold text-slate-500">Joined: </span>{fmtDate(user.joining_date)}</div>
+                            {user.blood_group && <div><span className="font-bold text-slate-500">Blood Group: </span>{user.blood_group}</div>}
+                            {user.contact_number && <div><span className="font-bold text-slate-500">Contact: </span>{user.contact_number}</div>}
                         </div>
                     </div>
                 </div>
@@ -908,10 +910,10 @@ export default function Users() {
             {editTarget && <EmployeeModal departments={allDepartments} mode="edit" initialData={editTarget} onSave={handleEdit} onClose={() => setEditTarget(null)} onEnrollFace={setFaceTarget} onEnrollFP={setFpTarget} />}
             {faceTarget && <FaceEnrollModal user={faceTarget} onDone={handleFaceEnrolled} onClose={() => setFaceTarget(null)} />}
             {fpTarget && <FingerprintEnrollModal user={fpTarget} onDone={handleFPEnrolled} onClose={() => setFpTarget(null)} />}
-            {profileTarget && <StaffProfileModal user={profileTarget} onClose={() => setProfileTarget(null)}
+            {profileTarget && <StaffProfileModal user={profileTarget} photoUrl={avatars[profileTarget.employee_id] || profileTarget.image_url} onClose={() => setProfileTarget(null)}
                 onEdit={(u) => { setProfileTarget(null); setEditTarget(u); }}
                 onViewCard={(u) => { setProfileTarget(null); setCardTarget(u); }} />}
-            {cardTarget && <IdCardModal user={cardTarget} onClose={() => setCardTarget(null)} />}
+            {cardTarget && <IdCardModal user={cardTarget} photoUrl={avatars[cardTarget.employee_id] || cardTarget.image_url} onClose={() => setCardTarget(null)} />}
             <DeleteDialog user={deleteTarget} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteTarget(null)} />
 
             {/* ── Header ── */}
