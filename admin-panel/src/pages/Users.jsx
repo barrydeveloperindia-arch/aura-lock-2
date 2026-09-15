@@ -19,7 +19,9 @@ const DEPARTMENTS = [
 ];
 const EMPTY_FORM = {
     name: '', email: '', employee_id: '', department: 'Mechanical Engineering', role: 'employee',
-    designation: '', joining_date: '', last_working_day: '', pan_number: '', aadhaar_number: ''
+    designation: '', joining_date: '', last_working_day: '', pan_number: '', aadhaar_number: '',
+    date_of_birth: '', gender: '', blood_group: '', location: '', father_mother_name: '', spouse_name: '',
+    contact_number: '', address: '', bank_name: '', bank_branch: '', bank_account_number: '', bank_ifsc: ''
 };
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -166,6 +168,30 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                 <div className="grid grid-cols-2 gap-3">
                     {field('PAN Number', 'pan_number', 'text', 'e.g. ABCDE1234F')}
                     {field('Aadhaar Number', 'aadhaar_number', 'text', 'e.g. 1234 5678 9012')}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    {field('Date of Birth', 'date_of_birth', 'date')}
+                    {field('Gender', 'gender', 'text', 'e.g. Male')}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    {field('Blood Group', 'blood_group', 'text', 'e.g. A Positive')}
+                    {field('Location', 'location', 'text', 'e.g. Panchkula')}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    {field('Father / Mother Name', 'father_mother_name', 'text')}
+                    {field('Spouse Name', 'spouse_name', 'text')}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    {field('Contact Number', 'contact_number', 'text', 'e.g. 9876543210')}
+                    {field('Address', 'address', 'text')}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    {field('Bank Name', 'bank_name', 'text', 'e.g. IDFC FIRST Bank (India)')}
+                    {field('Bank Branch', 'bank_branch', 'text')}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    {field('Bank Account Number', 'bank_account_number', 'text')}
+                    {field('Bank IFSC', 'bank_ifsc', 'text')}
                 </div>
                 {(mode === 'edit' && form.status === 'Disabled') && (
                     <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
@@ -504,10 +530,40 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
                 </div>
 
                 <div className="pt-4 border-t border-white/[0.06]">
+                    <SectionHeading icon={UserCheck}>Personal</SectionHeading>
+                    <div className="grid grid-cols-2 gap-4">
+                        <InfoRow label="Date of Birth" value={fmtDate(user.date_of_birth)} />
+                        <InfoRow label="Gender" value={user.gender || 'Not added'} />
+                        <InfoRow label="Blood Group" value={user.blood_group || 'Not added'} />
+                        <InfoRow label="Location" value={user.location || 'Not added'} />
+                        <InfoRow label="Father / Mother Name" value={user.father_mother_name || 'Not added'} />
+                        <InfoRow label="Spouse Name" value={user.spouse_name || 'Not added'} />
+                    </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/[0.06]">
                     <SectionHeading icon={CreditCard}>Government ID</SectionHeading>
                     <div className="grid grid-cols-2 gap-4">
                         <InfoRow label="PAN Number" value={user.pan_number || 'Not added'} mono />
                         <InfoRow label="Aadhaar Number" value={user.aadhaar_number || 'Not added'} mono />
+                    </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/[0.06]">
+                    <SectionHeading icon={Mail}>Contact</SectionHeading>
+                    <div className="grid grid-cols-2 gap-4">
+                        <InfoRow label="Contact Number" value={user.contact_number || 'Not added'} mono />
+                        <InfoRow label="Address" value={user.address || 'Not added'} />
+                    </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/[0.06]">
+                    <SectionHeading icon={CreditCard}>Bank Details</SectionHeading>
+                    <div className="grid grid-cols-2 gap-4">
+                        <InfoRow label="Bank Name" value={user.bank_name || 'Not added'} />
+                        <InfoRow label="Branch" value={user.bank_branch || 'Not added'} />
+                        <InfoRow label="Account Number" value={user.bank_account_number || 'Not added'} mono />
+                        <InfoRow label="IFSC" value={user.bank_ifsc || 'Not added'} mono />
                     </div>
                 </div>
 

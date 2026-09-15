@@ -621,6 +621,8 @@ app.get('/api/users', authenticateToken, isAdmin, async (req, res) => {
         let query = supabase.from('employees').select(`
             id, employee_id, name, email, role, department, status,
             designation, joining_date, last_working_day, pan_number, aadhaar_number,
+            date_of_birth, gender, blood_group, father_mother_name, spouse_name, location,
+            contact_number, address, bank_name, bank_branch, bank_account_number, bank_ifsc,
             image_url, created_at, updated_at, is_deleted,
             face_encodings(id),
             fingerprints(id)
@@ -682,7 +684,9 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
             'name', 'email', 'role', 'department', 'status',
             'employee_id', 'image_url', 'is_deleted', 'face_embedding',
             'designation', 'joining_date', 'last_working_day',
-            'pan_number', 'aadhaar_number'
+            'pan_number', 'aadhaar_number',
+            'date_of_birth', 'gender', 'blood_group', 'father_mother_name', 'spouse_name', 'location',
+            'contact_number', 'address', 'bank_name', 'bank_branch', 'bank_account_number', 'bank_ifsc'
         ]);
         
         const updates = Object.fromEntries(
@@ -711,7 +715,7 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
                 .from('employees')
                 .update(updates)
                 .eq('id', id)
-                .select('id, employee_id, name, email, role, department, status, designation, joining_date, last_working_day, pan_number, aadhaar_number, image_url, created_at, updated_at, is_deleted, face_embedding')
+                .select('id, employee_id, name, email, role, department, status, designation, joining_date, last_working_day, pan_number, aadhaar_number, date_of_birth, gender, blood_group, father_mother_name, spouse_name, location, image_url, created_at, updated_at, is_deleted, face_embedding')
                 .single();
 
             if (error) {
