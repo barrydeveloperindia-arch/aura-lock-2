@@ -17,10 +17,20 @@ const groupStatus = (group) => (group.some(l => l.status === 'Rejected') ? 'Reje
 // checked state always starts empty for a new decision.
 function ApproverModal({ decision, approvers, types, onPick, onClose }) {
     const [picked, setPicked] = useState([]);
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState('');
     if (!decision) return null;
     const { group, status } = decision;
     const first = group[0];
     const toggle = (name) => setPicked(p => (p.includes(name) ? p.filter(n => n !== name) : [...p, name]));
+    // onPick is the network call itself (throws on failure) — caught HERE so the reason shows
+    // inside this modal, not on a page-level banner the modal's own backdrop is hiding.
+    const confirm = async () => {
+        setSubmitting(true); setSubmitError('');
+        try { await onPick(picked); }
+        catch (err) { setSubmitError(err?.response?.data?.error || `Could not ${status === 'Approved' ? 'approve' : 'reject'} — try again.`); }
+        finally { setSubmitting(false); }
+    };
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center px-4" onClick={onClose}>
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
@@ -41,10 +51,16 @@ function ApproverModal({ decision, approvers, types, onPick, onClose }) {
                         </label>
                     ))}
                 </div>
+                {submitError && (
+                    <div className="mx-3 mb-2 flex items-start gap-2 p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
+                        <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />{submitError}
+                    </div>
+                )}
                 <div className="p-3 pt-1 flex items-center gap-2">
                     <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100">Cancel</button>
-                    <button type="button" disabled={picked.length === 0} onClick={() => onPick(picked)}
-                        className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40 ${status === 'Approved' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'}`}>
+                    <button type="button" disabled={picked.length === 0 || submitting} onClick={confirm}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40 ${status === 'Approved' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'}`}>
+                        {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                         {status === 'Approved' ? 'Approve' : 'Reject'}{picked.length > 1 ? ` (${picked.length})` : ''}
                     </button>
                 </div>
@@ -215,12 +231,14 @@ export default function Leaves() {
         try { await Promise.all(group.map(l => apiService.deleteLeave(l.id))); setLeaves(ls => ls.filter(l => !group.some(g => g.id === l.id))); setViewGroup(null); }
         catch (err) { setError(err?.response?.data?.error || 'Could not delete'); }
     };
+    // Throws on failure — ApproverModal awaits this itself and shows the reason inline (its own
+    // backdrop hides the page-level error banner, so a silent catch here looked like a dead
+    // button). Only clears viewGroup/decision once the API call has actually succeeded.
     const setGroupStatus = async (group, status, approvedBy) => {
-        try {
-            await Promise.all(group.map(l => apiService.setLeaveStatus(l.id, status, approvedBy)));
-            setLeaves(ls => ls.map(l => (group.some(g => g.id === l.id) ? { ...l, status, approved_by: approvedBy || l.approved_by } : l)));
-            setViewGroup(null);
-        } catch (err) { setError(err?.response?.data?.error || `Could not ${status === 'Approved' ? 'approve' : 'reject'}`); }
+        await Promise.all(group.map(l => apiService.setLeaveStatus(l.id, status, approvedBy)));
+        setLeaves(ls => ls.map(l => (group.some(g => g.id === l.id) ? { ...l, status, approved_by: approvedBy || l.approved_by } : l)));
+        setViewGroup(null);
+        setDecision(null);
     };
     // Approve/Reject always asks who is signing first (the printed form's "Admin / Supervisor
     // Approval ... Signature" line) — a bare click never changes status on its own.
