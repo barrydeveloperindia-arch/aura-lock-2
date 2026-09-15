@@ -33,6 +33,16 @@ const app = express();
 const { authenticateToken, isAdmin } = require('./src/middleware/auth');
 const PORT = process.env.PORT || 8000;
 
+// CORS + JSON body parsing must be registered before any route (including
+// calibrationRoutes/systemRoutes below) -- a route mounted before cors() never gets its
+// Access-Control-Allow-Origin header, which breaks it for any cross-origin caller (e.g. the
+// admin panel running on a different host/port than this backend).
+app.use(cors({
+    origin: '*', // Allow connections from ANY origin (including Wi-Fi IP and arbitrary phones)
+    // credentials: true (Must be removed if origin is '*')
+}));
+app.use(express.json());
+
 // Trust reverse proxy for rate limiter (required for Google Cloud Run)
 app.set('trust proxy', 1);
 // --- Configuration & Initialization ---
@@ -66,13 +76,6 @@ const LOG_THROTTLE_MS = 3000;
 
 // --- Supabase Connection ---
 const supabase = require('./supabase');
-
-app.use(cors({
-    origin: '*', // Allow connections from ANY origin (including Wi-Fi IP and arbitrary phones)
-    // credentials: true (Must be removed if origin is '*')
-}));
-
-app.use(express.json());
 
 // --- Static File Serving ---
 // Serve Admin Dashboard under /admin
