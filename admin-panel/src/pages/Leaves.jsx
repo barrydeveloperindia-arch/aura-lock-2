@@ -11,11 +11,16 @@ const STATUS_TONE = { Pending: 'bg-amber-500/10 text-amber-700', Approved: 'bg-e
 const groupStatus = (group) => (group.some(l => l.status === 'Rejected') ? 'Rejected' : group.every(l => l.status === 'Approved') ? 'Approved' : 'Pending');
 
 // "Who is approving/rejecting?" — the printed form's "Admin / Supervisor Approval ...
-// Signature" line, kept as a fixed pick list rather than free text.
+// Signature" line, kept as a fixed pick list rather than free text. More than one person
+// can sign the same leave (e.g. Bharat sir and Salil sir together), so this is a checklist,
+// not a single pick — parent remounts this with a fresh key each time it opens, so the
+// checked state always starts empty for a new decision.
 function ApproverModal({ decision, approvers, types, onPick, onClose }) {
+    const [picked, setPicked] = useState([]);
     if (!decision) return null;
     const { group, status } = decision;
     const first = group[0];
+    const toggle = (name) => setPicked(p => (p.includes(name) ? p.filter(n => n !== name) : [...p, name]));
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center px-4" onClick={onClose}>
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
@@ -25,17 +30,23 @@ function ApproverModal({ decision, approvers, types, onPick, onClose }) {
                         {status === 'Approved' ? 'Approve' : 'Reject'} leave — who is signing?
                     </div>
                     <div className="text-sm font-bold text-slate-900">{first.employee?.name} · {types[first.type] || first.type}</div>
+                    <div className="text-[11px] text-slate-400 mt-1">Tick everyone who is signing — more than one is fine.</div>
                 </div>
-                <div className="p-3 grid grid-cols-1 gap-1.5">
+                <div className="p-3 grid grid-cols-1 gap-1">
                     {approvers.map(name => (
-                        <button key={name} type="button" onClick={() => onPick(name)}
-                            className={`text-left px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100 ${status === 'Approved' ? 'text-emerald-700' : 'text-rose-700'}`}>
-                            {name}
-                        </button>
+                        <label key={name} className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-slate-50 cursor-pointer">
+                            <input type="checkbox" checked={picked.includes(name)} onChange={() => toggle(name)}
+                                className={`w-4 h-4 rounded ${status === 'Approved' ? 'accent-emerald-600' : 'accent-rose-600'}`} />
+                            <span className={`text-sm font-semibold ${status === 'Approved' ? 'text-emerald-700' : 'text-rose-700'}`}>{name}</span>
+                        </label>
                     ))}
                 </div>
-                <div className="p-3 pt-0">
-                    <button type="button" onClick={onClose} className="w-full px-4 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100">Cancel</button>
+                <div className="p-3 pt-1 flex items-center gap-2">
+                    <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100">Cancel</button>
+                    <button type="button" disabled={picked.length === 0} onClick={() => onPick(picked)}
+                        className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40 ${status === 'Approved' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'}`}>
+                        {status === 'Approved' ? 'Approve' : 'Reject'}{picked.length > 1 ? ` (${picked.length})` : ''}
+                    </button>
                 </div>
             </div>
         </div>
@@ -90,9 +101,9 @@ function ViewModal({ group, types, avatar, onShare, onDecide, onDelete, onClose 
                         <UserIcon className="w-3.5 h-3.5" />
                         Added by {first.created_by || 'admin'}{first.created_at ? ` · ${format(new Date(first.created_at), 'dd MMM, HH:mm')}` : ''}
                     </div>
-                    {status !== 'Pending' && first.approved_by && (
+                    {status !== 'Pending' && first.approved_by?.length > 0 && (
                         <div className={`text-[11px] font-semibold ${status === 'Approved' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {status} by {first.approved_by}
+                            {status} by {first.approved_by.join(', ')}
                         </div>
                     )}
                 </div>
@@ -242,7 +253,7 @@ export default function Leaves() {
         const status = groupStatus(group);
         lines.push('', 'Admin / Supervisor Approval:');
         if (status === 'Pending') lines.push('Current status: On hold', 'Sir/Mam, please confirm — Approved, Rejected, or on Hold? 🙏');
-        else lines.push(`${status} by ${first.approved_by || '—'}`);
+        else lines.push(`${status} by ${first.approved_by?.length ? first.approved_by.join(', ') : '—'}`);
         return lines.join('\n');
     };
     const share = async (text) => {
@@ -453,10 +464,11 @@ export default function Leaves() {
                 onClose={() => setViewGroup(null)}
             />
             <ApproverModal
+                key={decision ? `${decision.group[0].id}-${decision.status}` : 'closed'}
                 decision={decision}
                 approvers={approvers}
                 types={types}
-                onPick={name => setGroupStatus(decision.group, decision.status, name)}
+                onPick={names => setGroupStatus(decision.group, decision.status, names)}
                 onClose={() => setDecision(null)}
             />
         </div>

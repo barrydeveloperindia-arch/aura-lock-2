@@ -144,7 +144,7 @@ describe('PATCH /api/leaves/:id', () => {
         const res = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Approved', approved_by: 'Bharat sir' });
         expect(res.status).toBe(200);
         expect(res.body.leave.status).toBe('Approved');
-        expect(res.body.leave.approved_by).toBe('Bharat sir');
+        expect(res.body.leave.approved_by).toEqual(['Bharat sir']); // a single name still comes back as a one-item array
         expect(supabase.__state.leaves.find(l => l.id === id).status).toBe('Approved');
     });
 
@@ -154,7 +154,15 @@ describe('PATCH /api/leaves/:id', () => {
         const res = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Rejected', approved_by: 'Salil sir' });
         expect(res.status).toBe(200);
         expect(res.body.leave.status).toBe('Rejected');
-        expect(res.body.leave.approved_by).toBe('Salil sir');
+        expect(res.body.leave.approved_by).toEqual(['Salil sir']);
+    });
+
+    test('more than one person can sign the same leave', async () => {
+        const created = await request(app).post('/api/leaves/range').send({ employee_id: 'EL107', from: '2026-09-16', to: '2026-09-16', type: 'CL' });
+        const id = created.body.leaves[0].id;
+        const res = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Approved', approved_by: ['Bharat sir', 'Salil sir', 'Bharat sir'] }); // a duplicate is deduped
+        expect(res.status).toBe(200);
+        expect(res.body.leave.approved_by).toEqual(['Bharat sir', 'Salil sir']);
     });
 
     test('Approved/Rejected require approved_by to be one of the fixed signers', async () => {
@@ -162,8 +170,12 @@ describe('PATCH /api/leaves/:id', () => {
         const id = created.body.leaves[0].id;
         const noSigner = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Approved' });
         expect(noSigner.status).toBe(400);
+        const emptyArray = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Approved', approved_by: [] });
+        expect(emptyArray.status).toBe(400);
         const badSigner = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Approved', approved_by: 'Random Person' });
         expect(badSigner.status).toBe(400);
+        const oneBadOneGood = await request(app).patch(`/api/leaves/${id}`).send({ status: 'Approved', approved_by: ['Admin', 'Random Person'] });
+        expect(oneBadOneGood.status).toBe(400);
     });
 
     test('rejects a status that is none of Pending/Approved/Rejected, and an unknown id', async () => {

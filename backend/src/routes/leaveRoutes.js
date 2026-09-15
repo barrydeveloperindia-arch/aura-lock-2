@@ -7,7 +7,8 @@
  *          Sundays and holidays inside the range are skipped automatically (the same rule the
  *          monthly report already uses to count absence), so a leave never lands on a non-working day.
  *   PATCH  /api/leaves/:id  { status: 'Pending' | 'Approved' | 'Rejected', approved_by }
- *          approved_by is required for Approved/Rejected (one of APPROVERS below) — the
+ *          approved_by is required for Approved/Rejected — a name or array of names from
+ *          APPROVERS below (more than one person can sign the same leave) — the
  *          "Admin / Supervisor Approval ... Signature" line on the printed form.
  *   DELETE /api/leaves/:id
  *   GET    /api/holidays?year=2026
@@ -63,7 +64,7 @@ router.get('/api/leaves', authenticateToken, isAdmin, async (req, res) => {
         if (employee_id) q = q.eq('employees.employee_id', String(employee_id).toUpperCase());
         const { data, error } = await q;
         if (error) throw error;
-        res.json({ from, to, leaves: (data || []).map(l => ({ id: l.id, date: l.date, type: l.type, note: l.note, status: l.status || 'Approved', approved_by: l.approved_by || null, created_by: l.created_by, created_at: l.created_at, employee: l.employees })) });
+        res.json({ from, to, leaves: (data || []).map(l => ({ id: l.id, date: l.date, type: l.type, note: l.note, status: l.status || 'Approved', approved_by: l.approved_by || [], created_by: l.created_by, created_at: l.created_at, employee: l.employees })) });
     } catch (err) { fail(res, err, 'load leaves'); }
 });
 
@@ -130,8 +131,12 @@ router.patch('/api/leaves/:id', authenticateToken, isAdmin, async (req, res) => 
     if (!LEAVE_STATUSES.includes(status)) return res.status(400).json({ error: `status must be one of ${LEAVE_STATUSES.join(', ')}` });
     const patch = { status };
     if (status === 'Approved' || status === 'Rejected') {
-        const approvedBy = String(req.body?.approved_by || '');
-        if (!APPROVERS.includes(approvedBy)) return res.status(400).json({ error: `approved_by must be one of ${APPROVERS.join(', ')}` });
+        // One or more signers, e.g. both Bharat sir and Salil sir — accepts a single name too.
+        const raw = req.body?.approved_by;
+        const approvedBy = [...new Set((Array.isArray(raw) ? raw : [raw]).map(n => String(n || '').trim()).filter(Boolean))];
+        if (approvedBy.length === 0) return res.status(400).json({ error: `approved_by is required (one or more of ${APPROVERS.join(', ')})` });
+        const bad = approvedBy.find(n => !APPROVERS.includes(n));
+        if (bad) return res.status(400).json({ error: `"${bad}" is not a recognised approver — must be one of ${APPROVERS.join(', ')}` });
         patch.approved_by = approvedBy;
     }
     try {
