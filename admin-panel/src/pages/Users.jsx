@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { apiService } from '../services/api';
 import useAvatars from '../hooks/useAvatars';
+import BrandLogo from '../components/BrandLogo';
 import {
     Search, Trash2, Edit2, UserPlus, X, Save,
     ScanFace, Fingerprint, AlertTriangle, UserX, UserCheck,
     Briefcase, CheckCircle2, Camera, RefreshCw, Loader2,
-    ShieldCheck, AlertCircle, Upload, Smartphone
+    ShieldCheck, AlertCircle, Upload, Smartphone,
+    Mail, Calendar, CreditCard, Printer, BadgeCheck
 } from 'lucide-react';
 import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 
@@ -15,7 +17,10 @@ const DEPARTMENTS = [
     'Paint', 'Sanding', 'Packing', 'Maintenance', 'House Keeping', 'Cleaning', 'Driver',
     'Accounts', 'Management', 'CEO', 'MD', 'General',
 ];
-const EMPTY_FORM = { name: '', email: '', employee_id: '', department: 'Mechanical Engineering', role: 'employee', designation: '', joining_date: '' };
+const EMPTY_FORM = {
+    name: '', email: '', employee_id: '', department: 'Mechanical Engineering', role: 'employee',
+    designation: '', joining_date: '', last_working_day: '', pan_number: '', aadhaar_number: ''
+};
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function Toast({ toasts, dismiss }) {
@@ -158,6 +163,15 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                     {field('Designation', 'designation', 'text', 'e.g. Mechanical Engineer')}
                     {field('Joining Date', 'joining_date', 'date')}
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                    {field('PAN Number', 'pan_number', 'text', 'e.g. ABCDE1234F')}
+                    {field('Aadhaar Number', 'aadhaar_number', 'text', 'e.g. 1234 5678 9012')}
+                </div>
+                {(mode === 'edit' && form.status === 'Disabled') && (
+                    <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                        {field('Last Working Day', 'last_working_day', 'date')}
+                    </div>
+                )}
                 {err && <p className="text-xs font-bold text-red-400 bg-red-500/10 px-3 py-2 rounded-xl border border-red-500/20">{err}</p>}
                 
                 <div className="flex gap-3 pt-2">
@@ -429,28 +443,47 @@ function FaceEnrollModal({ user, onDone, onClose }) {
     );
 }
 
+// ── Section heading with icon, used across the profile ───────────────────────
+function SectionHeading({ icon: Icon, children }) {
+    return (
+        <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">
+            <Icon className="w-3 h-3" /> {children}
+        </div>
+    );
+}
+
 // ── Staff Profile Modal ───────────────────────────────────────────────────────
-function StaffProfileModal({ user, onClose, onEdit }) {
+function StaffProfileModal({ user, onClose, onEdit, onViewCard }) {
     if (!user) return null;
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not added';
     return (
         <Modal open onClose={onClose} maxW="max-w-xl">
-            <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600/30 to-indigo-600/30 border border-blue-500/20 flex items-center justify-center text-lg font-black text-emerald-500 overflow-hidden shrink-0">
+            {/* Cover banner + overlapping avatar */}
+            <div className="-m-5 md:-m-8 mb-0 relative">
+                <div className="h-20 md:h-24 rounded-t-3xl bg-gradient-to-r from-blue-600/25 via-indigo-600/15 to-transparent relative overflow-hidden">
+                    <BrandLogo variant="mark" className="absolute -right-4 -top-4 w-28 h-28 opacity-[0.08]" />
+                </div>
+                <button onClick={onClose}
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm flex items-center justify-center text-slate-300 hover:text-white transition-colors">
+                    <X className="w-4 h-4" />
+                </button>
+                <div className="px-5 md:px-8 -mt-10 flex items-end gap-4 pb-5">
+                    <div className="w-20 h-20 shrink-0 rounded-2xl bg-gradient-to-br from-blue-600/40 to-indigo-600/40 border-4 border-[#0a0f1e] flex items-center justify-center text-xl font-black text-emerald-400 overflow-hidden shadow-xl">
                         {user.image_url ? <img src={user.image_url} alt="" className="w-full h-full object-cover" /> : (user.name || '?').slice(0, 2).toUpperCase()}
                     </div>
-                    <div>
-                        <h2 className="text-xl font-black text-white">{user.name}</h2>
-                        <p className="text-xs text-slate-500 font-mono mt-0.5">{user.employee_id}</p>
+                    <div className="min-w-0 pb-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="text-xl font-black text-white truncate">{user.name}</h2>
+                            <StatusBadge status={user.status || 'Active'} />
+                        </div>
+                        <p className="text-xs text-slate-500 font-mono mt-0.5">{user.employee_id} · {user.designation || user.department || 'General'}</p>
                     </div>
                 </div>
-                <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-5 pt-1">
                 <div>
-                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Identity</div>
+                    <SectionHeading icon={Mail}>Identity</SectionHeading>
                     <div className="grid grid-cols-2 gap-4">
                         <InfoRow label="Email" value={user.email || '—'} mono />
                         <InfoRow label="Role" value={user.role === 'admin' ? 'Admin' : 'Employee'} />
@@ -460,17 +493,18 @@ function StaffProfileModal({ user, onClose, onEdit }) {
                 </div>
 
                 <div className="pt-4 border-t border-white/[0.06]">
-                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Employment</div>
+                    <SectionHeading icon={Briefcase}>Employment</SectionHeading>
                     <div className="grid grid-cols-2 gap-4">
                         <InfoRow label="Department" value={user.department || 'General'} />
                         <InfoRow label="Designation" value={user.designation || 'Not added'} />
                         <InfoRow label="Joining Date" value={fmtDate(user.joining_date)} />
                         <InfoRow label="Record Created" value={fmtDate(user.created_at)} />
+                        {user.last_working_day && <InfoRow label="Last Working Day" value={fmtDate(user.last_working_day)} />}
                     </div>
                 </div>
 
                 <div className="pt-4 border-t border-white/[0.06]">
-                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Government ID</div>
+                    <SectionHeading icon={CreditCard}>Government ID</SectionHeading>
                     <div className="grid grid-cols-2 gap-4">
                         <InfoRow label="PAN Number" value={user.pan_number || 'Not added'} mono />
                         <InfoRow label="Aadhaar Number" value={user.aadhaar_number || 'Not added'} mono />
@@ -478,7 +512,7 @@ function StaffProfileModal({ user, onClose, onEdit }) {
                 </div>
 
                 <div className="pt-4 border-t border-white/[0.06]">
-                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Biometrics</div>
+                    <SectionHeading icon={ScanFace}>Biometrics</SectionHeading>
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black ${user.face_registered ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'}`}>
                             <ScanFace className="w-3 h-3" /> {user.face_registered ? 'Face Enrolled' : 'Face Not Enrolled'}
@@ -492,12 +526,85 @@ function StaffProfileModal({ user, onClose, onEdit }) {
 
             <div className="flex gap-3 pt-6 mt-2">
                 <button onClick={onClose}
-                    className="flex-1 py-3 rounded-xl border border-white/10 text-slate-400 hover:text-white text-sm font-bold transition-all">
+                    className="py-3 px-4 rounded-xl border border-white/10 text-slate-400 hover:text-white text-sm font-bold transition-all">
                     Close
+                </button>
+                <button onClick={() => onViewCard(user)}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 text-white text-sm font-black transition-all">
+                    <BadgeCheck className="w-4 h-4" /> ID Card
                 </button>
                 <button onClick={() => onEdit(user)}
                     className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-black transition-all shadow-lg shadow-blue-600/20">
                     <Edit2 className="w-4 h-4" /> Edit Details
+                </button>
+            </div>
+        </Modal>
+    );
+}
+
+// ── ID Card ────────────────────────────────────────────────────────────────
+function IdCardModal({ user, onClose }) {
+    if (!user) return null;
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+    const initials = (user.name || '?').slice(0, 2).toUpperCase();
+
+    return (
+        <Modal open onClose={onClose} maxW="max-w-sm">
+            <style>{`
+                @media print {
+                    body * { visibility: hidden; }
+                    #englabs-id-card, #englabs-id-card * { visibility: visible; }
+                    #englabs-id-card { position: fixed; inset: 0; margin: auto; }
+                    @page { size: 3.375in 2.125in; margin: 0; }
+                }
+            `}</style>
+
+            <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-black text-white">Employee ID Card</h2>
+                <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+
+            {/* Printable card, sized to a real CR80 ID card (3.375in x 2.125in) */}
+            <div id="englabs-id-card"
+                className="mx-auto w-[3.375in] h-[2.125in] rounded-xl overflow-hidden shadow-2xl bg-white text-[#0a0f1e] flex flex-col"
+                style={{ fontFamily: 'inherit' }}>
+                <div className="h-[0.5in] shrink-0 bg-[#0a1e3d] flex items-center gap-2 px-3">
+                    <BrandLogo variant="mark" className="w-7 h-7" />
+                    <div className="leading-tight">
+                        <div className="text-white text-[11px] font-black tracking-wide">ENGLABS INDIA PVT LTD</div>
+                        <div className="text-blue-300 text-[8px] font-bold uppercase tracking-widest">Staff Identity Card</div>
+                    </div>
+                </div>
+
+                <div className="flex-1 flex gap-3 px-3 py-2.5">
+                    <div className="w-[0.85in] h-[0.85in] shrink-0 rounded-lg overflow-hidden border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-slate-500 font-black text-lg">
+                        {user.image_url ? <img src={user.image_url} alt="" className="w-full h-full object-cover" /> : initials}
+                    </div>
+                    <div className="min-w-0 flex-1 leading-tight">
+                        <div className="text-[13px] font-black truncate">{user.name}</div>
+                        <div className="text-[9px] text-slate-600 font-bold truncate">{user.designation || user.department || 'General'}</div>
+                        <div className="mt-1.5 space-y-0.5 text-[8.5px] text-slate-700">
+                            <div><span className="font-bold text-slate-500">ID: </span><span className="font-mono">{user.employee_id}</span></div>
+                            <div><span className="font-bold text-slate-500">Dept: </span>{user.department || 'General'}</div>
+                            <div><span className="font-bold text-slate-500">Joined: </span>{fmtDate(user.joining_date)}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="h-[0.3in] shrink-0 bg-slate-50 border-t border-slate-200 flex items-center justify-between px-3 text-[7px] text-slate-500 font-semibold">
+                    <span>If found, please return to Englabs India Pvt Ltd, Panchkula</span>
+                    <span className="font-mono">{user.employee_id}</span>
+                </div>
+            </div>
+
+            <div className="flex gap-3 pt-6">
+                <button onClick={onClose}
+                    className="flex-1 py-3 rounded-xl border border-white/10 text-slate-400 hover:text-white text-sm font-bold transition-all">
+                    Close
+                </button>
+                <button onClick={() => window.print()}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-black transition-all shadow-lg shadow-blue-600/20">
+                    <Printer className="w-4 h-4" /> Print Card
                 </button>
             </div>
         </Modal>
@@ -678,6 +785,7 @@ export default function Users() {
     const [faceTarget, setFaceTarget] = useState(null);   // user for face enrollment
     const [fpTarget, setFpTarget] = useState(null);   // user for fingerprint enrollment
     const [profileTarget, setProfileTarget] = useState(null);   // user for the full profile view
+    const [cardTarget, setCardTarget] = useState(null);   // user for the printable ID card
     const [actionLoading, setActionLoading] = useState(null);
 
     const { toasts, add: addToast, dismiss } = useToast();
@@ -800,7 +908,10 @@ export default function Users() {
             {editTarget && <EmployeeModal departments={allDepartments} mode="edit" initialData={editTarget} onSave={handleEdit} onClose={() => setEditTarget(null)} onEnrollFace={setFaceTarget} onEnrollFP={setFpTarget} />}
             {faceTarget && <FaceEnrollModal user={faceTarget} onDone={handleFaceEnrolled} onClose={() => setFaceTarget(null)} />}
             {fpTarget && <FingerprintEnrollModal user={fpTarget} onDone={handleFPEnrolled} onClose={() => setFpTarget(null)} />}
-            {profileTarget && <StaffProfileModal user={profileTarget} onClose={() => setProfileTarget(null)} onEdit={(u) => { setProfileTarget(null); setEditTarget(u); }} />}
+            {profileTarget && <StaffProfileModal user={profileTarget} onClose={() => setProfileTarget(null)}
+                onEdit={(u) => { setProfileTarget(null); setEditTarget(u); }}
+                onViewCard={(u) => { setProfileTarget(null); setCardTarget(u); }} />}
+            {cardTarget && <IdCardModal user={cardTarget} onClose={() => setCardTarget(null)} />}
             <DeleteDialog user={deleteTarget} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteTarget(null)} />
 
             {/* ── Header ── */}

@@ -617,7 +617,7 @@ app.get('/api/users', authenticateToken, isAdmin, async (req, res) => {
         // Select only real DB columns and join with biometric status
         let query = supabase.from('employees').select(`
             id, employee_id, name, email, role, department, status,
-            designation, joining_date,
+            designation, joining_date, last_working_day, pan_number, aadhaar_number,
             image_url, created_at, updated_at, is_deleted,
             face_encodings(id),
             fingerprints(id)
@@ -678,7 +678,8 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
         const ALLOWED_COLUMNS = new Set([
             'name', 'email', 'role', 'department', 'status',
             'employee_id', 'image_url', 'is_deleted', 'face_embedding',
-            'designation', 'joining_date'
+            'designation', 'joining_date', 'last_working_day',
+            'pan_number', 'aadhaar_number'
         ]);
         
         const updates = Object.fromEntries(
@@ -707,7 +708,7 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
                 .from('employees')
                 .update(updates)
                 .eq('id', id)
-                .select('id, employee_id, name, email, role, department, status, designation, joining_date, image_url, created_at, updated_at, is_deleted, face_embedding')
+                .select('id, employee_id, name, email, role, department, status, designation, joining_date, last_working_day, pan_number, aadhaar_number, image_url, created_at, updated_at, is_deleted, face_embedding')
                 .single();
 
             if (error) {
