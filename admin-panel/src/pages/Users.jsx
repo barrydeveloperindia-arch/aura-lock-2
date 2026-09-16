@@ -897,13 +897,16 @@ export default function Users() {
     const patchUser = (updated) =>
         setUsers(u => u.map(x => x.id === updated.id ? { ...x, ...updated } : x));
 
-    const filtered = users.filter(u =>
-        (u.name?.toLowerCase().includes(search.toLowerCase()) ||
-            u.employee_id?.toLowerCase().includes(search.toLowerCase()) ||
-            u.email?.toLowerCase().includes(search.toLowerCase())) &&
-        (!companyFilter || (u.company || 'Englabs India Pvt Ltd') === companyFilter) &&
-        (!departmentFilter || u.department === departmentFilter)
-    );
+    const filtered = users
+        .filter(u =>
+            (u.name?.toLowerCase().includes(search.toLowerCase()) ||
+                u.employee_id?.toLowerCase().includes(search.toLowerCase()) ||
+                u.email?.toLowerCase().includes(search.toLowerCase())) &&
+            (!companyFilter || (u.company || 'Englabs India Pvt Ltd') === companyFilter) &&
+            (!departmentFilter || u.department === departmentFilter)
+        )
+        // Resigned/disabled staff sink to the bottom, so the list reads as "who's here now" first.
+        .sort((a, b) => (a.status === 'Disabled') - (b.status === 'Disabled'));
 
     // ── Actions ───────────────────────────────────────────────────────────────
     const handleAdd = async (form) => {
