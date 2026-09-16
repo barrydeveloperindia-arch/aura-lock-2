@@ -2,16 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/api';
 import { Building2, User, Briefcase, MapPin, ChevronDown } from 'lucide-react';
 
-// Disha Arcade, MDC Sector 4, Panchkula -- floors top to bottom. `department` on the employee
-// record doubles as "which company" for the handful of staff who belong to a different
-// building tenant (Sky 5 Hotel, A & A, Bright Kids School); everyone else is Englabs, whatever
-// their internal department string says.
-const OTHER_TENANTS = {
-    'A & A': { floor: '6th Floor', company: 'A & A Architect' },
-    'Sky 5 Hotel': { floor: '5th Floor', company: 'Sky5 Hotel' },
-    'Bright Kids School': { floor: '1st Floor', company: 'Bright Kids School' },
+// Disha Arcade, MDC Sector 4, Panchkula -- floors top to bottom, keyed by each employee's own
+// `company` column (department is their real internal department, separate from this).
+const COMPANY_FLOOR = {
+    'A & A Architect': '6th Floor',
+    'Sky5 Hotel': '5th Floor',
+    'Bright Kids School': '1st Floor',
+    'Englabs India Pvt Ltd': '2nd Floor',
 };
-const ENGLABS_FLOOR = { floor: '2nd Floor', company: 'Englabs India Pvt Ltd' };
 
 // Floors with no staff tracked in this system, shown for context only.
 const INFO_ONLY_FLOORS = [
@@ -23,9 +21,10 @@ const INFO_ONLY_FLOORS = [
 function groupByFloor(users) {
     const groups = {};
     for (const u of users) {
-        const tenant = OTHER_TENANTS[u.department] || ENGLABS_FLOOR;
-        if (!groups[tenant.floor]) groups[tenant.floor] = { company: tenant.company, staff: [] };
-        groups[tenant.floor].staff.push(u);
+        const company = u.company || 'Englabs India Pvt Ltd';
+        const floor = COMPANY_FLOOR[company] || '2nd Floor';
+        if (!groups[floor]) groups[floor] = { company, staff: [] };
+        groups[floor].staff.push(u);
     }
     return groups;
 }

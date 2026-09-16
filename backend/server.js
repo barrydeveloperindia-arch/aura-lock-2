@@ -238,7 +238,7 @@ app.get('/api/access-logs', authenticateToken, async (req, res) => {
 
         const search = employee_name || req.query.search;
         // !inner makes the name filter restrict rows (a plain embed only nulls the employee object)
-        const embed = search ? 'employees!inner(name, employee_id, department, image_url)' : 'employees(name, employee_id, department, image_url)';
+        const embed = search ? 'employees!inner(name, employee_id, department, company, image_url)' : 'employees(name, employee_id, department, company, image_url)';
         let q = supabase
             .from('access_logs')
             .select(`*, ${embed}`, { count: 'exact' })
@@ -303,7 +303,7 @@ app.get('/api/access-logs/employee/:employee_id', authenticateToken, async (req,
 
         let q = supabase
             .from('access_logs')
-            .select('*, employees(name, employee_id, department, image_url)', { count: 'exact' })
+            .select('*, employees(name, employee_id, department, company, image_url)', { count: 'exact' })
             .eq('employee_id', resolved)
             .order('created_at', { ascending: false });
 
@@ -375,7 +375,7 @@ async function handleAccessExcelExport(req, res, opts = {}) {
 
         const q = supabase
             .from('access_logs')
-            .select('*, employees(name, employee_id, department)')
+            .select('*, employees(name, employee_id, department, company)')
             .gte('created_at', istDayStartUTC(fromDate))
             .lte('created_at', istDayEndUTC(toDate))
             .order('created_at', { ascending: false });
@@ -438,7 +438,7 @@ async function handleAccessPdfExport(req, res, opts = {}) {
 
         const q = supabase
             .from('access_logs')
-            .select('*, employees(name, employee_id, department)')
+            .select('*, employees(name, employee_id, department, company)')
             .gte('created_at', istDayStartUTC(fromDate))
             .lte('created_at', istDayEndUTC(toDate))
             .order('created_at', { ascending: false });
@@ -619,7 +619,7 @@ app.get('/api/users', authenticateToken, isAdmin, async (req, res) => {
 
         // Select only real DB columns and join with biometric status
         let query = supabase.from('employees').select(`
-            id, employee_id, name, email, role, department, status,
+            id, employee_id, name, email, role, department, company, status,
             designation, joining_date, last_working_day, pan_number, aadhaar_number,
             date_of_birth, gender, blood_group, father_mother_name, spouse_name, location,
             contact_number, address, bank_name, bank_branch, bank_account_number, bank_ifsc,
@@ -681,7 +681,7 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
         // Whitelist: only allow columns that actually exist in the employees table.
         // Silently drop any frontend-only fields to prevent Supabase errors.
         const ALLOWED_COLUMNS = new Set([
-            'name', 'email', 'role', 'department', 'status',
+            'name', 'email', 'role', 'department', 'company', 'status',
             'employee_id', 'image_url', 'is_deleted', 'face_embedding',
             'designation', 'joining_date', 'last_working_day',
             'pan_number', 'aadhaar_number',
@@ -715,7 +715,7 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
                 .from('employees')
                 .update(updates)
                 .eq('id', id)
-                .select('id, employee_id, name, email, role, department, status, designation, joining_date, last_working_day, pan_number, aadhaar_number, date_of_birth, gender, blood_group, father_mother_name, spouse_name, location, image_url, created_at, updated_at, is_deleted, face_embedding')
+                .select('id, employee_id, name, email, role, department, company, status, designation, joining_date, last_working_day, pan_number, aadhaar_number, date_of_birth, gender, blood_group, father_mother_name, spouse_name, location, image_url, created_at, updated_at, is_deleted, face_embedding')
                 .single();
 
             if (error) {
@@ -768,7 +768,7 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
 
 app.post('/api/users', authenticateToken, validateIdentity, async (req, res) => {
     try {
-        const { employeeId, employee_id, name, email, role, faceEncoding, image_url, rfid, fingerprint_id, department, designation, joining_date } = req.body;
+        const { employeeId, employee_id, name, email, role, faceEncoding, image_url, rfid, fingerprint_id, department, company, designation, joining_date } = req.body;
         const finalId = employeeId || employee_id;
 
         const { data: newUser, error } = await supabase
@@ -779,6 +779,7 @@ app.post('/api/users', authenticateToken, validateIdentity, async (req, res) => 
                 email,
                 role: role === 'admin' ? 'admin' : 'employee',
                 department: department || 'General',
+                company: company || 'Englabs India Pvt Ltd',
                 designation,
                 joining_date,
                 face_embedding: faceEncoding,

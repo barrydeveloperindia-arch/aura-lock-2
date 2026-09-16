@@ -18,7 +18,7 @@ const DEPARTMENTS = [
     'Accounts', 'Management', 'CEO', 'MD', 'General',
 ];
 const EMPTY_FORM = {
-    name: '', email: '', employee_id: '', department: 'Mechanical Engineering', role: 'employee',
+    name: '', email: '', employee_id: '', department: 'Mechanical Engineering', company: 'Englabs India Pvt Ltd', role: 'employee',
     designation: '', joining_date: '', last_working_day: '', pan_number: '', aadhaar_number: '',
     date_of_birth: '', gender: '', blood_group: '', location: '', father_mother_name: '', spouse_name: '',
     contact_number: '', address: '', bank_name: '', bank_branch: '', bank_account_number: '', bank_ifsc: ''
@@ -159,6 +159,23 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                     />
                     <datalist id="departments-list">
                         {departments.map(d => <option key={d} value={d} />)}
+                    </datalist>
+                </div>
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Company</label>
+                    <input
+                        list="companies-list"
+                        value={form.company || ''}
+                        onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
+                        placeholder="Which Disha Arcade tenant — defaults to Englabs"
+                        className="w-full bg-slate-950 border border-white/[0.07] rounded-xl px-4 py-2.5 text-sm text-white
+                                   focus:outline-none focus:border-blue-500/40 transition-colors placeholder:text-slate-700"
+                    />
+                    <datalist id="companies-list">
+                        <option value="Englabs India Pvt Ltd" />
+                        <option value="A & A Architect" />
+                        <option value="Sky5 Hotel" />
+                        <option value="Bright Kids School" />
                     </datalist>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -521,6 +538,7 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
                 <div className="pt-4 border-t border-white/[0.06]">
                     <SectionHeading icon={Briefcase}>Employment</SectionHeading>
                     <div className="grid grid-cols-2 gap-4">
+                        <InfoRow label="Company" value={user.company || 'Englabs India Pvt Ltd'} />
                         <InfoRow label="Department" value={user.department || 'General'} />
                         <InfoRow label="Designation" value={user.designation || 'Not added'} />
                         <InfoRow label="Joining Date" value={fmtDate(user.joining_date)} />
@@ -1074,6 +1092,9 @@ export default function Users() {
                                         
                                         {/* Department */}
                                         <td className="hidden md:table-cell px-8 py-4">
+                                            {user.company && user.company !== 'Englabs India Pvt Ltd' && (
+                                                <div className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-0.5">{user.company}</div>
+                                            )}
                                             <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
                                                 <Briefcase className="w-3 h-3 text-slate-600" />
                                                 {user.department || 'General'}

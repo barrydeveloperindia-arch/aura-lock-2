@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     Calendar, Clock, Fingerprint, ScanFace,
     ChevronLeft, ChevronRight, Search, FileText,
-    Briefcase, Download, ArrowUpDown, ArrowUp, ArrowDown,
+    Briefcase, Building2, Download, ArrowUpDown, ArrowUp, ArrowDown,
     Users, UserCheck, Timer, AlertTriangle, Loader2,
     CheckCircle2, X, Filter, Camera
 } from 'lucide-react';
@@ -447,6 +447,7 @@ export default function Attendance() {
                             <tr className="border-b border-slate-200 bg-slate-50">
                                 <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Sr. No.</th>
                                 <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Employee</th>
+                                <th className="hidden xl:table-cell px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Company</th>
                                 <th className="hidden lg:table-cell px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Department</th>
                                 <SortTh label="Date" col="date" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-center" />
                                 <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Check In</th>
@@ -469,7 +470,7 @@ export default function Attendance() {
                                 ))
                             ) : attendance.length === 0 ? (
                                 <tr>
-                                    <td colSpan={9} className="px-8 py-20 text-center">
+                                    <td colSpan={10} className="px-8 py-20 text-center">
                                         <div className="flex flex-col items-center gap-4">
                                             <Calendar className="w-12 h-12 text-slate-800" />
                                             <div className="text-slate-500 text-xs font-black uppercase tracking-widest">
@@ -509,6 +510,16 @@ export default function Attendance() {
                                                         {rec.employees?.employee_id || '—'}
                                                     </div>
                                                 </div>
+                                            </div>
+                                        </td>
+
+                                        {/* Company */}
+                                        <td className="hidden xl:table-cell px-6 py-4">
+                                            <div className="flex items-center gap-1.5">
+                                                <Building2 className="w-3 h-3 text-slate-600 shrink-0" />
+                                                <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">
+                                                    {rec.employees?.company || 'Englabs India Pvt Ltd'}
+                                                </span>
                                             </div>
                                         </td>
 

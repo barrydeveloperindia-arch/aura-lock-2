@@ -59,7 +59,7 @@ router.get('/api/leaves', authenticateToken, isAdmin, async (req, res) => {
     const { from, to, employee_id } = req.query;
     if (!isValidDate(from) || !isValidDate(to)) return res.status(400).json({ error: 'from and to (YYYY-MM-DD) are required' });
     try {
-        let q = supabase.from('leaves').select('id, date, type, note, status, approved_by, created_by, created_at, employees!inner(id, employee_id, name, department)')
+        let q = supabase.from('leaves').select('id, date, type, note, status, approved_by, created_by, created_at, employees!inner(id, employee_id, name, department, company)')
             .gte('date', from).lte('date', to).order('date', { ascending: false });
         if (employee_id) q = q.eq('employees.employee_id', String(employee_id).toUpperCase());
         const { data, error } = await q;

@@ -250,7 +250,7 @@ exports.getAttendanceLocations = async (req, res) => {
         const date = attendancePhotos.isValidDate(req.query.date) ? req.query.date : istDateString();
         const { data: rows, error } = await supabase
             .from('attendance')
-            .select('id, date, check_in, check_out, status, employees!inner(employee_id, name, department, status, is_deleted)')
+            .select('id, date, check_in, check_out, status, employees!inner(employee_id, name, department, company, status, is_deleted)')
             .eq('date', date)
             .eq('employees.is_deleted', false)
             .eq('employees.status', 'Active')
@@ -329,7 +329,7 @@ exports.getAttendancePhoto = async (req, res) => {
         }
         const { data: row, error } = await supabase
             .from('attendance')
-            .select('id, date, check_in, check_out, employees(name, employee_id, department)')
+            .select('id, date, check_in, check_out, employees(name, employee_id, department, company)')
             .eq('id', id)
             .single();
         if (error || !row) return res.status(404).json({ error: 'Attendance record not found' });
@@ -472,7 +472,7 @@ exports.getEmployeeHistory = async (req, res) => {
         // 2. Query attendance
         let q = supabase
             .from('attendance')
-            .select('*, employees(name, employee_id, department)')
+            .select('*, employees(name, employee_id, department, company)')
             .eq('employee_id', finalUuid)
             .order('date', { ascending: false });
 
@@ -669,7 +669,7 @@ exports.getAttendanceList = async (req, res) => {
         const buildQuery = () => {
             let q = supabase
                 .from('attendance')
-                .select('*, employees!inner(name, employee_id, image_url, department)')
+                .select('*, employees!inner(name, employee_id, image_url, department, company)')
                 .gte('date', fromDate)
                 .lte('date', toDate);
 
@@ -786,7 +786,7 @@ async function handleExcelExport(req, res, opts = {}) {
         // ── Fetch data ──
         let q = supabase
             .from('attendance')
-            .select('*, employees!inner(name, employee_id, department)')
+            .select('*, employees!inner(name, employee_id, department, company)')
             .gte('date', fromDate)
             .lte('date', toDate)
             .order('date', { ascending: false });
@@ -991,7 +991,7 @@ async function handlePdfExport(req, res, opts = {}) {
 
         let q = supabase
             .from('attendance')
-            .select('*, employees!inner(name, employee_id, department)')
+            .select('*, employees!inner(name, employee_id, department, company)')
             .gte('date', fromDate)
             .lte('date', toDate)
             .order('date', { ascending: false });
