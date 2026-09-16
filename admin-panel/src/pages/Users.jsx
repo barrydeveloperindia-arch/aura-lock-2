@@ -675,22 +675,30 @@ function IdCardModal({ user, photoUrl, onClose }) {
                             {user.designation || 'Staff'}
                         </div>
 
-                        <div className="mt-[0.07in] grid grid-cols-2 gap-x-[0.08in] gap-y-[0.03in] text-[7px]">
+                        <div className="mt-[0.05in] grid grid-cols-2 gap-x-[0.08in] gap-y-[0.025in] text-[6.5px]">
                             <div>
-                                <div className="text-[5.5px] font-black text-slate-400 uppercase tracking-wider">Company</div>
+                                <div className="text-[5px] font-black text-slate-400 uppercase tracking-wider">Company</div>
                                 <div className="font-bold truncate">{user.company || 'Englabs India Pvt Ltd'}</div>
                             </div>
                             <div>
-                                <div className="text-[5.5px] font-black text-slate-400 uppercase tracking-wider">Department</div>
+                                <div className="text-[5px] font-black text-slate-400 uppercase tracking-wider">Department</div>
                                 <div className="font-bold truncate">{user.department || 'General'}</div>
                             </div>
                             <div>
-                                <div className="text-[5.5px] font-black text-slate-400 uppercase tracking-wider">Joined</div>
+                                <div className="text-[5px] font-black text-slate-400 uppercase tracking-wider">Joined</div>
                                 <div className="font-bold">{fmtDate(user.joining_date)}</div>
                             </div>
                             <div>
-                                <div className="text-[5.5px] font-black text-slate-400 uppercase tracking-wider">Contact</div>
+                                <div className="text-[5px] font-black text-slate-400 uppercase tracking-wider">Contact</div>
                                 <div className="font-bold">{user.contact_number || '—'}</div>
+                            </div>
+                            <div>
+                                <div className="text-[5px] font-black text-slate-400 uppercase tracking-wider">PAN</div>
+                                <div className="font-bold font-mono truncate">{user.pan_number || '—'}</div>
+                            </div>
+                            <div className="min-w-0">
+                                <div className="text-[5px] font-black text-slate-400 uppercase tracking-wider">Address</div>
+                                <div className="font-bold truncate" title={user.address || ''}>{user.address || '—'}</div>
                             </div>
                         </div>
                     </div>
