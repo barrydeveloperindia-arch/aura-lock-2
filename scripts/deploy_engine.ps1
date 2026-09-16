@@ -24,19 +24,20 @@ if (-not ($Stage -or $Promote -or $Rollback)) { Write-Host "Usage: -Stage | -Pro
 if ($Stage) {
     $key = ""
     # Match limits travel with the deploy so a rebuild never resets a calibrated threshold
-    $thr = "0.90"; $gap = "0.10"
+    $thr = "0.90"; $gap = "0.10"; $failClosed = "false"
     foreach ($line in Get-Content $EnvFile) {
         if ($line -match '^ENGINE_KEY=(.+)$') { $key = $Matches[1].Trim() }
         if ($line -match '^FACE_THRESHOLD=(.+)$') { $thr = $Matches[1].Trim() }
         if ($line -match '^AMBIGUITY_GAP=(.+)$') { $gap = $Matches[1].Trim() }
+        if ($line -match '^FAIL_CLOSED_LIVENESS=(.+)$') { $failClosed = $Matches[1].Trim() }
     }
     if (-not $key) { throw "ENGINE_KEY not found in backend\.env" }
-    Write-Host "FACE_THRESHOLD=$thr AMBIGUITY_GAP=$gap" -ForegroundColor DarkGray
+    Write-Host "FACE_THRESHOLD=$thr AMBIGUITY_GAP=$gap FAIL_CLOSED_LIVENESS=$failClosed" -ForegroundColor DarkGray
     Write-Host "Building and deploying $Service (no traffic, tag 'next')..." -ForegroundColor Cyan
     Push-Location $Edge
     try {
         gcloud run deploy $Service --source . --region $Region --project $Project `
-            --no-traffic --tag next --update-env-vars "ENGINE_KEY=$key,FACE_THRESHOLD=$thr,AMBIGUITY_GAP=$gap" --quiet
+            --no-traffic --tag next --update-env-vars "ENGINE_KEY=$key,FACE_THRESHOLD=$thr,AMBIGUITY_GAP=$gap,FAIL_CLOSED_LIVENESS=$failClosed" --quiet
         if ($LASTEXITCODE -ne 0) { throw "gcloud run deploy failed" }
     } finally { Pop-Location }
     $tagUrl = gcloud run services describe $Service --region $Region --project $Project `
