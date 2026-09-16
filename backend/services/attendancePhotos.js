@@ -200,6 +200,10 @@ function avatarPath(employeeId) {
     return `avatars/${employeeId}.jpg`;
 }
 
+function profilePhotoPath(employeeId) {
+    return `profile_photos/${employeeId}.jpg`;
+}
+
 /**
  * Crop the upper-centre square of a frame (where a face sits on a portrait or
  * landscape terminal frame) and shrink it to AVATAR_SIZE. Returns a JPEG buffer.
@@ -261,6 +265,59 @@ async function getAvatarUrls(employeeIds) {
         return out;
     } catch (err) {
         console.error('[Photos] Avatar URL error:', err.message);
+        return {};
+    }
+}
+
+/**
+ * Store a deliberately-chosen ID-card photo for an employee (e.g. a proper passport-style
+ * photo), separate from the auto-generated biometric-scan avatar. Resized/cropped the same
+ * way as the avatar so it fits the ID card frame consistently. Never throws; returns the
+ * storage path or null.
+ */
+async function uploadProfilePhoto(employeeId, imageBuffer) {
+    try {
+        if (!EMP_ID_RE.test(employeeId || '') || !imageBuffer || !imageBuffer.length) return null;
+        const photo = await makeAvatar(imageBuffer);
+        const path = profilePhotoPath(employeeId);
+        const { error } = await getClient().storage.from(BUCKET).upload(path, photo, {
+            contentType: 'image/jpeg', upsert: true, cacheControl: '0',
+        });
+        if (error) { console.error(`[Photos] Profile photo upload failed for ${employeeId}: ${error.message}`); return null; }
+        return path;
+    } catch (err) {
+        console.error('[Photos] Profile photo upload error:', err.message);
+        return null;
+    }
+}
+
+/**
+ * Signed URLs for many employees' uploaded profile photos at once (separate from the
+ * auto-generated biometric-scan avatar -- this is a deliberately chosen ID-card photo).
+ * @param {string[]} employeeIds
+ * @returns {Promise<Record<string, string>>} employee_id -> url (only those that exist)
+ */
+async function getProfilePhotoUrls(employeeIds) {
+    const ids = [...new Set((employeeIds || []).filter(id => EMP_ID_RE.test(id || '')))];
+    if (ids.length === 0) return {};
+    try {
+        const storage = getClient().storage.from(BUCKET);
+        const { data: files, error: listErr } = await storage.list('profile_photos', { limit: 1000 });
+        if (listErr || !files) return {};
+        const existing = new Set(files.map(f => f.name));
+        const paths = ids.filter(id => existing.has(`${id}.jpg`)).map(profilePhotoPath);
+        if (paths.length === 0) return {};
+        const { data, error } = await storage.createSignedUrls(paths, AVATAR_TTL_SECONDS);
+        if (error || !data) return {};
+        const out = {};
+        for (const entry of data) {
+            if (!entry.signedUrl) continue;
+            const id = (entry.path || '').replace(/^profile_photos\//, '').replace(/\.jpg$/, '');
+            if (id) out[id] = entry.signedUrl;
+        }
+        return out;
+    } catch (err) {
+        console.error('[Photos] Profile photo URL error:', err.message);
         return {};
     }
 }
@@ -534,6 +591,9 @@ module.exports = {
     avatarPath,
     saveEmployeeAvatar,
     getAvatarUrls,
+    profilePhotoPath,
+    uploadProfilePhoto,
+    getProfilePhotoUrls,
     listPhotoAvailability,
     getSignedPhotoUrl,
     getSignedPhotoUrlsForRows,

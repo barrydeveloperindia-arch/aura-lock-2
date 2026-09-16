@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { apiService } from '../services/api';
 import useAvatars from '../hooks/useAvatars';
+import useProfilePhotos, { invalidateProfilePhoto } from '../hooks/useProfilePhotos';
 import BrandLogo from '../components/BrandLogo';
 import {
     Search, Trash2, Edit2, UserPlus, X, Save,
@@ -108,6 +109,25 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
     const [form, setForm] = useState(initialData || EMPTY_FORM);
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState('');
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    const [photoMsg, setPhotoMsg] = useState('');
+    const photoInputRef = useRef(null);
+
+    const handlePhotoUpload = async (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file || !initialData?.id) return;
+        setUploadingPhoto(true); setPhotoMsg('');
+        try {
+            await apiService.uploadProfilePhoto(initialData.id, file);
+            invalidateProfilePhoto(initialData.employee_id);
+            setPhotoMsg('Photo uploaded — it now shows on the profile and ID card.');
+        } catch (error) {
+            setPhotoMsg(error.response?.data?.error || 'Upload failed. Try a JPEG or PNG under 2MB.');
+        } finally {
+            setUploadingPhoto(false);
+        }
+    };
 
     const handleSubmit = async (e, enrollType = null) => {
         if (e) e.preventDefault();
@@ -239,11 +259,28 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                         </button>
                         <button type="button" onClick={(e) => handleSubmit(e, 'fp')} disabled={saving}
                             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 text-violet-400 text-[13px] font-bold transition-all">
-                            <Fingerprint className="w-4 h-4" /> 
+                            <Fingerprint className="w-4 h-4" />
                             {mode === 'edit' && initialData?.fingerprint_registered ? 'Update Finger' : 'Add Finger'}
                         </button>
                     </div>
                 </div>
+
+                {mode === 'edit' && (
+                    <div className="pt-4 mt-2 border-t border-white/[0.04]">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-3">ID Card Photo</label>
+                        <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
+                            Upload a proper passport-style photo to use on the profile and printable ID card, instead of the
+                            biometric scan capture.
+                        </p>
+                        <input ref={photoInputRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={handlePhotoUpload} />
+                        <button type="button" onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-50 text-emerald-400 text-[13px] font-bold transition-all">
+                            {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                            {uploadingPhoto ? 'Uploading…' : 'Upload Passport Photo'}
+                        </button>
+                        {photoMsg && <p className="text-[11px] text-slate-400 mt-2">{photoMsg}</p>}
+                    </div>
+                )}
             </form>
         </Modal>
     );
@@ -939,6 +976,7 @@ export default function Users() {
 
     // Latest-scan face crops for the whole list (one request, cached 50 min)
     const avatars = useAvatars(users.map(u => u.employee_id));
+    const profilePhotos = useProfilePhotos(users.map(u => u.employee_id));
 
     const patchUser = (updated) =>
         setUsers(u => u.map(x => x.id === updated.id ? { ...x, ...updated } : x));
@@ -1040,10 +1078,10 @@ export default function Users() {
             {editTarget && <EmployeeModal departments={allDepartments} mode="edit" initialData={editTarget} onSave={handleEdit} onClose={() => setEditTarget(null)} onEnrollFace={setFaceTarget} onEnrollFP={setFpTarget} />}
             {faceTarget && <FaceEnrollModal user={faceTarget} onDone={handleFaceEnrolled} onClose={() => setFaceTarget(null)} />}
             {fpTarget && <FingerprintEnrollModal user={fpTarget} onDone={handleFPEnrolled} onClose={() => setFpTarget(null)} />}
-            {profileTarget && <StaffProfileModal user={profileTarget} photoUrl={avatars[profileTarget.employee_id] || profileTarget.image_url} onClose={() => setProfileTarget(null)}
+            {profileTarget && <StaffProfileModal user={profileTarget} photoUrl={profilePhotos[profileTarget.employee_id] || avatars[profileTarget.employee_id] || profileTarget.image_url} onClose={() => setProfileTarget(null)}
                 onEdit={(u) => { setProfileTarget(null); setEditTarget(u); }}
                 onViewCard={(u) => { setProfileTarget(null); setCardTarget(u); }} />}
-            {cardTarget && <IdCardModal user={cardTarget} photoUrl={avatars[cardTarget.employee_id] || cardTarget.image_url} onClose={() => setCardTarget(null)} />}
+            {cardTarget && <IdCardModal user={cardTarget} photoUrl={profilePhotos[cardTarget.employee_id] || avatars[cardTarget.employee_id] || cardTarget.image_url} onClose={() => setCardTarget(null)} />}
             <DeleteDialog user={deleteTarget} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteTarget(null)} />
 
             {/* ── Header ── */}
@@ -1153,8 +1191,8 @@ export default function Users() {
                                             <button onClick={() => setProfileTarget(user)} title="View full profile"
                                                 className="flex items-center gap-3 text-left group/row">
                                                 <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/30 to-indigo-600/30 border border-blue-500/20 flex items-center justify-center text-[10px] md:text-xs font-black text-emerald-500 overflow-hidden">
-                                                    {(avatars[user.employee_id] || user.image_url)
-                                                        ? <img src={avatars[user.employee_id] || user.image_url} alt="" className="w-full h-full object-cover" />
+                                                    {(profilePhotos[user.employee_id] || avatars[user.employee_id] || user.image_url)
+                                                        ? <img src={profilePhotos[user.employee_id] || avatars[user.employee_id] || user.image_url} alt="" className="w-full h-full object-cover" />
                                                         : initials}
                                                 </div>
                                                 <div className="min-w-0">

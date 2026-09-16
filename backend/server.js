@@ -613,6 +613,38 @@ app.get('/api/departments', authenticateToken, async (req, res) => {
     }
 });
 
+// Deliberately-uploaded ID-card photo (e.g. a real passport-style photo), separate from the
+// biometric-scan avatar. GET returns signed URLs for many employees at once; POST uploads one.
+app.get('/api/users/profile-photos', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const ids = String(req.query.ids || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 500);
+        const urls = await attendancePhotos.getProfilePhotoUrls(ids);
+        res.json({ photos: urls, expires_in: 3600 });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch profile photos' });
+    }
+});
+
+app.post('/api/users/:id/photo', authenticateToken, isAdmin, upload.single('photo'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!req.file || !req.file.buffer?.length) {
+            return res.status(400).json({ error: 'No photo file uploaded (field name: photo)' });
+        }
+        const { data: emp, error: fetchErr } = await supabase.from('employees').select('employee_id').eq('id', id).single();
+        if (fetchErr || !emp) return res.status(404).json({ error: 'Employee not found' });
+
+        const path = await attendancePhotos.uploadProfilePhoto(emp.employee_id, req.file.buffer);
+        if (!path) return res.status(500).json({ error: 'Photo upload failed' });
+
+        const urls = await attendancePhotos.getProfilePhotoUrls([emp.employee_id]);
+        res.json({ success: true, employee_id: emp.employee_id, photo_url: urls[emp.employee_id] || null });
+    } catch (error) {
+        console.error('❌ Profile photo upload error:', error.message);
+        res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    }
+});
+
 app.get('/api/users', authenticateToken, isAdmin, async (req, res) => {
     try {
         const { includeDeleted = 'false' } = req.query;

@@ -207,6 +207,23 @@ export const apiService = {
         return response.data;
     },
 
+    // Deliberately-uploaded ID-card photo (e.g. a passport-style photo), separate from the
+    // auto-generated biometric-scan avatar.
+    getProfilePhotos: async (employeeIds) => {
+        const ids = [...new Set((employeeIds || []).filter(Boolean))];
+        if (ids.length === 0) return { photos: {} };
+        const response = await api.get('/api/users/profile-photos', { params: { ids: ids.join(',') } });
+        return response.data;
+    },
+    uploadProfilePhoto: async (userId, file) => {
+        const form = new FormData();
+        form.append('photo', file);
+        const response = await api.post(`/api/users/${userId}/photo`, form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
+
     // Signed URL (1h) for the check-in ('in') or check-out ('out') photo of one attendance row
     getAttendancePhoto: async (attendanceId, kind) => {
         const response = await api.get(`/api/attendance/${attendanceId}/photo/${kind}`);
