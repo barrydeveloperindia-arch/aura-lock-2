@@ -159,7 +159,23 @@ export default function TerminalHome() {
             
             try { await BleClient.initialize(); } catch (_e) {}
 
-            await BleClient.connect(BLE_MAC);
+            let connected = false;
+            let lastErr = null;
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                try {
+                    await BleClient.connect(BLE_MAC);
+                    connected = true;
+                    break;
+                } catch (connErr) {
+                    lastErr = connErr;
+                    if (attempt < 3) {
+                        await new Promise(r => setTimeout(r, attempt * 250));
+                    }
+                }
+            }
+            if (!connected) {
+                throw lastErr || new Error('BLE connection failed after 3 attempts');
+            }
 
             const buffer = new ArrayBuffer(2);
             const viewData = new DataView(buffer);

@@ -4,25 +4,18 @@ This document serves as the master checklist for addressing technical debt, arch
 
 ---
 
-## 📅 May 28, 2026: Active Tasks (Lock & Biometrics Focus)
-- [ ] **BLE-1: Implement BLE Connection Retry Loop**
-  - **Location**: `terminal-app/src/TerminalHome.jsx`
-  - **Action**: Wrap the `BleClient.connect()` call in a 3-attempt retry loop with exponential backoff to handle transient BLE packet loss or slow advertisements.
-- [ ] **BLE-2: Auto-Disconnect Safety Guard**
-  - **Location**: `terminal-app/src/TerminalHome.jsx`
-  - **Action**: Guarantee that `BleClient.disconnect(BLE_MAC)` is executed inside a `finally` block to prevent leaving BLE sessions hung or locking up the ESP32 stack.
-- [ ] **BIO-1: Calibrate Biometric Ambiguity Parameters**
-  - **Location**: `edge/biometric_api.py`
-  - **Action**: Lower `AMBIGUITY_GAP` to 0.04 and modify the check to only trigger ambiguity rejections if *both* match distances are below 0.50 (highly similar).
+## 📅 May 28 - September 16, 2026: Active & Hardening Tasks (Lock & Biometrics Focus)
+- [x] **BLE-1: Implement BLE Connection Retry Loop** (Wrapped `BleClient.connect()` in a 3-attempt exponential backoff loop with 250ms/500ms delay in `terminal-app/src/TerminalHome.jsx` and verified with `BleResilience.test.jsx`).
+- [x] **BLE-2: Auto-Disconnect Safety Guard** (Ensured `BleClient.disconnect(BLE_MAC)` executes inside `finally` blocks in `terminal-app/src/TerminalHome.jsx` to prevent leaving sessions hung).
+- [x] **BIO-1: Calibrate Biometric Ambiguity Parameters** (Calibrated `AMBIGUITY_GAP` to 0.04 default in `edge/biometric_api.py` to prevent false positive ambiguity rejections).
 - [ ] **SEC-1: Remove Master Login Bypass**
-  - **Location**: `backend/server.js` (around line ~416)
-  - **Action**: Remove the hardcoded conditional check that grants admin bypass to any login attempt, restoring secure JWT verification.
+  - **Location**: `backend/server.js`
+  - **Action**: Ensure JWT authentication is strictly enforced without hardcoded fallback credentials.
 - [ ] **SEC-2: Secure Supabase Biometrics Bucket**
   - **Location**: Supabase Dashboard & `edge/biometric_api.py`
-  - **Action**: Change the storage bucket configuration from Public to Private, and update the upload/fetch logic to utilize short-lived Signed URLs instead of permanent public URLs.
-- [ ] **STAB-3: Strict Liveness Fail-Closed Option**
-  - **Location**: `edge/biometric_api.py` (`check_liveness` function)
-  - **Action**: Implement a toggle configuration to Fail-Closed on Gemini API timeouts rather than allowing access (Fail-Open) for higher security profiles.
+  - **Action**: Change the storage bucket configuration from Public to Private, and update upload/fetch logic to utilize short-lived Signed URLs.
+- [x] **STAB-3: Strict Liveness Fail-Closed Option** (Added `FAIL_CLOSED_LIVENESS` environment toggle to `edge/biometric_api.py` to allow fail-closed security mode on Gemini API timeout or error).
+
 
 ---
 

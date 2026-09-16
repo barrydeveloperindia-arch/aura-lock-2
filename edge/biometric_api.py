@@ -72,6 +72,8 @@ app.add_middleware(
 
 # Configure Gemini AI for Liveness Detection
 GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
+FAIL_CLOSED_LIVENESS = os.getenv("FAIL_CLOSED_LIVENESS", "false").strip().lower() in ("true", "1", "yes")
+
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     liveness_model = genai.GenerativeModel('gemini-1.5-flash')
@@ -102,6 +104,8 @@ async def check_liveness(image_bytes):
             return False, "Potential Spoofing Detected"
     except Exception as e:
         print(f"[ERROR] Gemini Liveness Error: {e}")
+        if FAIL_CLOSED_LIVENESS:
+            return False, "Liveness Check Error (Fail-Closed)"
         return True, "Error-Skipped" # Fail open for reliability, but log error
 
 @app.on_event("startup")
@@ -142,7 +146,7 @@ FACE_METADATA = []
 # from a calibration session (admin "Face Calibration" page) via env vars, so a
 # change is a Cloud Run env update, not a rebuild.
 FACE_THRESHOLD = float(os.getenv("FACE_THRESHOLD", "0.90"))
-AMBIGUITY_GAP = float(os.getenv("AMBIGUITY_GAP", "0.10"))
+AMBIGUITY_GAP = float(os.getenv("AMBIGUITY_GAP", "0.04"))
 
 def refresh_in_memory_cache():
     global IN_MEMORY_CACHE, FACE_VECTORS, FACE_METADATA

@@ -37,3 +37,4 @@ describe('TerminalHome Component Logo Regression Test', () => {
         });
     });
 });
+
