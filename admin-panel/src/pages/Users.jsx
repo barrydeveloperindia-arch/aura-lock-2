@@ -853,6 +853,8 @@ export default function Users() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [search, setSearch] = useState('');
+    const [companyFilter, setCompanyFilter] = useState('');
+    const [departmentFilter, setDepartmentFilter] = useState('');
 
     // Modals
     const [addOpen, setAddOpen] = useState(false);
@@ -873,6 +875,9 @@ export default function Users() {
         apiService.getDepartments().then(d => setLiveDepartments(Array.isArray(d) ? d : [])).catch(() => {});
     }, []);
     const allDepartments = [...new Set([...DEPARTMENTS, ...liveDepartments.filter(Boolean)])].sort((a, b) => a.localeCompare(b));
+    const KNOWN_COMPANIES = ['Englabs India Pvt Ltd', 'A & A Architect', 'Sky5 Hotel', 'Bright Kids School'];
+    const allCompanies = [...new Set([...KNOWN_COMPANIES, ...users.map(u => u.company).filter(Boolean)])].sort((a, b) => a.localeCompare(b));
+    const departmentsInUse = [...new Set(users.map(u => u.department).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
     useEffect(() => { fetchUsers(); }, []);
 
@@ -893,9 +898,11 @@ export default function Users() {
         setUsers(u => u.map(x => x.id === updated.id ? { ...x, ...updated } : x));
 
     const filtered = users.filter(u =>
-        u.name?.toLowerCase().includes(search.toLowerCase()) ||
-        u.employee_id?.toLowerCase().includes(search.toLowerCase()) ||
-        u.email?.toLowerCase().includes(search.toLowerCase())
+        (u.name?.toLowerCase().includes(search.toLowerCase()) ||
+            u.employee_id?.toLowerCase().includes(search.toLowerCase()) ||
+            u.email?.toLowerCase().includes(search.toLowerCase())) &&
+        (!companyFilter || (u.company || 'Englabs India Pvt Ltd') === companyFilter) &&
+        (!departmentFilter || u.department === departmentFilter)
     );
 
     // ── Actions ───────────────────────────────────────────────────────────────
@@ -1021,15 +1028,33 @@ export default function Users() {
 
             {/* ── Table ── */}
             <div className="rounded-3xl bg-white border-slate-200 overflow-hidden">
-                {/* Search */}
-                <div className="px-8 py-5 border-b border-slate-200 flex items-center gap-4">
-                    <div className="relative flex-1 max-w-sm">
+                {/* Search + Filters */}
+                <div className="px-8 py-5 border-b border-slate-200 flex items-center gap-3 flex-wrap">
+                    <div className="relative flex-1 min-w-[180px] max-w-sm">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600" />
                         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                             placeholder="Search name, email or ID..."
                             className="w-full bg-white border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900
                                        focus:outline-none focus:border-blue-500/30 placeholder:text-slate-700" />
                     </div>
+                    <select value={companyFilter} onChange={e => setCompanyFilter(e.target.value)}
+                        className="bg-white border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900
+                                   focus:outline-none focus:border-blue-500/30">
+                        <option value="">All Companies</option>
+                        {allCompanies.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <select value={departmentFilter} onChange={e => setDepartmentFilter(e.target.value)}
+                        className="bg-white border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900
+                                   focus:outline-none focus:border-blue-500/30">
+                        <option value="">All Departments</option>
+                        {departmentsInUse.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                    {(companyFilter || departmentFilter) && (
+                        <button onClick={() => { setCompanyFilter(''); setDepartmentFilter(''); }}
+                            className="text-xs font-bold text-blue-600 hover:text-blue-700">
+                            Reset
+                        </button>
+                    )}
                     <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-auto">
                         {filtered.length} results
                     </span>
