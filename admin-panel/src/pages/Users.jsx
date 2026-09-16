@@ -640,37 +640,75 @@ function IdCardModal({ user, photoUrl, onClose }) {
 
             {/* Printable card, sized to a real CR80 ID card (3.375in x 2.125in) */}
             <div id="englabs-id-card"
-                className="mx-auto w-[3.375in] h-[2.125in] rounded-xl overflow-hidden shadow-2xl bg-white text-[#0a0f1e] flex flex-col"
+                className="mx-auto w-[3.375in] h-[2.125in] rounded-[0.09in] overflow-hidden shadow-2xl bg-white text-[#101425] flex flex-col relative"
                 style={{ fontFamily: 'inherit' }}>
-                <div className="h-[0.5in] shrink-0 bg-[#0a1e3d] flex items-center gap-2 px-3">
-                    <BrandLogo variant="mark" className="w-7 h-7" />
+                {/* Header band */}
+                <div className="h-[0.46in] shrink-0 bg-gradient-to-r from-[#081226] to-[#0f2a52] flex items-center gap-[0.06in] px-[0.13in] relative overflow-hidden">
+                    <BrandLogo variant="mark" className="absolute -right-3 -top-3 w-16 h-16 opacity-[0.12]" />
+                    <BrandLogo variant="mark" className="w-[0.24in] h-[0.24in] shrink-0" />
                     <div className="leading-tight">
-                        <div className="text-white text-[11px] font-black tracking-wide">ENGLABS INDIA PVT LTD</div>
-                        <div className="text-blue-300 text-[8px] font-bold uppercase tracking-widest">Staff Identity Card</div>
+                        <div className="text-white text-[10.5px] font-black tracking-wide">ENGLABS INDIA PVT LTD</div>
+                        <div className="text-[#8fb8f0] text-[7px] font-bold uppercase tracking-[0.15em]">Staff Identity Card</div>
+                    </div>
+                    <div className="ml-auto text-right leading-tight">
+                        <div className="text-[6px] text-[#8fb8f0] font-bold uppercase tracking-widest">Valid Employee</div>
+                        <div className="text-white text-[9px] font-black font-mono tracking-wide">{user.employee_id}</div>
                     </div>
                 </div>
 
-                <div className="flex-1 flex gap-3 px-3 py-2.5">
-                    <div className="w-[0.95in] h-[1in] shrink-0 rounded-lg overflow-hidden border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xl">
-                        {photoUrl ? <img src={photoUrl} alt="" className="w-full h-full object-cover" /> : initials}
+                {/* Body: photo badge overlapping the header, details grid alongside */}
+                <div className="flex-1 flex gap-[0.14in] px-[0.14in] pt-[0.08in] pb-[0.04in]">
+                    <div className="shrink-0 -mt-[0.18in]">
+                        <div className="w-[0.92in] h-[0.92in] rounded-[0.08in] overflow-hidden border-[2.5px] border-white shadow-md bg-gradient-to-br from-[#0f2a52] to-[#1a4a8f] flex items-center justify-center text-white font-black text-[20px]">
+                            {photoUrl ? <img src={photoUrl} alt="" className="w-full h-full object-cover" /> : initials}
+                        </div>
+                        {user.blood_group && (
+                            <div className="mt-[0.035in] text-center bg-[#c0281f] text-white text-[6px] font-black uppercase tracking-wider rounded-[0.03in] py-[0.02in]">
+                                {user.blood_group}
+                            </div>
+                        )}
                     </div>
-                    <div className="min-w-0 flex-1 leading-tight">
-                        <div className="text-[13px] font-black truncate">{user.name}</div>
-                        <div className="text-[9px] text-slate-600 font-bold truncate">{user.designation || user.department || 'General'}</div>
-                        <div className="mt-1.5 space-y-0.5 text-[8.5px] text-slate-700">
-                            <div><span className="font-bold text-slate-500">ID: </span><span className="font-mono">{user.employee_id}</span></div>
-                            <div><span className="font-bold text-slate-500">Dept: </span>{user.department || 'General'}</div>
-                            <div><span className="font-bold text-slate-500">Joined: </span>{fmtDate(user.joining_date)}</div>
-                            {user.blood_group && <div><span className="font-bold text-slate-500">Blood Group: </span>{user.blood_group}</div>}
-                            {user.contact_number && <div><span className="font-bold text-slate-500">Contact: </span>{user.contact_number}</div>}
+
+                    <div className="min-w-0 flex-1 leading-tight pt-[0.02in]">
+                        <div className="text-[13.5px] font-black truncate tracking-tight">{user.name}</div>
+                        <div className="inline-block mt-[0.02in] px-[0.06in] py-[0.015in] rounded-[0.03in] bg-[#fdf1de] text-[#9a5b12] text-[7.5px] font-bold uppercase tracking-wide truncate max-w-full">
+                            {user.designation || 'Staff'}
+                        </div>
+
+                        <div className="mt-[0.07in] grid grid-cols-2 gap-x-[0.08in] gap-y-[0.03in] text-[7px]">
+                            <div>
+                                <div className="text-[5.5px] font-black text-slate-400 uppercase tracking-wider">Company</div>
+                                <div className="font-bold truncate">{user.company || 'Englabs India Pvt Ltd'}</div>
+                            </div>
+                            <div>
+                                <div className="text-[5.5px] font-black text-slate-400 uppercase tracking-wider">Department</div>
+                                <div className="font-bold truncate">{user.department || 'General'}</div>
+                            </div>
+                            <div>
+                                <div className="text-[5.5px] font-black text-slate-400 uppercase tracking-wider">Joined</div>
+                                <div className="font-bold">{fmtDate(user.joining_date)}</div>
+                            </div>
+                            <div>
+                                <div className="text-[5.5px] font-black text-slate-400 uppercase tracking-wider">Contact</div>
+                                <div className="font-bold">{user.contact_number || '—'}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="h-[0.3in] shrink-0 bg-slate-50 border-t border-slate-200 flex items-center justify-between px-3 text-[7px] text-slate-500 font-semibold">
-                    <span>If found, please return to Englabs India Pvt Ltd, Panchkula</span>
-                    <span className="font-mono">{user.employee_id}</span>
+                {/* Signature strip */}
+                <div className="shrink-0 px-[0.14in] pb-[0.05in] flex items-end justify-between">
+                    <div className="text-[6px] text-slate-400 font-semibold leading-tight max-w-[1.6in]">
+                        If found, please return to Englabs India Pvt Ltd, MDC Sector 4, Panchkula
+                    </div>
+                    <div className="text-right">
+                        <div className="w-[0.85in] border-b border-slate-300 mb-[0.015in]" />
+                        <div className="text-[6px] text-slate-400 font-bold uppercase tracking-wider">Authorized Signatory</div>
+                    </div>
                 </div>
+
+                {/* Bottom accent bar */}
+                <div className="h-[0.09in] shrink-0 bg-gradient-to-r from-[#0f2a52] via-[#c0281f] to-[#0f2a52]" />
             </div>
 
             <div className="flex gap-3 pt-6">
