@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Calendar, Clock, Fingerprint, ScanFace,
     ChevronLeft, ChevronRight, Search, FileText,
@@ -43,6 +43,12 @@ const workHoursDisplay = (record) => {
 
 // ── Status badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status, leaveType }) {
+    if (status === 'ABSENT')
+        return (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-[10px] font-black text-red-400 uppercase tracking-widest">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />Absent
+            </span>
+        );
     if (status === 'LEAVE')
         return (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-navy/10 border border-brand-navy/20 text-[10px] font-black text-brand-navy uppercase tracking-widest">
@@ -96,6 +102,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function Attendance() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [attendance, setAttendance] = useState([]);
     const [, setEmployees] = useState([]);
     const [totalRecords, setTotalRecords] = useState(0);
@@ -108,7 +115,9 @@ export default function Attendance() {
     const [selectedEmployee, setSelectedEmployee] = useState('');
     const [selectedDept, setSelectedDept] = useState('');
     const [searchInput, setSearchInput] = useState('');   // raw (undelayed)
-    const [selectedStatus, setSelectedStatus] = useState('');   // '' | 'ON_TIME' | 'LATE'
+    // Deep-linked from the Dashboard KPI tiles: /admin/attendance?status=LATE or ?view=absent
+    const [selectedStatus, setSelectedStatus] = useState(() => searchParams.get('status') || '');   // '' | 'ON_TIME' | 'LATE'
+    const [absentView, setAbsentView] = useState(() => searchParams.get('view') === 'absent');
     const [activePreset, setActivePreset] = useState('today'); // today|week|month|custom
     const [departments, setDepartments] = useState([]);
 
@@ -146,10 +155,10 @@ export default function Attendance() {
     // Re-fetch whenever any filter / sort / page changes
     useEffect(() => {
         fetchAttendanceData();
-    }, [startDate, endDate, selectedEmployee, selectedDept, searchTerm, selectedStatus, page, sortCol, sortDir]);
+    }, [startDate, endDate, selectedEmployee, selectedDept, searchTerm, selectedStatus, absentView, page, sortCol, sortDir]);
 
     // Reset page to 1 when any filter that's not page changes
-    useEffect(() => { setPage(1); }, [startDate, endDate, selectedEmployee, selectedDept, searchTerm, selectedStatus]);
+    useEffect(() => { setPage(1); }, [startDate, endDate, selectedEmployee, selectedDept, searchTerm, selectedStatus, absentView]);
 
     const fetchEmployees = async () => {
         try {
@@ -168,7 +177,8 @@ export default function Attendance() {
                 employee_id: selectedEmployee,
                 department: selectedDept,
                 search: searchTerm,
-                status: selectedStatus,   // ← NEW
+                status: absentView ? '' : selectedStatus,
+                absent: absentView || undefined,
                 page,
                 pageSize: PAGE_SIZE,
                 sortBy: sortCol,
@@ -290,9 +300,17 @@ export default function Attendance() {
             {/* ── Header ── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 tracking-tighter">Attendance Registry</h1>
-                    <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">
-                        Verified Presence // <span className="text-emerald-500">{totalRecords}</span> Records
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 tracking-tighter">
+                        {absentView ? 'Absent Today' : 'Attendance Registry'}
+                    </h1>
+                    <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em] flex items-center gap-2 flex-wrap">
+                        {absentView ? 'Not Checked In' : 'Verified Presence'} // <span className="text-emerald-500">{totalRecords}</span> Records
+                        {absentView && (
+                            <button onClick={() => setAbsentView(false)}
+                                className="ml-1 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-black normal-case tracking-normal">
+                                <X className="w-3 h-3" /> Clear
+                            </button>
+                        )}
                     </p>
                 </div>
                 <div className="flex items-center gap-3">

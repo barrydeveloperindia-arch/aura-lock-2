@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Clock, Users, UserCheck, UserX, AlertTriangle, Shield,
     TrendingUp, TrendingDown, Minus, Activity, Building2, ScanLine,
@@ -12,6 +13,7 @@ import {
 import { format, parseISO } from 'date-fns';
 
 export default function Dashboard() {
+    const navigate = useNavigate();
     const [statsData, setStatsData] = useState(null);
     const [activityData, setActivityData] = useState([]);
     const [analytics, setAnalytics] = useState(null);
@@ -88,6 +90,7 @@ export default function Dashboard() {
             border: 'border-blue-500/20',
             accent: 'text-blue-400',
             dot: 'bg-blue-500',
+            to: '/admin/users',
         },
         {
             label: 'Present Today',
@@ -98,6 +101,7 @@ export default function Dashboard() {
             border: 'border-emerald-500/20',
             accent: 'text-emerald-400',
             dot: 'bg-emerald-500',
+            to: '/admin/attendance',
         },
         {
             label: 'Absent Today',
@@ -108,6 +112,7 @@ export default function Dashboard() {
             border: 'border-red-500/20',
             accent: 'text-red-400',
             dot: 'bg-red-500',
+            to: '/admin/attendance?view=absent',
         },
         {
             label: 'Late Today',
@@ -118,6 +123,7 @@ export default function Dashboard() {
             border: 'border-amber-500/20',
             accent: 'text-amber-400',
             dot: 'bg-amber-500',
+            to: '/admin/attendance?status=LATE',
         },
         {
             label: 'Total Scans Today',
@@ -128,6 +134,7 @@ export default function Dashboard() {
             border: 'border-indigo-500/20',
             accent: 'text-indigo-400',
             dot: 'bg-indigo-500',
+            to: '/admin/logs',
         },
     ];
 
@@ -157,9 +164,9 @@ export default function Dashboard() {
             {/* ── 5 KPI Cards ── */}
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
                 {kpis.map((kpi, i) => (
-                    <div key={i}
-                        className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${kpi.gradient} border ${kpi.border} p-4 sm:p-6
-                                    hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group`}>
+                    <button key={i} type="button" onClick={() => navigate(kpi.to)}
+                        className={`text-left relative overflow-hidden rounded-2xl bg-gradient-to-br ${kpi.gradient} border ${kpi.border} p-4 sm:p-6
+                                    hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group cursor-pointer`}>
                         {/* background glow */}
                         <div className={`absolute -right-4 -top-4 w-16 h-16 sm:-right-6 sm:-top-6 sm:w-24 sm:h-24 rounded-full ${kpi.dot} opacity-5 group-hover:opacity-10 transition-opacity blur-xl`} />
 
@@ -185,7 +192,7 @@ export default function Dashboard() {
                         <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1">
                             <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${kpi.dot} animate-pulse`} />
                         </div>
-                    </div>
+                    </button>
                 ))}
 
                 {/* --- Door Status Card --- */}
@@ -309,7 +316,7 @@ export default function Dashboard() {
                                 <span className="text-sm font-black">{growth > 0 ? `+${growth}` : growth}%</span>
                             </div>
                         </div>
-                    </div>
+                    </div>
                 </div>
             </div>
 

@@ -626,7 +626,7 @@ exports.getAttendanceList = async (req, res) => {
             // For simplicity and performance, we'll fetch all active employees and exclude those with records
             const { data: allEmps, error: empErr } = await supabase
                 .from('employees')
-                .select('id, employee_id, name, department, image_url, status')
+                .select('id, employee_id, name, department, company, image_url, status')
                 .eq('status', 'Active')
                 .eq('is_deleted', false);
 
