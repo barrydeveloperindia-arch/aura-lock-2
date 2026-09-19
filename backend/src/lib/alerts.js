@@ -34,7 +34,7 @@ function buildDailySummary({ date, employees = [], attendance = [], leaves = [],
 
     const present = [], late = [], onLeave = [], absent = [];
     for (const e of staff) {
-        const item = { name: e.name, employee_id: e.employee_id, company: e.company || DEFAULT_COMPANY, department: e.department, email: e.email || null, lateAlert: e.notify_email === true };
+        const item = { name: e.name, employee_id: e.employee_id, company: e.company || DEFAULT_COMPANY, department: e.department, designation: e.designation, email: e.email || null, lateAlert: e.notify_email === true };
         const a = checkIn.get(e.id);
         if (a) {
             const row = { ...item, time: istClock(a.check_in) };
@@ -94,7 +94,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Late staff who are switched on for a personal email and have a plausible address. */
 function lateRecipients(summary) {
-    return summary.late.filter(r => r.lateAlert && r.email && EMAIL_RE.test(r.email) && r.department !== 'CEO' && r.department !== 'Guest');
+    return summary.late.filter(r => r.lateAlert && r.email && EMAIL_RE.test(r.email) && r.department !== 'CEO' && r.designation !== 'CEO' && r.department !== 'Guest');
 }
 
 function formatLateStaffEmail(person, date) {

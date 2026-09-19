@@ -7,7 +7,7 @@ const { isPlausibleEmail } = require('./alerts');
 
 function canNotify(employee) {
     // Guests and the CEO are never emailed automatically; the CEO only gets a message when asked.
-    if (!employee || employee.department === 'Guest' || employee.department === 'CEO') return false;
+    if (!employee || employee.department === 'Guest' || employee.department === 'CEO' || employee.designation === 'CEO') return false;
     return Boolean(employee.notify_email === true && isPlausibleEmail(employee.email));
 }
 

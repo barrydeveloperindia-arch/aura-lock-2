@@ -9,6 +9,7 @@ const staff = [
     emp('EL005', 'Eve', { company: 'Sky5 Hotel' }),
     emp('EL006', 'Boss', { department: 'CEO' }),
     emp('EL007', 'Visitor', { department: 'Guest' }),
+    emp('EL011', 'Chief', { department: 'Management', designation: 'CEO' }),
     emp('EL008', 'Newbie', { joining_date: '2026-09-20' }),
     emp('EL009', 'Gone', { last_working_day: '2026-09-10' }),
     emp('EL010', 'NoMail', { email: null, notify_email: false }),
@@ -29,7 +30,7 @@ describe('buildAbsenceCandidates', () => {
     test('other companies, CEO, guests, not-yet-joined and already-left staff are never listed', () => {
         const r = buildAbsenceCandidates({ date: day, employees: staff, attendance, leaves: [] });
         const ids = r.notices.map(n => n.employee_id);
-        for (const skipped of ['EL005', 'EL006', 'EL007', 'EL008', 'EL009']) assert.ok(!ids.includes(skipped), skipped);
+        for (const skipped of ['EL005', 'EL006', 'EL007', 'EL008', 'EL009', 'EL011']) assert.ok(!ids.includes(skipped), skipped);
     });
 
     test('a leave that is still pending is held back, not fined', () => {

@@ -45,6 +45,9 @@ describe('notify.emailStaff', () => {
         expect(await emailStaff({ email: 'a@b.com', notify_email: true, department: 'CEO' }, msg)).toBe(false);
         expect(mailer.sendMail).not.toHaveBeenCalled();
     });
+    test('a CEO by designation is never emailed even if the department differs', () => {
+        expect(canNotify({ email: 'a@b.com', notify_email: true, department: 'Management', designation: 'CEO' })).toBe(false);
+    });
     test('does nothing (and does not throw) when email is not configured', async () => {
         mailer.config.mockReturnValue({ configured: false });
         expect(await emailStaff({ email: 'a@b.com', notify_email: true }, msg)).toBe(false);

@@ -141,7 +141,7 @@ function notifyApprovers(emp, { type, from, to, days, note }) {
 // Tell the person their leave was approved/rejected. Fire-and-forget: a mail problem never affects the decision.
 async function notifyLeaveDecision(leave) {
     try {
-        const { data, error } = await supabase.from('leaves').select('employees(name, email, notify_email, department)').eq('id', leave.id).maybeSingle();
+        const { data, error } = await supabase.from('leaves').select('employees(name, email, notify_email, department, designation)').eq('id', leave.id).maybeSingle();
         if (error || !data || !data.employees) return;
         await emailStaff(data.employees, formatLeaveDecisionEmail({
             name: data.employees.name, date: leave.date, type: leave.type, status: leave.status, approvedBy: leave.approved_by || [], note: leave.note,

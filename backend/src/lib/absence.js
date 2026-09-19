@@ -35,7 +35,7 @@ function buildAbsenceCandidates({ date, employees = [], attendance = [], leaves 
     const notices = [], pendingLeave = [];
     for (const e of employees) {
         if ((e.company || COMPANY) !== COMPANY) continue;
-        if (EXEMPT_DEPARTMENTS.has(e.department)) continue;
+        if (EXEMPT_DEPARTMENTS.has(e.department) || e.designation === 'CEO') continue;
         if (e.status && e.status !== 'Active') continue;
         if (e.joining_date && e.joining_date > date) continue;
         if (e.last_working_day && e.last_working_day < date) continue;
