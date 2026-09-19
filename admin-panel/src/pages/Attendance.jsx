@@ -8,6 +8,7 @@ import {
     CheckCircle2, X, Filter, Camera
 } from 'lucide-react';
 import { apiService } from '../services/api';
+import { TableSkeleton, EmptyState } from '../components/ui';
 import AttendancePhotoModal from '../components/AttendancePhotoModal';
 import useAvatars from '../hooks/useAvatars';
 import { format, differenceInMinutes, parseISO, startOfWeek, startOfMonth } from 'date-fns';
@@ -477,28 +478,13 @@ export default function Attendance() {
                         </thead>
                         <tbody className="divide-y divide-slate-200">
                             {loading ? (
-                                Array(5).fill(0).map((_, i) => (
-                                    <tr key={i} className="animate-pulse">
-                                        {Array(9).fill(0).map((_, j) => (
-                                            <td key={j} className="px-6 py-4">
-                                                <div className="h-6 bg-slate-100 rounded-lg" />
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))
+                                <TableSkeleton rows={6} cols={10} bare />
                             ) : attendance.length === 0 ? (
                                 <tr>
-                                    <td colSpan={10} className="px-8 py-20 text-center">
-                                        <div className="flex flex-col items-center gap-4">
-                                            <Calendar className="w-12 h-12 text-slate-800" />
-                                            <div className="text-slate-500 text-xs font-bold">
-                                                No records match the selected filters
-                                            </div>
-                                            <button onClick={resetFilters}
-                                                className="text-xs text-emerald-600 hover:underline font-bold">
-                                                Clear filters
-                                            </button>
-                                        </div>
+                                    <td colSpan={10}>
+                                        <EmptyState icon={Calendar} title="No records match the selected filters"
+                                            hint="Try a wider date range or clear the filters."
+                                            action={<button onClick={resetFilters} className="mt-2 px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50">Clear filters</button>} />
                                     </td>
                                 </tr>
                             ) : attendance.map((rec, idx) => {

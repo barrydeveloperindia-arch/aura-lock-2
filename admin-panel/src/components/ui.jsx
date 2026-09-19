@@ -1,9 +1,11 @@
 import React from 'react';
 import { Inbox } from 'lucide-react';
 
-export function TableSkeleton({ rows = 6, cols = 5 }) {
+export function TableSkeleton({ rows = 6, cols = 5, bare = false }) {
+    const Wrap = bare ? React.Fragment : 'tbody';
+    const wrapProps = bare ? {} : { 'aria-busy': 'true', 'aria-label': 'Loading' };
     return (
-        <tbody aria-busy="true" aria-label="Loading">
+        <Wrap {...wrapProps}>
             {Array.from({ length: rows }).map((_, r) => (
                 <tr key={r} className="animate-pulse border-b border-slate-100">
                     {Array.from({ length: cols }).map((__, c) => (
@@ -13,7 +15,7 @@ export function TableSkeleton({ rows = 6, cols = 5 }) {
                     ))}
                 </tr>
             ))}
-        </tbody>
+        </Wrap>
     );
 }
 

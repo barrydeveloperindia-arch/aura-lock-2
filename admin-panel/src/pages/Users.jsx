@@ -4,6 +4,7 @@ import useAvatars from '../hooks/useAvatars';
 import useProfilePhotos, { invalidateProfilePhoto } from '../hooks/useProfilePhotos';
 import BrandLogo from '../components/BrandLogo';
 import IdCard from '../components/IdCard';
+import { TableSkeleton, EmptyState } from '../components/ui';
 import BulkIdCards from '../components/BulkIdCards';
 import {
     Search, Trash2, Edit2, UserPlus, X, Save,
@@ -1188,17 +1189,11 @@ export default function Users() {
                         </thead>
                         <tbody className="divide-y divide-slate-200">
                             {loading ? (
-                                [1, 2, 3, 4].map(i => (
-                                    <tr key={i} className="animate-pulse">
-                                        <td colSpan={9} className="px-8 py-5">
-                                            <div className="h-10 bg-slate-100 rounded-xl" />
-                                        </td>
-                                    </tr>
-                                ))
+                                <TableSkeleton rows={6} cols={9} bare />
                             ) : error ? (
-                                <tr><td colSpan={9} className="px-8 py-16 text-center text-red-600 font-bold">{error}</td></tr>
+                                <tr><td colSpan={9}><EmptyState icon={AlertCircle} title="Could not load employees" hint={error} action={<button onClick={fetchUsers} className="mt-2 px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50">Try again</button>} /></td></tr>
                             ) : filtered.length === 0 ? (
-                                <tr><td colSpan={9} className="px-8 py-16 text-center text-slate-600 font-semibold">No employees found.</td></tr>
+                                <tr><td colSpan={9}><EmptyState icon={Search} title="No employees found" hint={search || companyFilter || departmentFilter ? 'Nothing matches these filters. Try clearing them.' : 'Add your first employee to get started.'} /></td></tr>
                             ) : filtered.map((user, idx) => {
                                 const isActioning = actionLoading === user.id;
                                 const isDisabled = user.status === 'Disabled';

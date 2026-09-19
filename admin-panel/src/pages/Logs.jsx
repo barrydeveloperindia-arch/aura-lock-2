@@ -7,6 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { apiService } from '../services/api';
+import { TableSkeleton, EmptyState } from '../components/ui';
 
 const PAGE_SIZE = 20;
 
@@ -235,23 +236,12 @@ export default function Logs() {
                         </thead>
                         <tbody className="divide-y divide-white/[0.04]">
                             {loading ? (
-                                Array.from({ length: 6 }).map((_, i) => (
-                                    <tr key={i} className="animate-pulse">
-                                        {Array.from({ length: 6 }).map((_, j) => (
-                                            <td key={j} className="px-6 py-4">
-                                                <div className="h-4 bg-slate-50 rounded-lg" />
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))
+                                <TableSkeleton rows={6} cols={6} bare />
                             ) : logs.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-24 text-center">
-                                        <div className="flex flex-col items-center gap-3 opacity-30">
-                                            <Activity className="w-10 h-10 text-blue-600 animate-pulse" />
-                                            <p className="font-bold text-xs">No events found</p>
-                                            {hasFilter && <p className="text-slate-600 text-xs">Try adjusting your filters</p>}
-                                        </div>
+                                    <td colSpan={6}>
+                                        <EmptyState icon={Activity} title="No events found"
+                                            hint={hasFilter ? 'Try adjusting or clearing your filters.' : 'Scan events will appear here as people use the terminal.'} />
                                     </td>
                                 </tr>
                             ) : logs.map(log => (
