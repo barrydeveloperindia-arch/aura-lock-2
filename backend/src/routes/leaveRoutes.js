@@ -29,6 +29,7 @@ const express = require('express');
 const supabase = require('../../supabase');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { LEAVE_TYPES, isValidLeaveType, isValidDate, workingDates } = require('../lib/leaves');
+const { logAudit } = require('../lib/audit');
 
 const router = express.Router();
 const LEAVE_STATUSES = ['Pending', 'Approved', 'Rejected']; // matches the printed Leave Application Form
@@ -78,6 +79,7 @@ router.post('/api/leaves', authenticateToken, isAdmin, async (req, res) => {
         const row = { employee_id: emp.id, date, type: String(type).toUpperCase(), note: String(note || '').trim().slice(0, 200) || null, status: 'Pending', created_by: req.user?.email || 'admin' };
         const { data, error } = await supabase.from('leaves').upsert(row, { onConflict: 'employee_id,date' }).select('id, date, type, note, status, approved_by, created_by, created_at').single();
         if (error) throw error;
+        logAudit(req, { action: 'leave.add', entityType: 'leave', entityId: data.id, entityLabel: `${emp.name} (${emp.employee_id})`, changes: { date: { from: null, to: date }, type: { from: null, to: row.type } } });
         res.status(201).json({ leave: { ...data, employee: emp } });
     } catch (err) { fail(res, err, 'save leave'); }
 });
@@ -116,6 +118,7 @@ router.post('/api/leaves/range', authenticateToken, isAdmin, async (req, res) =>
         const rows = [...working].sort().map(date => ({ employee_id: emp.id, date, type: upType, note: trimmedNote, status: 'Pending', created_by: createdBy }));
         const { data, error } = await supabase.from('leaves').upsert(rows, { onConflict: 'employee_id,date' }).select('id, date, type, note, status, approved_by, created_by, created_at');
         if (error) throw error;
+        logAudit(req, { action: 'leave.add', entityType: 'leave', entityId: null, entityLabel: `${emp.name} (${emp.employee_id})`, changes: { from: { from: null, to: from }, to: { from: null, to }, type: { from: null, to: upType }, days: { from: null, to: (data || []).length } } });
         res.status(201).json({
             employee: emp,
             leaves: (data || []).map(l => ({ ...l, employee: emp })),
@@ -143,6 +146,7 @@ router.patch('/api/leaves/:id', authenticateToken, isAdmin, async (req, res) => 
         const { data, error } = await supabase.from('leaves').update(patch).eq('id', req.params.id).select('id, date, type, note, status, approved_by, created_by, created_at').maybeSingle();
         if (error) throw error;
         if (!data) return res.status(404).json({ error: 'Leave not found' });
+        logAudit(req, { action: 'leave.status', entityType: 'leave', entityId: data.id, entityLabel: `${data.type} on ${data.date}`, changes: { status: { from: null, to: data.status }, ...(patch.approved_by ? { approved_by: { from: null, to: patch.approved_by.join(', ') } } : {}) } });
         res.json({ leave: data });
     } catch (err) { fail(res, err, 'update leave status'); }
 });
@@ -152,6 +156,7 @@ router.delete('/api/leaves/:id', authenticateToken, isAdmin, async (req, res) =>
     try {
         const { error } = await supabase.from('leaves').delete().eq('id', req.params.id);
         if (error) throw error;
+        logAudit(req, { action: 'leave.delete', entityType: 'leave', entityId: req.params.id, entityLabel: 'Leave entry removed', changes: null });
         res.json({ deleted: req.params.id });
     } catch (err) { fail(res, err, 'delete leave'); }
 });

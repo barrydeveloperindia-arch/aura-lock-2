@@ -16,6 +16,8 @@ import {
     ScanFace,
     CalendarOff,
     Building2,
+    Search,
+    History,
     X
 } from 'lucide-react';
 
@@ -27,6 +29,7 @@ const menuItems = [
     { name: 'Leaves', icon: CalendarOff, path: '/admin/leaves' },
     { name: 'Live Map', icon: MapPin, path: '/admin/live-map' },
     { name: 'Reports', icon: Shield, path: '/admin/reports' },
+    { name: 'Audit Trail', icon: History, path: '/admin/audit' },
     { name: 'Access Logs', icon: ClipboardList, path: '/admin/logs' },
     { name: 'Door Control', icon: Key, path: '/admin/door-control' },
     { name: 'Face Calibration', icon: ScanFace, path: '/admin/face-calibration' },
@@ -53,6 +56,15 @@ export default function Sidebar({ isOpen, onClose }) {
                     aria-label="Close menu"
                 >
                     <X className="w-6 h-6" />
+                </button>
+            </div>
+
+            <div className="px-4 pb-2">
+                <button type="button" onClick={() => window.dispatchEvent(new Event('open-command-palette'))}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-sm text-slate-500 transition-colors">
+                    <Search className="w-4 h-4" />
+                    <span className="flex-1 text-left">Search</span>
+                    <kbd className="text-xs border border-slate-200 bg-white rounded px-1.5 py-0.5">Ctrl K</kbd>
                 </button>
             </div>
 

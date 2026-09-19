@@ -11,6 +11,7 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024, files: 1 } });
 const validateIdentity = require('./middleware/validateIdentity');
+const { logAudit, diffFields } = require('./src/lib/audit');
 const validateDevice = require('./middleware/validateDevice');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit-table');
@@ -210,6 +211,7 @@ const attendanceRoutes = require('./src/routes/attendanceRoutes');
 app.use('/api/attendance', attendanceRoutes);
 // Leave register + holidays (feeds the monthly report and the absent list)
 app.use('/', require('./src/routes/leaveRoutes'));
+app.use('/', require('./src/routes/auditRoutes'));
 // Activity and Analytics were previously under /api/stats, so we'll mount them explicitly
 app.use('/api/stats', attendanceRoutes);
 
@@ -637,6 +639,7 @@ app.post('/api/users/:id/photo', authenticateToken, isAdmin, upload.single('phot
         const path = await attendancePhotos.uploadProfilePhoto(emp.employee_id, req.file.buffer);
         if (!path) return res.status(500).json({ error: 'Photo upload failed' });
 
+        logAudit(req, { action: 'employee.photo', entityType: 'employee', entityId: id, entityLabel: emp.employee_id, changes: { profile_photo: { from: null, to: 'uploaded' } } });
         const urls = await attendancePhotos.getProfilePhotoUrls([emp.employee_id]);
         res.json({ success: true, employee_id: emp.employee_id, photo_url: urls[emp.employee_id] || null });
     } catch (error) {
@@ -700,7 +703,7 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
         // Fetch existing user to check for ID changes and biometric status
         const { data: existingUser, error: fetchErr } = await supabase
             .from('employees')
-            .select('employee_id, face_embedding')
+            .select('*')
             .eq('id', id)
             .single();
         
@@ -777,6 +780,12 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
             }
         }
 
+        logAudit(req, {
+            action: 'employee.update', entityType: 'employee', entityId: id,
+            entityLabel: `${updatedUser.name || existingUser.name} (${updatedUser.employee_id || old_eid})`,
+            changes: diffFields(existingUser, updates),
+        });
+
         // Fetch real-time biometric status for the response
         const [
             { count: faceCount },
@@ -843,6 +852,7 @@ app.post('/api/users', authenticateToken, validateIdentity, async (req, res) => 
         }
 
         console.log("âœ… User created/updated in Supabase:", newUser.employee_id);
+        logAudit(req, { action: 'employee.create', entityType: 'employee', entityId: newUser.id, entityLabel: `${newUser.name} (${newUser.employee_id})`, changes: { department: { from: null, to: newUser.department }, company: { from: null, to: newUser.company } } });
         res.status(201).json(newUser);
     } catch (error) {
         console.error("âŒ Create user error:", error);
@@ -917,6 +927,7 @@ app.delete('/api/users/:id', authenticateToken, isAdmin, async (req, res) => {
 
             if (deleteError) throw deleteError;
             
+            logAudit(req, { action: 'employee.delete.hard', entityType: 'employee', entityId: employeeUuid, entityLabel: employeeEid, changes: { deleted: { from: false, to: 'permanently purged' } } });
             return res.json({ message: "Employee permanently purged from system.", hard: true });
         }
 
@@ -964,6 +975,7 @@ app.delete('/api/users/:id', authenticateToken, isAdmin, async (req, res) => {
         }
 
         console.log(`âœ… Success: Subject ${evictionEmployeeId} soft-deleted. Historical records preserved.`);
+        logAudit(req, { action: 'employee.delete', entityType: 'employee', entityId: employeeUuid, entityLabel: `${updatedUser.name} (${evictionEmployeeId})`, changes: { status: { from: 'Active', to: 'Disabled (removed)' } } });
         res.json({
             success: true,
             message: "User has been deactivated and removed from the dashboard. Historical records are preserved.",

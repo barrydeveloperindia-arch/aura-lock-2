@@ -3,6 +3,8 @@ import { apiService } from '../services/api';
 import useAvatars from '../hooks/useAvatars';
 import useProfilePhotos, { invalidateProfilePhoto } from '../hooks/useProfilePhotos';
 import BrandLogo from '../components/BrandLogo';
+import IdCard from '../components/IdCard';
+import BulkIdCards from '../components/BulkIdCards';
 import {
     Search, Trash2, Edit2, UserPlus, X, Save,
     ScanFace, Fingerprint, AlertTriangle, UserX, UserCheck,
@@ -657,9 +659,6 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
 // ── ID Card ────────────────────────────────────────────────────────────────
 function IdCardModal({ user, photoUrl, onClose }) {
     if (!user) return null;
-    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-    const initials = (user.name || '?').slice(0, 2).toUpperCase();
-
     return (
         <Modal open onClose={onClose} maxW="max-w-sm">
             <style>{`
@@ -676,86 +675,7 @@ function IdCardModal({ user, photoUrl, onClose }) {
                 <button onClick={onClose} className="text-slate-500 hover:text-slate-900 transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
-            {/* Printable card, sized to a real CR80 ID card (3.375in x 2.125in) */}
-            <div id="englabs-id-card"
-                className="mx-auto w-[3.375in] h-[2.125in] rounded-[0.09in] overflow-hidden shadow-2xl bg-white text-[#101425] flex flex-col relative"
-                style={{ fontFamily: 'inherit' }}>
-                {/* Header band */}
-                <div className="h-[0.46in] shrink-0 bg-gradient-to-r from-[#081226] to-[#0f2a52] flex items-center gap-[0.06in] px-[0.13in] relative overflow-hidden">
-                    <BrandLogo variant="mark" className="absolute -right-3 -top-3 w-16 h-16 opacity-[0.12]" />
-                    <BrandLogo variant="mark" className="w-[0.24in] h-[0.24in] shrink-0" />
-                    <div className="leading-tight">
-                        <div className="text-white text-[10.5px] font-bold">ENGLABS INDIA PVT LTD</div>
-                        <div className="text-[#8fb8f0] text-xs font-bold">Staff Identity Card</div>
-                    </div>
-                    <div className="ml-auto text-right leading-tight">
-                        <div className="text-[6px] text-[#8fb8f0] font-bold">Valid Employee</div>
-                        <div className="text-white text-xs font-bold font-mono">{user.employee_id}</div>
-                    </div>
-                </div>
-
-                {/* Body: photo badge overlapping the header, details grid alongside */}
-                <div className="flex-1 flex gap-[0.14in] px-[0.14in] pt-[0.08in] pb-[0.04in]">
-                    <div className="shrink-0 -mt-[0.18in]">
-                        <div className="w-[0.92in] h-[0.92in] rounded-[0.08in] overflow-hidden border-[2.5px] border-white shadow-md bg-gradient-to-br from-[#0f2a52] to-[#1a4a8f] flex items-center justify-center text-white font-bold text-[20px]">
-                            {photoUrl ? <img src={photoUrl} alt="" className="w-full h-full object-cover" /> : initials}
-                        </div>
-                        {user.blood_group && (
-                            <div className="mt-[0.035in] text-center bg-[#c0281f] text-white text-[6px] font-bold rounded-[0.03in] py-[0.02in]">
-                                {user.blood_group}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="min-w-0 flex-1 leading-tight pt-[0.02in]">
-                        <div className="text-[13.5px] font-bold truncate tracking-tight">{user.name}</div>
-                        <div className="inline-block mt-[0.02in] px-[0.06in] py-[0.015in] rounded-[0.03in] bg-[#fdf1de] text-[#9a5b12] text-[7.5px] font-bold truncate max-w-full">
-                            {user.designation || 'Staff'}
-                        </div>
-
-                        <div className="mt-[0.05in] grid grid-cols-2 gap-x-[0.08in] gap-y-[0.025in] text-[6.5px]">
-                            <div>
-                                <div className="text-[5px] font-bold text-slate-600">Company</div>
-                                <div className="font-bold truncate">{user.company || 'Englabs India Pvt Ltd'}</div>
-                            </div>
-                            <div>
-                                <div className="text-[5px] font-bold text-slate-600">Department</div>
-                                <div className="font-bold truncate">{user.department || 'General'}</div>
-                            </div>
-                            <div>
-                                <div className="text-[5px] font-bold text-slate-600">Joined</div>
-                                <div className="font-bold">{fmtDate(user.joining_date)}</div>
-                            </div>
-                            <div>
-                                <div className="text-[5px] font-bold text-slate-600">Contact</div>
-                                <div className="font-bold">{user.contact_number || '—'}</div>
-                            </div>
-                            <div>
-                                <div className="text-[5px] font-bold text-slate-600">PAN</div>
-                                <div className="font-bold font-mono truncate">{user.pan_number || '—'}</div>
-                            </div>
-                            <div className="min-w-0">
-                                <div className="text-[5px] font-bold text-slate-600">Address</div>
-                                <div className="font-bold truncate" title={user.address || ''}>{user.address || '—'}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Signature strip */}
-                <div className="shrink-0 px-[0.14in] pb-[0.05in] flex items-end justify-between">
-                    <div className="text-[6px] text-slate-600 font-semibold leading-tight max-w-[1.6in]">
-                        If found, please return to Englabs India Pvt Ltd, MDC Sector 4, Panchkula
-                    </div>
-                    <div className="text-right">
-                        <div className="w-[0.85in] border-b border-slate-300 mb-[0.015in]" />
-                        <div className="text-[6px] text-slate-600 font-bold">Authorized Signatory</div>
-                    </div>
-                </div>
-
-                {/* Bottom accent bar */}
-                <div className="h-[0.09in] shrink-0 bg-gradient-to-r from-[#0f2a52] via-[#c0281f] to-[#0f2a52]" />
-            </div>
+            <IdCard id="englabs-id-card" user={user} photoUrl={photoUrl} />
 
             <div className="flex gap-3 pt-6">
                 <button onClick={onClose}
@@ -968,6 +888,8 @@ export default function Users() {
     const [companyFilter, setCompanyFilter] = useState('');
     const [departmentFilter, setDepartmentFilter] = useState('');
     const [sort, setSort] = useState({ key: null, dir: 'asc' });
+    const [selected, setSelected] = useState(() => new Set());
+    const [bulkPrint, setBulkPrint] = useState(false);
 
     // Modals
     const [addOpen, setAddOpen] = useState(false);
@@ -1028,10 +950,15 @@ export default function Users() {
             return sort.dir === 'asc' ? cmp : -cmp;
         });
 
+    const selectedUsers = filtered.filter(u => selected.has(u.id));
+    const allShownSelected = filtered.length > 0 && selectedUsers.length === filtered.length;
+    const toggleOne = (id) => setSelected(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+    const toggleAll = () => setSelected(allShownSelected ? new Set() : new Set(filtered.map(u => u.id)));
+
     const toggleSort = (key) =>
         setSort(cur => cur.key === key ? { key, dir: cur.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
 
-    const exportCsv = () => {
+    const exportCsv = (list = filtered) => {
         const cols = [
             ['Sr. No.', (u, i) => i + 1], ['Employee ID', u => u.employee_id], ['Name', u => u.name],
             ['Company', u => u.company || 'Englabs India Pvt Ltd'], ['Department', u => u.department],
@@ -1039,10 +966,10 @@ export default function Users() {
             ['Joining Date', u => u.joining_date], ['Contact', u => u.contact_number],
         ];
         const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-        const csv = [cols.map(c => esc(c[0])).join(','), ...filtered.map((u, i) => cols.map(c => esc(c[1](u, i))).join(','))].join('\r\n');
+        const csv = [cols.map(c => esc(c[0])).join(','), ...list.map((u, i) => cols.map(c => esc(c[1](u, i))).join(','))].join('\r\n');
         const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
         const a = document.createElement('a');
-        a.href = url; a.download = 'employees.csv'; a.click();
+        a.href = url; a.download = list === filtered ? 'employees.csv' : 'employees-selected.csv'; a.click();
         URL.revokeObjectURL(url);
     };
 
@@ -1136,6 +1063,7 @@ export default function Users() {
                 onEdit={(u) => { setProfileTarget(null); setEditTarget(u); }}
                 onViewCard={(u) => { setProfileTarget(null); setCardTarget(u); }} />}
             {cardTarget && <IdCardModal user={cardTarget} photoUrl={profilePhotos[cardTarget.employee_id] || avatars[cardTarget.employee_id] || cardTarget.image_url} onClose={() => setCardTarget(null)} />}
+            {bulkPrint && <BulkIdCards users={selectedUsers} photoFor={(u) => profilePhotos[u.employee_id] || avatars[u.employee_id] || u.image_url} onClose={() => setBulkPrint(false)} />}
             <DeleteDialog user={deleteTarget} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteTarget(null)} />
 
             {/* ── Header ── */}
@@ -1205,10 +1133,24 @@ export default function Users() {
                     </button>
                 </div>
 
+                {selectedUsers.length > 0 && (
+                    <div className="px-4 md:px-6 py-3 border-b border-blue-200 bg-blue-50 flex items-center gap-3 flex-wrap" role="region" aria-label="Bulk actions">
+                        <span className="text-sm font-semibold text-blue-900">{selectedUsers.length} selected</span>
+                        <button onClick={() => setBulkPrint(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-sm">
+                            <Printer className="w-4 h-4" /> Print ID cards
+                        </button>
+                        <button onClick={() => exportCsv(selectedUsers)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50">
+                            <Download className="w-4 h-4" /> Export selected
+                        </button>
+                        <button onClick={() => setSelected(new Set())} className="ml-auto text-sm font-medium text-blue-700 hover:text-blue-900">Clear selection</button>
+                    </div>
+                )}
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-50">
+                                <th className="pl-4 md:pl-6 pr-0 py-3 w-8 sticky top-0 bg-slate-50 z-10"><input type="checkbox" checked={allShownSelected} onChange={toggleAll} aria-label="Select all shown employees" className="w-4 h-4 rounded border-slate-300 text-blue-600" /></th>
                                 <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 hidden md:table-cell w-16">Sr. No.</th>
                                 <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 hidden sm:table-cell" aria-sort={sort.key === 'employee_id' ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
                                     <button onClick={() => toggleSort('employee_id')} className="inline-flex items-center gap-1 hover:text-slate-900">
@@ -1248,15 +1190,15 @@ export default function Users() {
                             {loading ? (
                                 [1, 2, 3, 4].map(i => (
                                     <tr key={i} className="animate-pulse">
-                                        <td colSpan={8} className="px-8 py-5">
+                                        <td colSpan={9} className="px-8 py-5">
                                             <div className="h-10 bg-slate-100 rounded-xl" />
                                         </td>
                                     </tr>
                                 ))
                             ) : error ? (
-                                <tr><td colSpan={8} className="px-8 py-16 text-center text-red-600 font-bold">{error}</td></tr>
+                                <tr><td colSpan={9} className="px-8 py-16 text-center text-red-600 font-bold">{error}</td></tr>
                             ) : filtered.length === 0 ? (
-                                <tr><td colSpan={8} className="px-8 py-16 text-center text-slate-600 font-semibold">No employees found.</td></tr>
+                                <tr><td colSpan={9} className="px-8 py-16 text-center text-slate-600 font-semibold">No employees found.</td></tr>
                             ) : filtered.map((user, idx) => {
                                 const isActioning = actionLoading === user.id;
                                 const isDisabled = user.status === 'Disabled';
@@ -1271,6 +1213,7 @@ export default function Users() {
                                     <tr key={user.id}
                                         className={`group transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-slate-50'}`}>
 
+                                        <td className="pl-4 md:pl-6 pr-0 py-3 w-8"><input type="checkbox" checked={selected.has(user.id)} onChange={() => toggleOne(user.id)} aria-label={`Select ${user.name}`} className="w-4 h-4 rounded border-slate-300 text-blue-600" /></td>
                                         <td className="hidden md:table-cell px-4 md:px-6 py-3 text-sm text-slate-500 tabular-nums">{idx + 1}</td>
                                         <td className="hidden sm:table-cell px-4 md:px-6 py-3 text-sm font-mono text-slate-700">{user.employee_id || '—'}</td>
 

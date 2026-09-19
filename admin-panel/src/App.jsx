@@ -13,6 +13,7 @@ import FaceCalibration from './pages/FaceCalibration';
 import Leaves from './pages/Leaves';
 import BuildingDirectory from './pages/BuildingDirectory';
 import Login from './pages/Login';
+import AuditTrail from './pages/AuditTrail';
 
 import DoorControl from './pages/DoorControl';
 
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="face-calibration" element={<FaceCalibration />} />
         <Route path="logs" element={<Logs />} />
         <Route path="door-control" element={<DoorControl />} />
+        <Route path="audit" element={<AuditTrail />} />
         <Route path="settings" element={<Settings />} />
       </Route>
       

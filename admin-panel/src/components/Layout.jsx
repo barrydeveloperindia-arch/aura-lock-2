@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { Menu } from 'lucide-react';
 import BrandLogo from './BrandLogo';
+import CommandPalette from './CommandPalette';
 
 export default function Layout() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,6 +25,7 @@ export default function Layout() {
                 </button>
             </header>
 
+            <CommandPalette />
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             {/* Mobile Sidebar Overlay */}
