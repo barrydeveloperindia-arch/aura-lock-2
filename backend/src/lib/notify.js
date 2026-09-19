@@ -18,4 +18,16 @@ async function emailStaff(employee, message) {
     catch (e) { console.warn('[Notify] email to staff failed:', e.message); return false; }
 }
 
-module.exports = { canNotify, emailStaff };
+/** Who is asked to approve leaves: ALERT_LEAVE_APPROVERS (comma separated). Empty = nobody is emailed. */
+function approverEmails() {
+    return String(process.env.ALERT_LEAVE_APPROVERS || '').split(',').map(x => x.trim()).filter(isPlausibleEmail);
+}
+
+async function emailApprovers(message) {
+    const to = approverEmails();
+    if (to.length === 0 || !mailer.config().configured) return false;
+    try { await mailer.sendMail({ ...message, to }); return true; }
+    catch (e) { console.warn('[Notify] approver email failed:', e.message); return false; }
+}
+
+module.exports = { canNotify, emailStaff, approverEmails, emailApprovers };

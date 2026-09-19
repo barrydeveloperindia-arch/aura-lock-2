@@ -2,6 +2,24 @@ jest.mock('./mailer', () => ({ config: jest.fn(() => ({ configured: true })), se
 const mailer = require('./mailer');
 const { canNotify, emailStaff } = require('./notify');
 
+describe('notify.emailApprovers', () => {
+    const { approverEmails, emailApprovers } = require('./notify');
+    const msg = { subject: 's', text: 't', html: 'h' };
+    beforeEach(() => { mailer.sendMail.mockClear(); mailer.config.mockReturnValue({ configured: true }); delete process.env.ALERT_LEAVE_APPROVERS; });
+    afterAll(() => { delete process.env.ALERT_LEAVE_APPROVERS; });
+
+    test('sends one email to every valid approver address', async () => {
+        process.env.ALERT_LEAVE_APPROVERS = 'a@x.com, b@y.com ,not-an-email';
+        expect(approverEmails()).toEqual(['a@x.com', 'b@y.com']);
+        expect(await emailApprovers(msg)).toBe(true);
+        expect(mailer.sendMail).toHaveBeenCalledWith({ ...msg, to: ['a@x.com', 'b@y.com'] });
+    });
+    test('nobody is emailed when no approvers are configured', async () => {
+        expect(await emailApprovers(msg)).toBe(false);
+        expect(mailer.sendMail).not.toHaveBeenCalled();
+    });
+});
+
 describe('notify.emailStaff', () => {
     beforeEach(() => { mailer.sendMail.mockClear(); mailer.config.mockReturnValue({ configured: true }); });
     const msg = { subject: 's', text: 't', html: 'h' };

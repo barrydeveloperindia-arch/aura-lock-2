@@ -103,6 +103,16 @@ describe('personal emails to staff', () => {
         assert.match(no.subject, /sick leave .* was not approved/);
         assert.ok(no.text.includes('normal working day'));
     });
+    test('the approval request names the person, dates and reason', () => {
+        const { formatLeaveRequestEmail } = require('./alerts');
+        const m = formatLeaveRequestEmail({ name: 'Anurag Sahni', employee_id: 'EL018', type: 'CL', from: '2026-09-21', to: '2026-09-23', days: 3, note: 'family function' });
+        assert.match(m.subject, /Leave approval needed: Anurag Sahni, casual leave, .*21 Sept.* to .*23 Sept/);
+        assert.ok(m.text.includes('3 working days') && m.text.includes('family function') && m.text.includes('EL018'));
+        const one = formatLeaveRequestEmail({ name: 'A', employee_id: 'EL1', type: 'SL', from: '2026-09-21', to: '2026-09-21', days: 1 });
+        assert.ok(one.text.includes('1 working day'));
+        assert.ok(one.text.split(String.fromCharCode(10)).some(l => l.startsWith("  Dates:") && l.includes("2026")));
+        assert.ok(!/Dates: .* to /.test(one.text), 'a single day shows one date, not a range');
+    });
     test('leave email escapes markup from the reason', () => {
         const m = formatLeaveDecisionEmail({ name: 'A', date: day, type: 'CL', status: 'Approved', note: '<script>x</script>' });
         assert.ok(!m.html.includes('<script>'));

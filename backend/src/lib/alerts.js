@@ -118,6 +118,37 @@ function formatLateStaffEmail(person, date) {
     return { subject, text, html };
 }
 
+function formatLeaveRequestEmail({ name, employee_id, type, from, to, days, note }) {
+    const kind = LEAVE_NAMES[String(type).toUpperCase()] || 'Leave';
+    const range = from === to ? prettyDate(from) : `${prettyDate(from)} to ${prettyDate(to)}`;
+    const dayText = `${days} working day${days === 1 ? '' : 's'}`;
+    const subject = `Leave approval needed: ${name}, ${kind.toLowerCase()}, ${range}`;
+    const text = [
+        'A leave has been recorded and is waiting for approval.',
+        '',
+        `  Staff:   ${name} (${employee_id})`,
+        `  Leave:   ${kind}, ${dayText}`,
+        `  Dates:   ${range}`,
+        ...(note ? [`  Reason:  ${note}`] : []),
+        '',
+        'Please open the Leaves page in the attendance console to approve or reject it.',
+        'The staff member is emailed automatically once you decide.',
+        '',
+        'Englabs Attendance Tracker (automatic message)',
+    ].join('\n');
+    const html = `<div style="max-width:540px;font:15px/1.6 Arial,sans-serif;color:#0f172a;padding:16px">
+      <p>A leave has been recorded and is <b>waiting for approval</b>.</p>
+      <table style="border-collapse:collapse;font:14px Arial,sans-serif;margin:6px 0 16px">
+        <tr><td style="padding:4px 18px 4px 0;color:#64748b">Staff</td><td><b>${esc(name)}</b> (${esc(employee_id)})</td></tr>
+        <tr><td style="padding:4px 18px 4px 0;color:#64748b">Leave</td><td>${esc(kind)}, ${esc(dayText)}</td></tr>
+        <tr><td style="padding:4px 18px 4px 0;color:#64748b">Dates</td><td>${esc(range)}</td></tr>
+        ${note ? `<tr><td style="padding:4px 18px 4px 0;color:#64748b">Reason</td><td>${esc(note)}</td></tr>` : ''}
+      </table>
+      <p>Please open the <b>Leaves</b> page in the attendance console to approve or reject it. The staff member is emailed automatically once you decide.</p>
+      <p style="color:#94a3b8;font-size:12px">Englabs Attendance Tracker (automatic message)</p></div>`;
+    return { subject, text, html };
+}
+
 const LEAVE_NAMES = { CL: 'Casual leave', SL: 'Sick leave', EL: 'Emergency leave', UWL: 'Urgent work leave', OTH: 'Leave' };
 
 function formatLeaveDecisionEmail({ name, date, type, status, approvedBy = [], note }) {
@@ -147,4 +178,4 @@ function formatLeaveDecisionEmail({ name, date, type, status, approvedBy = [], n
     return { subject, text, html };
 }
 
-module.exports = { buildDailySummary, formatEmail, formatLateStaffEmail, formatLeaveDecisionEmail, lateRecipients, isPlausibleEmail: (e) => EMAIL_RE.test(String(e || '')), prettyDate };
+module.exports = { buildDailySummary, formatEmail, formatLateStaffEmail, formatLeaveDecisionEmail, formatLeaveRequestEmail, lateRecipients, isPlausibleEmail: (e) => EMAIL_RE.test(String(e || '')), prettyDate };

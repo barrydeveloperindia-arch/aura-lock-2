@@ -30,8 +30,8 @@ const supabase = require('../../supabase');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { LEAVE_TYPES, isValidLeaveType, isValidDate, workingDates } = require('../lib/leaves');
 const { logAudit } = require('../lib/audit');
-const { formatLeaveDecisionEmail } = require('../lib/alerts');
-const { emailStaff } = require('../lib/notify');
+const { formatLeaveDecisionEmail, formatLeaveRequestEmail } = require('../lib/alerts');
+const { emailStaff, emailApprovers } = require('../lib/notify');
 
 const router = express.Router();
 const LEAVE_STATUSES = ['Pending', 'Approved', 'Rejected']; // matches the printed Leave Application Form
@@ -82,6 +82,7 @@ router.post('/api/leaves', authenticateToken, isAdmin, async (req, res) => {
         const { data, error } = await supabase.from('leaves').upsert(row, { onConflict: 'employee_id,date' }).select('id, date, type, note, status, approved_by, created_by, created_at').single();
         if (error) throw error;
         logAudit(req, { action: 'leave.add', entityType: 'leave', entityId: data.id, entityLabel: `${emp.name} (${emp.employee_id})`, changes: { date: { from: null, to: date }, type: { from: null, to: row.type } } });
+        notifyApprovers(emp, { type: row.type, from: date, to: date, days: 1, note: row.note });
         res.status(201).json({ leave: { ...data, employee: emp } });
     } catch (err) { fail(res, err, 'save leave'); }
 });
@@ -121,6 +122,7 @@ router.post('/api/leaves/range', authenticateToken, isAdmin, async (req, res) =>
         const { data, error } = await supabase.from('leaves').upsert(rows, { onConflict: 'employee_id,date' }).select('id, date, type, note, status, approved_by, created_by, created_at');
         if (error) throw error;
         logAudit(req, { action: 'leave.add', entityType: 'leave', entityId: null, entityLabel: `${emp.name} (${emp.employee_id})`, changes: { from: { from: null, to: from }, to: { from: null, to }, type: { from: null, to: upType }, days: { from: null, to: (data || []).length } } });
+        notifyApprovers(emp, { type: upType, from: [...working].sort()[0], to: [...working].sort().slice(-1)[0], days: (data || []).length, note: trimmedNote });
         res.status(201).json({
             employee: emp,
             leaves: (data || []).map(l => ({ ...l, employee: emp })),
@@ -129,6 +131,12 @@ router.post('/api/leaves/range', authenticateToken, isAdmin, async (req, res) =>
         });
     } catch (err) { fail(res, err, 'save leave range'); }
 });
+
+// Ask the approvers (the CEO side) to decide on a newly recorded leave. Fire-and-forget.
+function notifyApprovers(emp, { type, from, to, days, note }) {
+    emailApprovers(formatLeaveRequestEmail({ name: emp.name, employee_id: emp.employee_id, type, from, to, days, note }))
+        .catch(e => console.warn('[Leaves] approver email skipped:', e.message));
+}
 
 // Tell the person their leave was approved/rejected. Fire-and-forget: a mail problem never affects the decision.
 async function notifyLeaveDecision(leave) {
