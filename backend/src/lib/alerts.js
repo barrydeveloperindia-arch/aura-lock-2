@@ -94,7 +94,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Late staff who are switched on for a personal email and have a plausible address. */
 function lateRecipients(summary) {
-    return summary.late.filter(r => r.lateAlert && r.email && EMAIL_RE.test(r.email));
+    return summary.late.filter(r => r.lateAlert && r.email && EMAIL_RE.test(r.email) && r.department !== 'CEO' && r.department !== 'Guest');
 }
 
 function formatLateStaffEmail(person, date) {

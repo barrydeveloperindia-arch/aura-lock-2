@@ -82,6 +82,12 @@ describe('personal emails to staff', () => {
     test('only late staff who are switched on AND have a valid address get a personal email', () => {
         assert.deepEqual(lateRecipients(s).map(r => r.employee_id), ['EL001']);
     });
+    test('the CEO and guests never get a personal late email', () => {
+        const people = [emp('EL010', 'Boss', { department: 'CEO', email: 'boss@real.com', notify_email: true }), emp('EL011', 'Visitor', { department: 'Guest', email: 'v@real.com', notify_email: true }), emp('EL012', 'Worker', { email: 'w@real.com', notify_email: true })];
+        const att = ['u-EL010', 'u-EL011', 'u-EL012'].map(id => ({ employee_id: id, check_in: '2026-09-18T04:30:00Z', status: 'LATE' }));
+        const sum = buildDailySummary({ date: day, employees: people, attendance: att });
+        assert.deepEqual(lateRecipients(sum).map(r => r.employee_id), ['EL012']);
+    });
     test('the late email is addressed to the person and states the time', () => {
         const m = formatLateStaffEmail(lateRecipients(s)[0], day);
         assert.match(m.subject, /late today \(10:00\)/);
