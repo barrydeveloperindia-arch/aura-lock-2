@@ -212,6 +212,7 @@ app.use('/api/attendance', attendanceRoutes);
 // Leave register + holidays (feeds the monthly report and the absent list)
 app.use('/', require('./src/routes/leaveRoutes'));
 app.use('/', require('./src/routes/auditRoutes'));
+app.use('/', require('./src/routes/alertRoutes'));
 // Activity and Analytics were previously under /api/stats, so we'll mount them explicitly
 app.use('/api/stats', attendanceRoutes);
 
@@ -658,6 +659,7 @@ app.get('/api/users', authenticateToken, isAdmin, async (req, res) => {
             designation, joining_date, last_working_day, pan_number, aadhaar_number,
             date_of_birth, gender, blood_group, father_mother_name, spouse_name, location,
             contact_number, address, bank_name, bank_branch, bank_account_number, bank_ifsc,
+            notify_email,
             image_url, created_at, updated_at, is_deleted,
             face_encodings(id),
             fingerprints(id)
@@ -721,7 +723,8 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
             'designation', 'joining_date', 'last_working_day',
             'pan_number', 'aadhaar_number',
             'date_of_birth', 'gender', 'blood_group', 'father_mother_name', 'spouse_name', 'location',
-            'contact_number', 'address', 'bank_name', 'bank_branch', 'bank_account_number', 'bank_ifsc'
+            'contact_number', 'address', 'bank_name', 'bank_branch', 'bank_account_number', 'bank_ifsc',
+            'notify_email'
         ]);
         
         const updates = Object.fromEntries(
@@ -750,7 +753,7 @@ app.patch('/api/users/:id', authenticateToken, isAdmin, validateIdentity, async 
                 .from('employees')
                 .update(updates)
                 .eq('id', id)
-                .select('id, employee_id, name, email, role, department, company, status, designation, joining_date, last_working_day, pan_number, aadhaar_number, date_of_birth, gender, blood_group, father_mother_name, spouse_name, location, image_url, created_at, updated_at, is_deleted, face_embedding')
+                .select('id, employee_id, name, email, role, department, company, status, designation, joining_date, last_working_day, pan_number, aadhaar_number, date_of_birth, gender, blood_group, father_mother_name, spouse_name, location, notify_email, image_url, created_at, updated_at, is_deleted, face_embedding')
                 .single();
 
             if (error) {

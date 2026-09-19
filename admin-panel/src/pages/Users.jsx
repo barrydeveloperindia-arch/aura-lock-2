@@ -26,7 +26,8 @@ const EMPTY_FORM = {
     name: '', email: '', employee_id: '', department: 'Mechanical Engineering', company: 'Englabs India Pvt Ltd', role: 'employee',
     designation: '', joining_date: '', last_working_day: '', pan_number: '', aadhaar_number: '',
     date_of_birth: '', gender: '', blood_group: '', location: '', father_mother_name: '', spouse_name: '',
-    contact_number: '', address: '', bank_name: '', bank_branch: '', bank_account_number: '', bank_ifsc: ''
+    contact_number: '', address: '', bank_name: '', bank_branch: '', bank_account_number: '', bank_ifsc: '',
+    notify_email: true
 };
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -271,6 +272,15 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
 
                 {mode === 'edit' && (
                     <div className="pt-4 mt-2 border-t border-slate-200">
+                        <label className="flex items-start gap-3 mb-5 cursor-pointer">
+                            <input type="checkbox" checked={form.notify_email !== false}
+                                onChange={e => setForm(f => ({ ...f, notify_email: e.target.checked }))}
+                                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600" />
+                            <span>
+                                <span className="block text-sm font-semibold text-slate-900">Email updates</span>
+                                <span className="block text-xs text-slate-500">Send this person an email when they are marked late, and when their leave is approved or rejected. Uses the email address above.</span>
+                            </span>
+                        </label>
                         <label className="text-xs font-bold text-slate-500 block mb-3">ID Card Photo</label>
                         <p className="text-xs text-slate-500 mb-3 leading-relaxed">
                             Upload a proper passport-style photo to use on the profile and printable ID card, instead of the

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ScanFace, CalendarDays, MapPin, Camera, Server, ShieldCheck, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { apiService } from '../services/api';
+import AlertsCard from '../components/AlertsCard';
 
 /**
  * System settings as they really are: read from the live backend and engine.
@@ -105,6 +106,7 @@ export default function Settings() {
                         {loading && !info ? <div className="text-xs text-slate-600 py-4">Loading…</div> : c.rows.map(([l, v]) => <Row key={l} label={l} value={v} />)}
                     </div>
                 ))}
+                <AlertsCard />
             </div>
         </div>
     );

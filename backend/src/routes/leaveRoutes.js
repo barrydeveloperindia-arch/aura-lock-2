@@ -30,6 +30,8 @@ const supabase = require('../../supabase');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { LEAVE_TYPES, isValidLeaveType, isValidDate, workingDates } = require('../lib/leaves');
 const { logAudit } = require('../lib/audit');
+const { formatLeaveDecisionEmail } = require('../lib/alerts');
+const { emailStaff } = require('../lib/notify');
 
 const router = express.Router();
 const LEAVE_STATUSES = ['Pending', 'Approved', 'Rejected']; // matches the printed Leave Application Form
@@ -128,6 +130,17 @@ router.post('/api/leaves/range', authenticateToken, isAdmin, async (req, res) =>
     } catch (err) { fail(res, err, 'save leave range'); }
 });
 
+// Tell the person their leave was approved/rejected. Fire-and-forget: a mail problem never affects the decision.
+async function notifyLeaveDecision(leave) {
+    try {
+        const { data, error } = await supabase.from('leaves').select('employees(name, email, notify_email)').eq('id', leave.id).maybeSingle();
+        if (error || !data || !data.employees) return;
+        await emailStaff(data.employees, formatLeaveDecisionEmail({
+            name: data.employees.name, date: leave.date, type: leave.type, status: leave.status, approvedBy: leave.approved_by || [], note: leave.note,
+        }));
+    } catch (e) { console.warn('[Leaves] decision email skipped:', e.message); }
+}
+
 router.patch('/api/leaves/:id', authenticateToken, isAdmin, async (req, res) => {
     if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
     const status = String(req.body?.status || '');
@@ -147,6 +160,7 @@ router.patch('/api/leaves/:id', authenticateToken, isAdmin, async (req, res) => 
         if (error) throw error;
         if (!data) return res.status(404).json({ error: 'Leave not found' });
         logAudit(req, { action: 'leave.status', entityType: 'leave', entityId: data.id, entityLabel: `${data.type} on ${data.date}`, changes: { status: { from: null, to: data.status }, ...(patch.approved_by ? { approved_by: { from: null, to: patch.approved_by.join(', ') } } : {}) } });
+        if (data.status === 'Approved' || data.status === 'Rejected') notifyLeaveDecision(data);
         res.json({ leave: data });
     } catch (err) { fail(res, err, 'update leave status'); }
 });
