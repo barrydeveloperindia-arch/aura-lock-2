@@ -79,39 +79,41 @@ export default function Dashboard() {
         };
     }, []);
 
+    const TONES = {
+        blue: { chip: 'bg-blue-50 text-blue-600', bar: 'bg-blue-500' },
+        emerald: { chip: 'bg-emerald-50 text-emerald-600', bar: 'bg-emerald-500' },
+        red: { chip: 'bg-red-50 text-red-600', bar: 'bg-red-500' },
+        amber: { chip: 'bg-amber-50 text-amber-600', bar: 'bg-amber-500' },
+        indigo: { chip: 'bg-indigo-50 text-indigo-600', bar: 'bg-indigo-500' },
+    };
+    const totalEmp = statsData?.total_employees ?? statsData?.totalUsers ?? 0;
+    const presentN = statsData?.present_today ?? statsData?.isPresent ?? 0;
+    const pctOf = (n, d) => (d > 0 ? Math.round((n / d) * 100) : 0);
+
     // ── 5 KPI definitions ──────────────────────────────────────────────────
     const kpis = [
         {
             label: 'Total Employees',
             value: statsData?.total_employees ?? statsData?.totalUsers ?? 0,
-            sub: 'Registered personnel',
+            sub: 'Active on the system',
             icon: Users,
-            gradient: 'from-blue-600/20 to-blue-600/5',
-            border: 'border-blue-500/20',
-            accent: 'text-blue-400',
-            dot: 'bg-blue-500',
+            tone: 'blue',
             to: '/admin/users',
         },
         {
             label: 'Present Today',
             value: statsData?.present_today ?? statsData?.isPresent ?? 0,
-            sub: 'Checked in so far',
+            sub: `${pctOf(presentN, totalEmp)}% of workforce`,
             icon: UserCheck,
-            gradient: 'from-emerald-600/20 to-emerald-600/5',
-            border: 'border-emerald-500/20',
-            accent: 'text-emerald-400',
-            dot: 'bg-emerald-500',
+            tone: 'emerald',
             to: '/admin/attendance',
         },
         {
             label: 'Absent Today',
             value: statsData?.absent_today ?? statsData?.absentToday ?? 0,
-            sub: 'Not yet checked in',
+            sub: `${pctOf(statsData?.absent_today ?? statsData?.absentToday ?? 0, totalEmp)}% not checked in`,
             icon: UserX,
-            gradient: 'from-red-600/20 to-red-600/5',
-            border: 'border-red-500/20',
-            accent: 'text-red-400',
-            dot: 'bg-red-500',
+            tone: 'red',
             to: '/admin/attendance?view=absent',
         },
         {
@@ -119,10 +121,7 @@ export default function Dashboard() {
             value: statsData?.late_today ?? statsData?.lateToday ?? 0,
             sub: 'Arrived after 09:15',
             icon: AlertTriangle,
-            gradient: 'from-amber-600/20 to-amber-600/5',
-            border: 'border-amber-500/20',
-            accent: 'text-amber-400',
-            dot: 'bg-amber-500',
+            tone: 'amber',
             to: '/admin/attendance?status=LATE',
         },
         {
@@ -130,10 +129,7 @@ export default function Dashboard() {
             value: statsData?.total_scans_today ?? statsData?.todayEntries ?? 0,
             sub: 'All biometric events',
             icon: ScanLine,
-            gradient: 'from-indigo-600/20 to-indigo-600/5',
-            border: 'border-indigo-500/20',
-            accent: 'text-indigo-400',
-            dot: 'bg-indigo-500',
+            tone: 'indigo',
             to: '/admin/logs',
         },
     ];
@@ -152,62 +148,51 @@ export default function Dashboard() {
             {/* ── Header ── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-1 md:mb-2 tracking-tighter">Command Center</h1>
-                    <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Operational Oversight // Englabs Attendance Tracker (EAT) v2.4</p>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1 tracking-tight">Command Center</h1>
+                    <p className="text-slate-500 text-sm">Live attendance and access overview &middot; Englabs Attendance Tracker</p>
                 </div>
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${systemOnline ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20'}`}>
-                    <div className={`w-2 h-2 rounded-full ${systemOnline ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                    <span className={`text-[10px] font-black uppercase tracking-widest text-nowrap ${systemOnline ? 'text-emerald-500' : 'text-rose-500'}`}>{systemOnline ? 'System Online' : 'Backend unreachable'}</span>
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${systemOnline ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}>
+                    <div className={`w-2 h-2 rounded-full ${systemOnline ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                    <span className={`text-xs font-semibold text-nowrap ${systemOnline ? 'text-emerald-700' : 'text-rose-700'}`}>{systemOnline ? 'System online' : 'Backend unreachable'}</span>
                 </div>
             </div>
 
             {/* ── 5 KPI Cards ── */}
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
-                {kpis.map((kpi, i) => (
-                    <button key={i} type="button" onClick={() => navigate(kpi.to)}
-                        className={`text-left relative overflow-hidden rounded-2xl bg-gradient-to-br ${kpi.gradient} border ${kpi.border} p-4 sm:p-6
-                                    hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group cursor-pointer`}>
-                        {/* background glow */}
-                        <div className={`absolute -right-4 -top-4 w-16 h-16 sm:-right-6 sm:-top-6 sm:w-24 sm:h-24 rounded-full ${kpi.dot} opacity-5 group-hover:opacity-10 transition-opacity blur-xl`} />
-
-                        {/* icon */}
-                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-black/30 border ${kpi.border} flex items-center justify-center mb-3 sm:mb-4`}>
-                            <kpi.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${kpi.accent}`} />
-                        </div>
-
-                        {/* value */}
-                        <div className={`text-2xl sm:text-4xl font-black tabular-nums ${kpi.accent} mb-0.5 sm:mb-1 transition-transform group-hover:translate-x-0.5`}>
-                            {loading ? (
-                                <div className="w-10 h-6 sm:w-16 sm:h-9 bg-white/5 rounded-lg animate-pulse" />
-                            ) : kpi.value}
-                        </div>
-
-                        {/* label */}
-                        <div className="text-[11px] sm:text-sm font-bold text-slate-900/90 mb-0.5 leading-tight">{kpi.label}</div>
-
-                        {/* sub-label */}
-                        <div className="text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase tracking-[0.15em] leading-tight line-clamp-1">{kpi.sub}</div>
-
-                        {/* live dot */}
-                        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1">
-                            <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${kpi.dot} animate-pulse`} />
-                        </div>
-                    </button>
-                ))}
+                {kpis.map((kpi, i) => {
+                    const t = TONES[kpi.tone];
+                    return (
+                        <button key={i} type="button" onClick={() => navigate(kpi.to)}
+                            className="group text-left rounded-xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 transition cursor-pointer">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs sm:text-sm font-semibold text-slate-600">{kpi.label}</span>
+                                <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${t.chip}`}>
+                                    <kpi.icon className="w-4 h-4" />
+                                </span>
+                            </div>
+                            <div className="text-3xl sm:text-4xl font-bold tabular-nums text-slate-900 leading-none mb-2">
+                                {loading ? <div className="w-14 h-8 bg-slate-100 rounded animate-pulse" /> : kpi.value}
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-slate-500">
+                                <span>{kpi.sub}</span>
+                                <span className="opacity-0 group-hover:opacity-100 transition text-blue-600 font-medium">View &rarr;</span>
+                            </div>
+                        </button>
+                    );
+                })}
 
                 {/* --- Door Status Card --- */}
-                <div className={`relative overflow-hidden rounded-2xl bg-white border-slate-200 p-4 sm:p-6 
-                                hover:scale-[1.02] hover:shadow-lg transition-all duration-300 group`}>
+                <div className="relative overflow-hidden rounded-xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-3 sm:mb-4">
                         <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-50 border-slate-200 flex items-center justify-center`}>
                             {doorStatus === 'Locked' ? <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" /> : <Unlock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 animate-pulse" />}
                         </div>
                         <div className="flex flex-col items-end gap-1">
-                            <div className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded 
+                            <div className={`text-xs font-semibold px-2 py-1 rounded 
                                             ${doorStatus === 'Locked' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
                                 {doorStatus}
                             </div>
-                            <div className={`flex items-center gap-1 text-[7px] sm:text-[8px] font-bold uppercase tracking-widest ${isOnline ? 'text-emerald-500' : 'text-red-500'}`}>
+                            <div className={`flex items-center gap-1 text-xs font-medium ${isOnline ? 'text-emerald-500' : 'text-red-500'}`}>
                                 <div className={`w-1 h-1 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
                                 <span className="hidden sm:inline">{isOnline ? 'Hardware Online' : 'Hardware Offline'}</span>
                                 <span className="sm:hidden">{isOnline ? 'Online' : 'Offline'}</span>
@@ -217,7 +202,7 @@ export default function Dashboard() {
 
                     <div className="mb-3 sm:mb-4">
                         <div className="text-[11px] sm:text-sm font-bold text-slate-900/90 mb-0.5 leading-tight">Door Status</div>
-                        <div className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-tight">
+                        <div className="text-xs text-slate-500 leading-tight">
                             Last Unlock: <span className="text-slate-300">{lastUnlock}</span>
                         </div>
                     </div>
@@ -226,7 +211,7 @@ export default function Dashboard() {
                         onClick={handleRemoteUnlock}
                         disabled={unlocking || doorStatus === 'Unlocked'}
                         className="w-full py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-slate-800 
-                                   rounded-xl text-[9px] sm:text-[10px] font-black text-slate-900 uppercase tracking-widest transition-all
+                                   rounded-xl text-sm font-semibold text-slate-900 transition-all
                                    flex items-center justify-center gap-2 group/btn"
                     >
                         {unlocking ? (
@@ -255,11 +240,11 @@ export default function Dashboard() {
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <Activity className="w-4 h-4 text-blue-400" />
-                                <h2 className="text-lg font-black text-slate-900 tracking-tight">Daily Attendance Trend</h2>
+                                <h2 className="text-base font-semibold text-slate-900">Daily Attendance Trend</h2>
                             </div>
-                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Present vs Late // Last 15 Days</p>
+                            <p className="text-sm text-slate-500">Present vs Late // Last 15 Days</p>
                         </div>
-                        <div className="flex items-center flex-wrap gap-4 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                        <div className="flex items-center flex-wrap gap-4 text-xs font-medium text-slate-500">
                             <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" />Present</div>
                             <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500" />Late</div>
                         </div>
@@ -294,22 +279,22 @@ export default function Dashboard() {
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <BarChart2 className="w-4 h-4 text-indigo-400" />
-                            <h2 className="text-lg font-black text-slate-900 tracking-tight">Monthly Pulse</h2>
+                            <h2 className="text-base font-semibold text-slate-900">Monthly Pulse</h2>
                         </div>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-8">Active Attendance // This vs Last Month</p>
+                        <p className="text-sm text-slate-500 mb-8">Active Attendance // This vs Last Month</p>
                     </div>
 
                     <div className="flex flex-col gap-6">
                         <div>
-                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Current Month</p>
-                            <div className="text-4xl font-black text-slate-900 tabular-nums">{loading ? '—' : analytics?.monthly?.current ?? 0}</div>
-                            <p className="text-[9px] text-slate-500 mt-1">unique attendees</p>
+                            <p className="text-xs font-medium text-slate-500 mb-2">Current Month</p>
+                            <div className="text-4xl font-bold text-slate-900 tabular-nums">{loading ? '—' : analytics?.monthly?.current ?? 0}</div>
+                            <p className="text-xs text-slate-500 mt-1">unique attendees</p>
                         </div>
                         <div className="w-full h-px bg-white/5" />
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Same days last month</p>
-                                <div className="text-2xl font-black text-slate-400 tabular-nums">{loading ? '—' : analytics?.monthly?.previous ?? 0}</div>
+                                <p className="text-xs font-medium text-slate-500 mb-1">Same days last month</p>
+                                <div className="text-2xl font-bold text-slate-500 tabular-nums">{loading ? '—' : analytics?.monthly?.previous ?? 0}</div>
                             </div>
                             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/60 border border-white/5 ${growthColor}`}>
                                 <GrowthIcon className="w-4 h-4" />
@@ -326,11 +311,11 @@ export default function Dashboard() {
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <Building2 className="w-4 h-4 text-purple-400" />
-                            <h2 className="text-lg font-black text-slate-900 tracking-tight">Department Attendance</h2>
+                            <h2 className="text-base font-semibold text-slate-900">Department Attendance</h2>
                         </div>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Present vs Absent // Today's Breakdown</p>
+                        <p className="text-sm text-slate-500">Present vs Absent // Today's Breakdown</p>
                     </div>
-                    <div className="flex items-center flex-wrap gap-4 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                    <div className="flex items-center flex-wrap gap-4 text-xs font-medium text-slate-500">
                         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500" />Present</div>
                         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500" />Absent</div>
                         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-600" />Total</div>
@@ -357,9 +342,9 @@ export default function Dashboard() {
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <Percent className="w-4 h-4 text-teal-400" />
-                            <h2 className="text-lg font-black text-slate-900 tracking-tight">Monthly Attendance Rate</h2>
+                            <h2 className="text-base font-semibold text-slate-900">Monthly Attendance Rate</h2>
                         </div>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">
+                        <p className="text-sm text-slate-500">
                             Unique Attendees as % of Workforce // Last 6 Months
                         </p>
                     </div>
@@ -367,7 +352,7 @@ export default function Dashboard() {
                         <span className="text-[10px] font-black text-teal-400 tabular-nums">
                             {loading ? '—' : `${analytics?.monthlyRate?.[analytics.monthlyRate.length - 1]?.rate ?? 0}%`}
                         </span>
-                        <span className="text-[9px] text-slate-500 font-bold">this month</span>
+                        <span className="text-xs text-slate-500">this month</span>
                     </div>
                 </div>
                 <div className="h-[220px]">
@@ -402,11 +387,11 @@ export default function Dashboard() {
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <Shield className="w-4 h-4 text-slate-400" />
-                            <h2 className="text-lg font-black text-slate-900 tracking-tight">Access Distribution</h2>
+                            <h2 className="text-base font-semibold text-slate-900">Access Distribution</h2>
                         </div>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Biometric Activity // Last 24 Hours</p>
+                        <p className="text-sm text-slate-500">Biometric Activity // Last 24 Hours</p>
                     </div>
-                    <div className="flex items-center flex-wrap gap-4 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                    <div className="flex items-center flex-wrap gap-4 text-xs font-medium text-slate-500">
                         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500" />Face</div>
                         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-purple-500" />Fingerprint</div>
                         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500" />RFID</div>

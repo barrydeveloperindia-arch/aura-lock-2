@@ -8,7 +8,8 @@ import {
     ScanFace, Fingerprint, AlertTriangle, UserX, UserCheck,
     Briefcase, CheckCircle2, Camera, RefreshCw, Loader2,
     ShieldCheck, AlertCircle, Upload, Smartphone,
-    Mail, Calendar, CreditCard, Printer, BadgeCheck
+    Mail, Calendar, CreditCard, Printer, BadgeCheck,
+    ArrowUp, ArrowDown, ChevronsUpDown, Download
 } from 'lucide-react';
 import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 
@@ -938,6 +939,7 @@ export default function Users() {
     const [search, setSearch] = useState('');
     const [companyFilter, setCompanyFilter] = useState('');
     const [departmentFilter, setDepartmentFilter] = useState('');
+    const [sort, setSort] = useState({ key: null, dir: 'asc' });
 
     // Modals
     const [addOpen, setAddOpen] = useState(false);
@@ -990,7 +992,31 @@ export default function Users() {
             (!departmentFilter || u.department === departmentFilter)
         )
         // Resigned/disabled staff sink to the bottom, so the list reads as "who's here now" first.
-        .sort((a, b) => (a.status === 'Disabled') - (b.status === 'Disabled'));
+        .sort((a, b) => {
+            const disabled = (a.status === 'Disabled') - (b.status === 'Disabled');
+            if (disabled || !sort.key) return disabled;
+            const val = (u) => String(u[sort.key] ?? '').toLowerCase();
+            const cmp = val(a).localeCompare(val(b), undefined, { numeric: true });
+            return sort.dir === 'asc' ? cmp : -cmp;
+        });
+
+    const toggleSort = (key) =>
+        setSort(cur => cur.key === key ? { key, dir: cur.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
+
+    const exportCsv = () => {
+        const cols = [
+            ['Sr. No.', (u, i) => i + 1], ['Employee ID', u => u.employee_id], ['Name', u => u.name],
+            ['Company', u => u.company || 'Englabs India Pvt Ltd'], ['Department', u => u.department],
+            ['Designation', u => u.designation], ['Status', u => u.status || 'Active'],
+            ['Joining Date', u => u.joining_date], ['Contact', u => u.contact_number],
+        ];
+        const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+        const csv = [cols.map(c => esc(c[0])).join(','), ...filtered.map((u, i) => cols.map(c => esc(c[1](u, i))).join(','))].join('\r\n');
+        const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+        const a = document.createElement('a');
+        a.href = url; a.download = 'employees.csv'; a.click();
+        URL.revokeObjectURL(url);
+    };
 
     // ── Actions ───────────────────────────────────────────────────────────────
     const handleAdd = async (form) => {
@@ -1087,13 +1113,13 @@ export default function Users() {
             {/* ── Header ── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 mb-2 tracking-tighter">Personnel Management</h1>
-                    <p className="text-slate-500 text-sm font-medium uppercase tracking-[0.2em]">
-                        {users.length} Employees // Biometric Access Control
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1 tracking-tight">Personnel Management</h1>
+                    <p className="text-slate-500 text-sm">
+                        {users.length} people &middot; biometric access control
                     </p>
                 </div>
                 <button onClick={() => setAddOpen(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-slate-900 text-sm font-black rounded-xl transition-all shadow-lg shadow-blue-600/20">
+                    className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
                     <UserPlus className="w-4 h-4" /> Add Employee
                 </button>
             </div>
@@ -1101,22 +1127,22 @@ export default function Users() {
             {/* ── Stat Cards ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'Total', value: users.length, color: 'text-emerald-500' },
-                    { label: 'Active', value: users.filter(u => u.status === 'Active' || !u.status).length, color: 'text-emerald-400' },
-                    { label: 'Face Enrolled', value: users.filter(u => u.face_embedding || u.face_registered).length, color: 'text-indigo-400' },
-                    { label: 'FP Enrolled', value: users.filter(u => u.fingerprint_registered).length, color: 'text-violet-400' },
+                    { label: 'Total people', value: users.length },
+                    { label: 'Active', value: users.filter(u => u.status === 'Active' || !u.status).length },
+                    { label: 'Face enrolled', value: users.filter(u => u.face_embedding || u.face_registered).length },
+                    { label: 'Fingerprint enrolled', value: users.filter(u => u.fingerprint_registered).length },
                 ].map(s => (
-                    <div key={s.label} className="p-5 rounded-2xl bg-white border-slate-200">
-                        <div className={`text-2xl font-black tabular-nums ${s.color}`}>{loading ? '—' : s.value}</div>
-                        <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">{s.label}</div>
+                    <div key={s.label} className="p-4 sm:p-5 rounded-xl bg-white border border-slate-200 shadow-sm">
+                        <div className="text-xs font-semibold text-slate-500 mb-1.5">{s.label}</div>
+                        <div className="text-2xl sm:text-3xl font-bold tabular-nums text-slate-900 leading-none">{loading ? '—' : s.value}</div>
                     </div>
                 ))}
             </div>
 
             {/* ── Table ── */}
-            <div className="rounded-3xl bg-white border-slate-200 overflow-hidden">
+            <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
                 {/* Search + Filters */}
-                <div className="px-8 py-5 border-b border-slate-200 flex items-center gap-3 flex-wrap">
+                <div className="px-4 md:px-6 py-4 border-b border-slate-200 flex items-center gap-3 flex-wrap">
                     <div className="relative flex-1 min-w-[180px] max-w-sm">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600" />
                         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -1142,37 +1168,68 @@ export default function Users() {
                             Reset
                         </button>
                     )}
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-auto">
+                    <span className="text-sm text-slate-500 ml-auto tabular-nums">
                         {filtered.length} results
                     </span>
+                    <button onClick={exportCsv} disabled={filtered.length === 0}
+                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 transition-colors">
+                        <Download className="w-4 h-4" /> Export CSV
+                    </button>
                 </div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-50">
-                                <th className="px-4 md:px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Employee</th>
-                                <th className="hidden md:table-cell px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Department</th>
-                                <th className="px-4 md:px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</th>
-                                <th className="hidden lg:table-cell px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Biometrics</th>
-                                <th className="hidden xl:table-cell px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Created / Joined</th>
-                                <th className="px-4 md:px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Actions</th>
+                                <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 hidden md:table-cell w-16">Sr. No.</th>
+                                <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 hidden sm:table-cell" aria-sort={sort.key === 'employee_id' ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                                    <button onClick={() => toggleSort('employee_id')} className="inline-flex items-center gap-1 hover:text-slate-900">
+                                        Employee ID
+                                        {sort.key === 'employee_id' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-400" />}
+                                    </button>
+                                </th>
+                                <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10" aria-sort={sort.key === 'name' ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                                    <button onClick={() => toggleSort('name')} className="inline-flex items-center gap-1 hover:text-slate-900">
+                                        Employee
+                                        {sort.key === 'name' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-400" />}
+                                    </button>
+                                </th>
+                                <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 hidden md:table-cell" aria-sort={sort.key === 'department' ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                                    <button onClick={() => toggleSort('department')} className="inline-flex items-center gap-1 hover:text-slate-900">
+                                        Department
+                                        {sort.key === 'department' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-400" />}
+                                    </button>
+                                </th>
+                                <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10" aria-sort={sort.key === 'status' ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                                    <button onClick={() => toggleSort('status')} className="inline-flex items-center gap-1 hover:text-slate-900">
+                                        Status
+                                        {sort.key === 'status' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-400" />}
+                                    </button>
+                                </th>
+                                <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 hidden lg:table-cell">Biometrics</th>
+                                <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 hidden xl:table-cell" aria-sort={sort.key === 'joining_date' ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                                    <button onClick={() => toggleSort('joining_date')} className="inline-flex items-center gap-1 hover:text-slate-900">
+                                        Joined
+                                        {sort.key === 'joining_date' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-400" />}
+                                    </button>
+                                </th>
+                                <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
                             {loading ? (
                                 [1, 2, 3, 4].map(i => (
                                     <tr key={i} className="animate-pulse">
-                                        <td colSpan={6} className="px-8 py-5">
+                                        <td colSpan={8} className="px-8 py-5">
                                             <div className="h-10 bg-slate-100 rounded-xl" />
                                         </td>
                                     </tr>
                                 ))
                             ) : error ? (
-                                <tr><td colSpan={6} className="px-8 py-16 text-center text-red-400 font-bold">{error}</td></tr>
+                                <tr><td colSpan={8} className="px-8 py-16 text-center text-red-400 font-bold">{error}</td></tr>
                             ) : filtered.length === 0 ? (
-                                <tr><td colSpan={6} className="px-8 py-16 text-center text-slate-600 font-semibold">No employees found.</td></tr>
-                            ) : filtered.map(user => {
+                                <tr><td colSpan={8} className="px-8 py-16 text-center text-slate-600 font-semibold">No employees found.</td></tr>
+                            ) : filtered.map((user, idx) => {
                                 const isActioning = actionLoading === user.id;
                                 const isDisabled = user.status === 'Disabled';
                                 const initials = (user.name || '?').slice(0, 2).toUpperCase();
@@ -1186,8 +1243,11 @@ export default function Users() {
                                     <tr key={user.id}
                                         className={`group transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-slate-50'}`}>
 
+                                        <td className="hidden md:table-cell px-4 md:px-6 py-3 text-sm text-slate-500 tabular-nums">{idx + 1}</td>
+                                        <td className="hidden sm:table-cell px-4 md:px-6 py-3 text-sm font-mono text-slate-700">{user.employee_id || '—'}</td>
+
                                         {/* Employee */}
-                                        <td className="px-4 md:px-8 py-4">
+                                        <td className="px-4 md:px-6 py-3">
                                             <button onClick={() => setProfileTarget(user)} title="View full profile"
                                                 className="flex items-center gap-3 text-left group/row">
                                                 <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/30 to-indigo-600/30 border border-blue-500/20 flex items-center justify-center text-[10px] md:text-xs font-black text-emerald-500 overflow-hidden">
@@ -1196,33 +1256,33 @@ export default function Users() {
                                                         : initials}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <div className="text-sm font-bold text-slate-900 truncate group-hover/row:text-blue-600 transition-colors">{user.name}</div>
-                                                    <div className="text-[9px] md:text-[10px] text-slate-500 font-mono truncate">{user.employee_id || user.email}</div>
+                                                    <div className="text-sm font-semibold text-slate-900 truncate group-hover/row:text-blue-600 transition-colors">{user.name}</div>
+                                                    <div className="text-xs text-slate-500 truncate sm:hidden">{user.employee_id || user.email}</div>
                                                 </div>
                                             </button>
                                         </td>
                                         
                                         {/* Department */}
-                                        <td className="hidden md:table-cell px-8 py-4">
+                                        <td className="hidden md:table-cell px-4 md:px-6 py-3">
                                             {user.company && user.company !== 'Englabs India Pvt Ltd' && (
-                                                <div className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-0.5">{user.company}</div>
+                                                <div className="text-xs font-semibold text-amber-700 mb-0.5">{user.company}</div>
                                             )}
-                                            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
+                                            <div className="flex items-center gap-1.5 text-sm text-slate-700">
                                                 <Briefcase className="w-3 h-3 text-slate-600" />
                                                 {user.department || 'General'}
                                             </div>
                                             {user.designation && (
-                                                <div className="text-[10px] text-slate-500 mt-0.5 truncate">{user.designation}</div>
+                                                <div className="text-xs text-slate-500 mt-0.5 truncate">{user.designation}</div>
                                             )}
                                         </td>
 
                                         {/* Status */}
-                                        <td className="px-4 md:px-8 py-4">
+                                        <td className="px-4 md:px-6 py-3">
                                             <StatusBadge status={user.status || 'Active'} />
                                         </td>
 
                                         {/* Biometrics */}
-                                        <td className="hidden lg:table-cell px-8 py-4">
+                                        <td className="hidden lg:table-cell px-4 md:px-6 py-3">
                                             <BiometricsCell
                                                 user={user}
                                                 onEnrollFace={u => setFaceTarget(u)}
@@ -1231,15 +1291,13 @@ export default function Users() {
                                         </td>
 
                                         {/* Created */}
-                                        <td className="hidden xl:table-cell px-8 py-4">
-                                            <span className="text-xs text-slate-500 tabular-nums">{createdAt}</span>
-                                            {joinedAt && (
-                                                <div className="text-[10px] text-slate-600 tabular-nums mt-0.5">Joined {joinedAt}</div>
-                                            )}
+                                        <td className="hidden xl:table-cell px-4 md:px-6 py-3">
+                                            <span className="text-sm text-slate-700 tabular-nums">{joinedAt || '—'}</span>
+                                            <div className="text-xs text-slate-500 tabular-nums mt-0.5">Added {createdAt}</div>
                                         </td>
 
                                         {/* Actions */}
-                                        <td className="px-4 md:px-8 py-4 text-right">
+                                        <td className="px-4 md:px-6 py-3 text-right">
                                             <div className="flex items-center justify-end gap-0.5 md:gap-1">
                                                 <button onClick={() => setCardTarget(user)} title="Print ID Card"
                                                     className="p-1.5 md:p-2 rounded-lg hover:bg-indigo-500/10 text-slate-500 hover:text-indigo-500 transition-all">
