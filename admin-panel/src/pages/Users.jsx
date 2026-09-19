@@ -9,7 +9,7 @@ import {
     Briefcase, CheckCircle2, Camera, RefreshCw, Loader2,
     ShieldCheck, AlertCircle, Upload, Smartphone,
     Mail, Calendar, CreditCard, Printer, BadgeCheck,
-    ArrowUp, ArrowDown, ChevronsUpDown, Download
+    ArrowUp, ArrowDown, ChevronsUpDown, Download, Eye, EyeOff
 } from 'lucide-react';
 import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 
@@ -67,7 +67,7 @@ function Modal({ open, onClose, children, maxW = 'max-w-lg' }) {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" onClick={onClose}>
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-            <div className={`relative z-10 w-full ${maxW} bg-[#0a0f1e] border border-slate-200 rounded-xl shadow-2xl p-5 md:p-8 max-h-[90vh] overflow-y-auto`}
+            <div className={`relative z-10 w-full ${maxW} bg-white border border-slate-200 rounded-xl shadow-2xl p-5 md:p-8 max-h-[90vh] overflow-y-auto`}
                 onClick={e => e.stopPropagation()}>
                 {children}
             </div>
@@ -84,15 +84,15 @@ function DeleteDialog({ user, onConfirm, onCancel }) {
                     <AlertTriangle className="w-8 h-8 text-red-600" />
                 </div>
                 <div>
-                    <h2 className="text-xl font-bold text-white mb-2">Deactivate employee</h2>
+                    <h2 className="text-xl font-bold text-slate-900 mb-2">Deactivate employee</h2>
                     <p className="text-sm text-slate-600 leading-relaxed">
-                        <span className="text-white font-bold">{user?.name}</span> will be hidden from all lists and can no longer
+                        <span className="text-slate-900 font-bold">{user?.name}</span> will be hidden from all lists and can no longer
                         check in or unlock the door. Attendance history and photos are kept for records.
                     </p>
                 </div>
                 <div className="flex gap-3 w-full pt-2">
                     <button onClick={onCancel}
-                        className="flex-1 py-3 rounded-xl border border-white/10 text-slate-600 hover:text-white hover:border-white/20 text-sm font-bold transition-all">
+                        className="flex-1 py-3 rounded-xl border border-slate-300 text-slate-600 hover:text-slate-900 hover:border-slate-300 text-sm font-bold transition-all">
                         Cancel
                     </button>
                     <button onClick={onConfirm}
@@ -153,7 +153,7 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
             <input type={type} value={form[key] || ''}
                 onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                 placeholder={placeholder}
-                className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-white
+                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900
                            focus:outline-none focus:border-blue-500/40 transition-colors placeholder:text-slate-700" />
         </div>
     );
@@ -161,8 +161,8 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
     return (
         <Modal open onClose={onClose}>
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold text-white">{mode === 'add' ? 'Add Employee' : 'Edit Employee'}</h2>
-                <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+                <h2 className="text-lg font-bold text-slate-900">{mode === 'add' ? 'Add Employee' : 'Edit Employee'}</h2>
+                <button onClick={onClose} className="text-slate-500 hover:text-slate-900 transition-colors"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={e => handleSubmit(e)} className="space-y-4">
                 {field('Full Name', 'name', 'text', 'e.g. Rahul Sharma')}
@@ -175,7 +175,7 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                         value={form.department || ''}
                         onChange={e => setForm(f => ({ ...f, department: e.target.value }))}
                         placeholder="Select or type department"
-                        className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-white
+                        className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900
                                    focus:outline-none focus:border-blue-500/40 transition-colors placeholder:text-slate-700" 
                     />
                     <datalist id="departments-list">
@@ -189,7 +189,7 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                         value={form.company || ''}
                         onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
                         placeholder="Which Disha Arcade tenant — defaults to Englabs"
-                        className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-white
+                        className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900
                                    focus:outline-none focus:border-blue-500/40 transition-colors placeholder:text-slate-700"
                     />
                     <datalist id="companies-list">
@@ -240,7 +240,7 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                 
                 <div className="flex gap-3 pt-2">
                     <button type="button" onClick={onClose}
-                        className="flex-1 py-3 rounded-xl border border-white/10 text-slate-600 hover:text-white text-sm font-bold transition-all">
+                        className="flex-1 py-3 rounded-xl border border-slate-300 text-slate-600 hover:text-slate-900 text-sm font-bold transition-all">
                         Cancel
                     </button>
                     <button type="submit" disabled={saving}
@@ -411,12 +411,12 @@ function FaceEnrollModal({ user, onDone, onClose }) {
         <Modal open onClose={onClose} maxW="max-w-2xl">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                         <ScanFace className="w-5 h-5 text-blue-600" /> Enroll Face
                     </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Enrolling biometric identity for <span className="text-white font-bold">{user.name}</span></p>
+                    <p className="text-xs text-slate-500 mt-0.5">Enrolling biometric identity for <span className="text-slate-900 font-bold">{user.name}</span></p>
                 </div>
-                <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+                <button onClick={onClose} className="text-slate-500 hover:text-slate-900 transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -540,21 +540,21 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
     return (
         <Modal open onClose={onClose} maxW="max-w-xl">
             {/* Cover banner + overlapping avatar */}
-            <div className="-m-5 md:-m-8 mb-0 relative">
-                <div className="h-20 md:h-24 rounded-t-3xl bg-gradient-to-r from-blue-600/25 via-indigo-600/15 to-transparent relative overflow-hidden">
-                    <BrandLogo variant="mark" className="absolute -right-4 -top-4 w-28 h-28 opacity-[0.08]" />
+            <div className="-m-5 md:-m-8 mb-0 md:mb-0 relative">
+                <div className="h-20 md:h-24 rounded-t-xl bg-gradient-to-r from-blue-100 via-indigo-50 to-white relative overflow-hidden">
+                    <BrandLogo variant="mark" className="absolute -right-4 -top-4 w-28 h-28 opacity-[0.12]" />
                 </div>
                 <button onClick={onClose}
-                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm flex items-center justify-center text-slate-500 hover:text-white transition-colors">
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors">
                     <X className="w-4 h-4" />
                 </button>
-                <div className="px-5 md:px-8 -mt-10 flex items-end gap-4 pb-5">
-                    <div className="w-20 h-20 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/40 to-indigo-600/40 border-4 border-[#0a0f1e] flex items-center justify-center text-xl font-bold text-emerald-600 overflow-hidden shadow-xl">
+                <div className="relative px-5 md:px-8 -mt-10 flex items-end gap-4 pb-5">
+                    <div className="w-20 h-20 shrink-0 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 border-4 border-white flex items-center justify-center text-xl font-bold text-blue-700 overflow-hidden shadow-xl">
                         {photoUrl ? <img src={photoUrl} alt="" className="w-full h-full object-cover" /> : (user.name || '?').slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0 pb-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                            <h2 className="text-xl font-bold text-white truncate">{user.name}</h2>
+                            <h2 className="text-xl font-bold text-slate-900 truncate">{user.name}</h2>
                             <StatusBadge status={user.status || 'Active'} />
                         </div>
                         <p className="text-xs text-slate-500 font-mono mt-0.5">{user.employee_id} · {user.designation || user.department || 'General'}</p>
@@ -600,8 +600,8 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
                 <div className="pt-4 border-t border-slate-200">
                     <SectionHeading icon={CreditCard}>Government ID</SectionHeading>
                     <div className="grid grid-cols-2 gap-4">
-                        <InfoRow label="PAN Number" value={user.pan_number || 'Not added'} mono />
-                        <InfoRow label="Aadhaar Number" value={user.aadhaar_number || 'Not added'} mono />
+                        <SensitiveRow label="PAN Number" value={user.pan_number} />
+                        <SensitiveRow label="Aadhaar Number" value={user.aadhaar_number} />
                     </div>
                 </div>
 
@@ -618,7 +618,7 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
                     <div className="grid grid-cols-2 gap-4">
                         <InfoRow label="Bank Name" value={user.bank_name || 'Not added'} />
                         <InfoRow label="Branch" value={user.bank_branch || 'Not added'} />
-                        <InfoRow label="Account Number" value={user.bank_account_number || 'Not added'} mono />
+                        <SensitiveRow label="Account Number" value={user.bank_account_number} />
                         <InfoRow label="IFSC" value={user.bank_ifsc || 'Not added'} mono />
                     </div>
                 </div>
@@ -638,11 +638,11 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
 
             <div className="flex gap-3 pt-6 mt-2">
                 <button onClick={onClose}
-                    className="py-3 px-4 rounded-xl border border-white/10 text-slate-600 hover:text-white text-sm font-bold transition-all">
+                    className="py-3 px-4 rounded-xl border border-slate-300 text-slate-600 hover:text-slate-900 text-sm font-bold transition-all">
                     Close
                 </button>
                 <button onClick={() => onViewCard(user)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 hover:bg-white/[0.1] border border-white/10 text-white text-sm font-bold transition-all">
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-900 text-sm font-bold transition-all">
                     <BadgeCheck className="w-4 h-4" /> ID Card
                 </button>
                 <button onClick={() => onEdit(user)}
@@ -672,8 +672,8 @@ function IdCardModal({ user, photoUrl, onClose }) {
             `}</style>
 
             <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-bold text-white">Employee ID Card</h2>
-                <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+                <h2 className="text-lg font-bold text-slate-900">Employee ID Card</h2>
+                <button onClick={onClose} className="text-slate-500 hover:text-slate-900 transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
             {/* Printable card, sized to a real CR80 ID card (3.375in x 2.125in) */}
@@ -759,7 +759,7 @@ function IdCardModal({ user, photoUrl, onClose }) {
 
             <div className="flex gap-3 pt-6">
                 <button onClick={onClose}
-                    className="flex-1 py-3 rounded-xl border border-white/10 text-slate-600 hover:text-white text-sm font-bold transition-all">
+                    className="flex-1 py-3 rounded-xl border border-slate-300 text-slate-600 hover:text-slate-900 text-sm font-bold transition-all">
                     Close
                 </button>
                 <button onClick={() => window.print()}
@@ -774,8 +774,36 @@ function IdCardModal({ user, photoUrl, onClose }) {
 function InfoRow({ label, value, mono = false }) {
     return (
         <div>
-            <div className="text-xs font-bold text-slate-600 mb-0.5">{label}</div>
-            <div className={`text-sm font-bold text-white ${mono ? 'font-mono text-slate-500' : ''}`}>{value}</div>
+            <div className="text-xs font-semibold text-slate-600 mb-0.5">{label}</div>
+            <div className={`text-sm font-semibold text-slate-900 ${mono ? 'font-mono' : ''}`}>{value}</div>
+        </div>
+    );
+}
+
+// Sensitive identifiers (Aadhaar, PAN, bank account) stay masked until someone chooses to reveal them.
+function maskValue(v) {
+    const chars = [...String(v)];
+    let seen = 0;
+    for (let i = chars.length - 1; i >= 0; i--) {
+        if (/[A-Za-z0-9]/.test(chars[i])) { if (seen >= 4) chars[i] = '•'; seen++; }
+    }
+    return chars.join('');
+}
+
+function SensitiveRow({ label, value }) {
+    const [shown, setShown] = useState(false);
+    if (!value) return <InfoRow label={label} value="Not added" mono />;
+    return (
+        <div>
+            <div className="text-xs font-semibold text-slate-600 mb-0.5">{label}</div>
+            <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-slate-900 font-mono">{shown ? value : maskValue(value)}</span>
+                <button type="button" onClick={() => setShown(v => !v)}
+                    aria-label={shown ? `Hide ${label}` : `Show ${label}`} title={shown ? 'Hide' : 'Show'}
+                    className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-100">
+                    {shown ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+            </div>
         </div>
     );
 }
@@ -805,12 +833,12 @@ function FingerprintEnrollModal({ user, onDone, onClose }) {
         <Modal open onClose={onClose}>
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                         <Fingerprint className="w-5 h-5 text-violet-600" /> Enroll Fingerprint
                     </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Biometric enrollment for <span className="text-white font-bold">{user.name}</span></p>
+                    <p className="text-xs text-slate-500 mt-0.5">Biometric enrollment for <span className="text-slate-900 font-bold">{user.name}</span></p>
                 </div>
-                <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+                <button onClick={onClose} className="text-slate-500 hover:text-slate-900 transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="flex flex-col items-center gap-6 py-4">
@@ -837,9 +865,9 @@ function FingerprintEnrollModal({ user, onDone, onClose }) {
                         </>
                     ) : (
                         <>
-                            <p className="text-base font-bold text-white">Confirm Fingerprint Enrollment</p>
+                            <p className="text-base font-bold text-slate-900">Confirm Fingerprint Enrollment</p>
                             <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
-                                This will mark <span className="text-white">{user.name}</span>'s fingerprint as registered.
+                                This will mark <span className="text-slate-900">{user.name}</span>'s fingerprint as registered.
                                 The actual fingerprint capture happens at the physical terminal device.
                             </p>
                         </>
@@ -855,11 +883,11 @@ function FingerprintEnrollModal({ user, onDone, onClose }) {
                 {!done && (
                     <div className="flex gap-3 w-full">
                         <button onClick={onClose}
-                            className="flex-1 py-3 rounded-xl border border-white/10 text-slate-600 hover:text-white text-sm font-bold transition-all">
+                            className="flex-1 py-3 rounded-xl border border-slate-300 text-slate-600 hover:text-slate-900 text-sm font-bold transition-all">
                             Cancel
                         </button>
                         <button onClick={enroll} disabled={loading}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-bold transition-all shadow-lg shadow-violet-600/20">
+                            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-slate-900 text-sm font-bold transition-all shadow-lg shadow-violet-600/20">
                             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Fingerprint className="w-4 h-4" />}
                             {loading ? 'Enrolling…' : 'Confirm Enroll'}
                         </button>
