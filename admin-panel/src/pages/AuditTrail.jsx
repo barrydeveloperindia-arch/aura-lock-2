@@ -13,6 +13,7 @@ const ACTION_LABELS = {
     'leave.add': { label: 'Leave added', tone: 'bg-violet-50 text-violet-700 border-violet-200' },
     'leave.status': { label: 'Leave decision', tone: 'bg-amber-50 text-amber-800 border-amber-200' },
     'leave.delete': { label: 'Leave removed', tone: 'bg-red-50 text-red-700 border-red-200' },
+    'absence.notice': { label: 'Absence notice sent', tone: 'bg-amber-50 text-amber-800 border-amber-200' },
 };
 
 const FIELD_LABELS = {
@@ -21,7 +22,7 @@ const FIELD_LABELS = {
     date_of_birth: 'Date of birth', gender: 'Gender', blood_group: 'Blood group', father_mother_name: 'Father / mother',
     spouse_name: 'Spouse', location: 'Location', contact_number: 'Contact', address: 'Address', bank_name: 'Bank',
     bank_branch: 'Branch', bank_account_number: 'Account number', bank_ifsc: 'IFSC', employee_id: 'Employee ID',
-    profile_photo: 'ID card photo', date: 'Date', type: 'Type', approved_by: 'Approved by', days: 'Days', from: 'From', to: 'To',
+    profile_photo: 'ID card photo', notice: 'Notice', date: 'Date', type: 'Type', approved_by: 'Approved by', days: 'Days', from: 'From', to: 'To',
 };
 
 const show = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
@@ -85,6 +86,7 @@ export default function AuditTrail() {
                         <option value="">All records</option>
                         <option value="employee">Employees</option>
                         <option value="leave">Leaves</option>
+                        <option value="absence">Absence notices</option>
                     </select>
                     <span className="text-sm text-slate-500 ml-auto tabular-nums">{loading ? 'Loading…' : `${entries.length} entries`}</span>
                 </div>

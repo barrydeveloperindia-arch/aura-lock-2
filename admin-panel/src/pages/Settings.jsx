@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScanFace, CalendarDays, MapPin, Camera, Server, ShieldCheck, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { apiService } from '../services/api';
 import AlertsCard from '../components/AlertsCard';
+import AbsenceNoticesCard from '../components/AbsenceNoticesCard';
 
 /**
  * System settings as they really are: read from the live backend and engine.
@@ -107,6 +108,7 @@ export default function Settings() {
                     </div>
                 ))}
                 <AlertsCard />
+                <AbsenceNoticesCard />
             </div>
         </div>
     );

@@ -176,6 +176,8 @@ export const apiService = {
     // Leave register + holidays
     getLeaveTypes: async () => (await api.get('/api/leaves/types')).data,
     getLeaveApprovers: async () => (await api.get('/api/leaves/approvers')).data,
+    getAbsenceNotices: async (date) => (await api.get('/api/absence-notices', { params: date ? { date } : {} })).data,
+    sendAbsenceNotice: async (employee_id, date) => (await api.post('/api/absence-notices/send', { employee_id, date })).data,
     getAlertConfig: async () => (await api.get('/api/alerts/config')).data,
     runDailyAlert: async ({ dry } = {}) => (await api.post('/api/alerts/daily', null, { params: dry ? { dry: 1 } : {} })).data,
     getAuditLog: async (params) => (await api.get('/api/audit-log', { params })).data,

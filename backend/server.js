@@ -213,6 +213,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/', require('./src/routes/leaveRoutes'));
 app.use('/', require('./src/routes/auditRoutes'));
 app.use('/', require('./src/routes/alertRoutes'));
+app.use('/', require('./src/routes/absenceRoutes'));
 // Activity and Analytics were previously under /api/stats, so we'll mount them explicitly
 app.use('/api/stats', attendanceRoutes);
 

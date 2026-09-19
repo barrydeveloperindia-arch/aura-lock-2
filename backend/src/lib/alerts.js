@@ -149,6 +149,34 @@ function formatLeaveRequestEmail({ name, employee_id, type, from, to, days, note
     return { subject, text, html };
 }
 
+function formatAbsenceNoticeEmail({ name, date, amount }) {
+    const d = prettyDate(date);
+    const first = String(name).split(' ')[0];
+    const subject = `Notice: absence without approved leave on ${d}`;
+    const text = [
+        `Dear ${first},`,
+        '',
+        `Our attendance records show that you were absent on ${d}, and there was no approved leave on record for that day.`,
+        '',
+        `As per company policy, an absence without prior intimation and approval attracts a fine of Rs. ${amount}.`,
+        '',
+        'If you believe this is incorrect (for example, you had approved leave or there was a problem with the attendance scan), please contact the office at the earliest so that the record can be reviewed.',
+        '',
+        'Regards,',
+        'Management',
+        'Englabs India Pvt Ltd',
+        '(Sent via the Englabs Attendance system)',
+    ].join('\n');
+    const html = `<div style="max-width:560px;font:15px/1.6 Arial,sans-serif;color:#0f172a;padding:16px">
+      <p>Dear ${esc(first)},</p>
+      <p>Our attendance records show that you were <b>absent on ${esc(d)}</b>, and there was no approved leave on record for that day.</p>
+      <p>As per company policy, an absence without prior intimation and approval attracts a fine of <b>Rs. ${esc(amount)}</b>.</p>
+      <p>If you believe this is incorrect (for example, you had approved leave or there was a problem with the attendance scan), please contact the office at the earliest so that the record can be reviewed.</p>
+      <p>Regards,<br>Management<br>Englabs India Pvt Ltd</p>
+      <p style="color:#94a3b8;font-size:12px">Sent via the Englabs Attendance system</p></div>`;
+    return { subject, text, html };
+}
+
 const LEAVE_NAMES = { CL: 'Casual leave', SL: 'Sick leave', EL: 'Emergency leave', UWL: 'Urgent work leave', OTH: 'Leave' };
 
 function formatLeaveDecisionEmail({ name, date, type, status, approvedBy = [], note }) {
@@ -178,4 +206,4 @@ function formatLeaveDecisionEmail({ name, date, type, status, approvedBy = [], n
     return { subject, text, html };
 }
 
-module.exports = { buildDailySummary, formatEmail, formatLateStaffEmail, formatLeaveDecisionEmail, formatLeaveRequestEmail, lateRecipients, isPlausibleEmail: (e) => EMAIL_RE.test(String(e || '')), prettyDate };
+module.exports = { buildDailySummary, formatEmail, formatLateStaffEmail, formatLeaveDecisionEmail, formatLeaveRequestEmail, formatAbsenceNoticeEmail, lateRecipients, isPlausibleEmail: (e) => EMAIL_RE.test(String(e || '')), prettyDate };

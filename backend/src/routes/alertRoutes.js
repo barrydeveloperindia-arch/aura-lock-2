@@ -10,12 +10,12 @@
  */
 const crypto = require('crypto');
 const express = require('express');
-const supabase = require('../../supabase');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 const { istDateString, istClock } = require('../lib/attendanceTime');
 const { isValidDate } = require('../lib/leaves');
 const { buildDailySummary, formatEmail, formatLateStaffEmail, lateRecipients } = require('../lib/alerts');
 const mailer = require('../lib/mailer');
+const { loadDay } = require('../lib/dayData');
 
 const router = express.Router();
 const SCHEDULE_TEXT = '09:45 IST, Monday to Saturday (Sundays and holidays skipped)';
@@ -29,23 +29,6 @@ function allow(req, res, next) {
     const key = process.env.ALERT_CRON_KEY;
     if (key && req.headers['x-alert-key'] && safeEqual(req.headers['x-alert-key'], key)) return next();
     return authenticateToken(req, res, () => isAdmin(req, res, next));
-}
-
-async function loadDay(date) {
-    const empQuery = (cols) => supabase.from('employees').select(cols).eq('is_deleted', false).eq('status', 'Active');
-    let empRes = await empQuery('id, employee_id, name, department, company, email, notify_email');
-    // Before migration_v21 is run the column does not exist: alerts still work, just without personal emails.
-    if (empRes.error) empRes = await empQuery('id, employee_id, name, department, company, email');
-    const [emps, att, lv, hol] = await Promise.all([
-        Promise.resolve(empRes),
-        supabase.from('attendance').select('employee_id, check_in, status').eq('date', date).not('check_in', 'is', null),
-        supabase.from('leaves').select('employee_id, type, status').eq('date', date),
-        supabase.from('holidays').select('date, name').eq('date', date),
-    ]);
-    if (emps.error) throw emps.error;
-    if (att.error) throw att.error;
-    // Leave/holiday tables may not exist yet on a fresh database: alerts still work without them.
-    return { employees: emps.data || [], attendance: att.data || [], leaves: lv.error ? [] : (lv.data || []), holidays: hol.error ? [] : (hol.data || []) };
 }
 
 router.get('/api/alerts/config', authenticateToken, isAdmin, (req, res) => {
