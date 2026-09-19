@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { toggleTheme, getTheme } from '../lib/theme';
 import { NavLink } from 'react-router-dom';
 import { apiService } from '../services/api';
 import BrandLogo from './BrandLogo';
@@ -18,6 +19,8 @@ import {
     Building2,
     Search,
     History,
+    Moon,
+    Sun,
     X
 } from 'lucide-react';
 
@@ -37,6 +40,7 @@ const menuItems = [
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
+    const [theme, setTheme] = useState(getTheme());
     const user = JSON.parse(localStorage.getItem('aura_user') || '{}');
 
     return (
@@ -100,6 +104,13 @@ export default function Sidebar({ isOpen, onClose }) {
                         <div className="text-[11px] font-medium text-slate-500 truncate">System Administrator</div>
                     </div>
                 </div>
+                <button
+                    onClick={() => setTheme(toggleTheme())}
+                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 mb-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all text-xs font-bold"
+                >
+                    {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />} {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                </button>
                 <button
                     onClick={() => apiService.logout()}
                     className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all text-xs font-bold"

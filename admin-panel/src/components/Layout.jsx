@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { syncConsoleTheme } from '../lib/theme';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { Menu } from 'lucide-react';
@@ -7,6 +8,7 @@ import CommandPalette from './CommandPalette';
 
 export default function Layout() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    useEffect(() => syncConsoleTheme(), []);
 
     return (
         <div className="flex min-h-screen bg-[#f8fafc] text-slate-800 font-sans">
