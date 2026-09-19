@@ -2,7 +2,7 @@
  * Audit trail: who changed what. Writing is best-effort — a missing table or a DB hiccup must
  * never fail the admin action that triggered it. Sensitive identifiers are stored masked.
  */
-const supabase = require('../../supabase');
+const supabase = require('./adminDb');
 
 const SENSITIVE = new Set(['pan_number', 'aadhaar_number', 'bank_account_number']);
 const IGNORED = new Set(['face_embedding', 'updated_at', 'fingerprint_registered', 'face_registered']);

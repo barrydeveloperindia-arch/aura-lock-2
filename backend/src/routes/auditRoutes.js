@@ -4,7 +4,7 @@
  * route answers 503 with that hint (same pattern as the leave register).
  */
 const express = require('express');
-const supabase = require('../../supabase');
+const supabase = require('../lib/adminDb');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 
 const router = express.Router();
