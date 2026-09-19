@@ -6,7 +6,8 @@ const mailer = require('./mailer');
 const { isPlausibleEmail } = require('./alerts');
 
 function canNotify(employee) {
-    return Boolean(employee && employee.notify_email === true && isPlausibleEmail(employee.email));
+    if (!employee || employee.department === 'Guest') return false; // guests are never emailed
+    return Boolean(employee.notify_email === true && isPlausibleEmail(employee.email));
 }
 
 async function emailStaff(employee, message) {
