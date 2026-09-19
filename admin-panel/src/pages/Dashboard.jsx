@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     Clock, Users, UserCheck, UserX, AlertTriangle, Shield,
     TrendingUp, TrendingDown, Minus, Activity, Building2, ScanLine,
-    BarChart2, ShieldCheck, Percent, Key, Unlock, Lock
+    BarChart2, ShieldCheck, Percent, Key, Unlock, Lock, CalendarOff
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import {
@@ -85,7 +85,9 @@ export default function Dashboard() {
         red: { chip: 'bg-red-50 text-red-600', bar: 'bg-red-500' },
         amber: { chip: 'bg-amber-50 text-amber-600', bar: 'bg-amber-500' },
         indigo: { chip: 'bg-indigo-50 text-indigo-600', bar: 'bg-indigo-500' },
+        violet: { chip: 'bg-violet-50 text-violet-600', bar: 'bg-violet-500' },
     };
+    const onLeaveList = statsData?.on_leave_list ?? [];
     const totalEmp = statsData?.total_employees ?? statsData?.totalUsers ?? 0;
     const presentN = statsData?.present_today ?? statsData?.isPresent ?? 0;
     const pctOf = (n, d) => (d > 0 ? Math.round((n / d) * 100) : 0);
@@ -115,6 +117,14 @@ export default function Dashboard() {
             icon: UserX,
             tone: 'red',
             to: '/admin/attendance?view=absent',
+        },
+        {
+            label: 'On Leave Today',
+            value: statsData?.on_leave_today ?? 0,
+            sub: 'Approved / pending leave',
+            icon: CalendarOff,
+            tone: 'violet',
+            to: '/admin/leaves',
         },
         {
             label: 'Late Today',
@@ -157,8 +167,33 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* ── 5 KPI Cards ── */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+            {/* ── On leave today ── */}
+            {onLeaveList.length > 0 && (
+                <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-4 sm:p-5">
+                    <div className="flex items-center justify-between mb-3">
+                        <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                            <CalendarOff className="w-4 h-4 text-violet-600" /> On leave today
+                            <span className="text-xs font-semibold bg-violet-50 text-violet-700 rounded-full px-2 py-0.5">{onLeaveList.length}</span>
+                        </h2>
+                        <button type="button" onClick={() => navigate('/admin/leaves')} className="text-sm font-medium text-blue-600 hover:text-blue-700">Open leave register</button>
+                    </div>
+                    <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                        {onLeaveList.map(l => (
+                            <li key={l.employee_id} className="flex items-start gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
+                                <span className="mt-0.5 text-xs font-bold text-violet-700 bg-violet-50 rounded px-1.5 py-0.5">{l.type}</span>
+                                <div className="min-w-0">
+                                    <div className="text-sm font-semibold text-slate-900 truncate">{l.name} <span className="font-mono text-xs font-normal text-slate-500">{l.employee_id}</span></div>
+                                    <div className="text-xs text-slate-500 truncate">{[l.company && l.company !== 'Englabs India Pvt Ltd' ? l.company : null, l.department].filter(Boolean).join(' · ')}</div>
+                                    {l.note && <div className="text-xs text-slate-500 truncate">{l.note}</div>}
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {/* ── KPI Cards ── */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {kpis.map((kpi, i) => {
                     const t = TONES[kpi.tone];
                     return (
@@ -182,7 +217,7 @@ export default function Dashboard() {
                 })}
 
                 {/* --- Door Status Card --- */}
-                <div className="relative overflow-hidden rounded-xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm">
+                <div className="relative overflow-hidden rounded-xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm col-span-2 lg:col-span-1 xl:col-span-2">
                     <div className="flex items-center justify-between mb-3 sm:mb-4">
                         <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-50 border-slate-200 flex items-center justify-center`}>
                             {doorStatus === 'Locked' ? <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" /> : <Unlock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 animate-pulse" />}

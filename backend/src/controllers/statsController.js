@@ -51,6 +51,21 @@ exports.getStats = async (req, res) => {
             });
         }
 
+        // Who is on (Pending/Approved) leave today. Missing leaves table must not break the dashboard.
+        let onLeaveList = [];
+        try {
+            const { data: leavesToday, error: leaveErr } = await supabase
+                .from('leaves')
+                .select('type, note, status, employees!inner(id, employee_id, name, department, company, status)')
+                .eq('date', todayIST)
+                .neq('status', 'Rejected');
+            if (!leaveErr) {
+                onLeaveList = (leavesToday || [])
+                    .filter(l => l.employees && l.employees.status === 'Active' && !uniquePresentIds.has(l.employees.id))
+                    .map(l => ({ employee_id: l.employees.employee_id, name: l.employees.name, department: l.employees.department, company: l.employees.company, type: l.type, note: l.note || null }));
+            }
+        } catch (e) { console.warn('[Stats] leave lookup skipped:', e.message); }
+
         const presentToday = uniquePresentIds.size;
         const absentToday = Math.max(0, totalEmployees - presentToday);
         const lateToday = uniqueLateIds.size;
@@ -63,6 +78,8 @@ exports.getStats = async (req, res) => {
             absent_today: absentToday,
             late_today: lateToday,
             total_scans_today: scansToday || 0,
+            on_leave_today: onLeaveList.length,
+            on_leave_list: onLeaveList,
             totalUsers: totalEmployees,
             faceProfiles: faceCount || 0,
             fingerprints: fingerCount || 0,
