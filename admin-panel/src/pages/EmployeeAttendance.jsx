@@ -29,24 +29,24 @@ const workHoursDisplay = (record) => {
 function StatusBadge({ status }) {
     if (status === 'LATE')
         return (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-black text-amber-400 uppercase tracking-widest">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-bold text-amber-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Late
             </span>
         );
     if (status === 'ON_TIME')
         return (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-600">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />On Time
             </span>
         );
-    return <span className="text-[10px] text-slate-600 font-bold">—</span>;
+    return <span className="text-xs text-slate-600 font-bold">—</span>;
 }
 
 function MethodBadge({ method }) {
     const isFace = method === 'face';
     return (
-        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border
-            ${isFace ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-purple-500/10 border-purple-500/20 text-purple-400'}`}>
+        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border
+            ${isFace ? 'bg-blue-500/10 border-blue-500/20 text-blue-600' : 'bg-purple-500/10 border-purple-500/20 text-purple-600'}`}>
             {isFace ? <ScanFace className="w-3 h-3" /> : <Fingerprint className="w-3 h-3" />}
             {method || '—'}
         </div>
@@ -173,53 +173,53 @@ export default function EmployeeAttendance() {
     };
 
     const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
-    const inputCls = 'w-full bg-slate-950 border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/30 transition-colors';
+    const inputCls = 'w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors';
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
             {/* ── Profile hero: big latest-scan photo + full details ── */}
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6">
                 <div className="flex items-start gap-4 md:gap-6 min-w-0">
                     <button onClick={() => navigate(-1)} aria-label="Back"
                         className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-900 transition-all shrink-0 mt-1">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
-                    <div className="w-28 h-28 md:w-40 md:h-40 shrink-0 rounded-3xl overflow-hidden bg-slate-100 border border-slate-200 shadow-lg flex items-center justify-center">
+                    <div className="w-20 h-20 md:w-32 md:h-32 shrink-0 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm flex items-center justify-center">
                         {(employee?.avatar_url || employee?.image_url)
                             ? <img src={employee.avatar_url || employee.image_url} alt={employee?.name || ''} className="w-full h-full object-cover" />
-                            : <span className="text-3xl font-black text-emerald-500">{(employee?.name || '?').slice(0, 2).toUpperCase()}</span>}
+                            : <span className="text-3xl font-semibold text-slate-500">{(employee?.name || '?').slice(0, 2).toUpperCase()}</span>}
                     </div>
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-1">
-                            <h1 className="text-xl md:text-3xl font-black text-slate-900 tracking-tighter truncate">{employee?.name || 'Loading...'}</h1>
-                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[9px] md:text-[10px] font-bold text-emerald-700 uppercase tracking-widest shrink-0 font-mono">
+                            <h1 className="text-xl md:text-3xl font-bold text-slate-900 tracking-tight">{employee?.name || 'Loading...'}</h1>
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 shrink-0 font-mono">
                                 {employee?.employee_id}
                             </span>
                             {employee?.status && (
-                                <span className={`px-2 py-0.5 rounded-md text-[9px] md:text-[10px] font-black uppercase tracking-widest shrink-0
-                                    ${employee.status === 'Active' ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'}`}>
+                                <span className={`px-2 py-0.5 rounded-md text-xs md:text-xs font-bold shrink-0
+                                    ${employee.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
                                     {employee.status}
                                 </span>
                             )}
                         </div>
-                        <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-slate-600">
-                            <div className="flex items-center gap-2"><Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" /><dt className="sr-only">Department</dt><dd>{employee?.department || 'General'}</dd></div>
-                            <div className="flex items-center gap-2 min-w-0"><Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" /><dt className="sr-only">Email</dt><dd className="truncate">{employee?.email || '—'}</dd></div>
-                            <div className="flex items-center gap-2"><ShieldCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" /><dt className="sr-only">Role</dt><dd className="capitalize">{employee?.role || 'employee'}</dd></div>
-                            <div className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" /><dt className="sr-only">Joined</dt><dd>Since {employee?.created_at ? format(new Date(employee.created_at), 'dd MMM yyyy') : '—'}</dd></div>
+                        <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-slate-600">
+                            <div className="flex items-center gap-2"><Briefcase className="w-3.5 h-3.5 text-slate-600 shrink-0" /><dt className="sr-only">Department</dt><dd>{employee?.department || 'General'}</dd></div>
+                            <div className="flex items-center gap-2 min-w-0"><Mail className="w-3.5 h-3.5 text-slate-600 shrink-0" /><dt className="sr-only">Email</dt><dd className="truncate">{employee?.email || '—'}</dd></div>
+                            <div className="flex items-center gap-2"><ShieldCheck className="w-3.5 h-3.5 text-slate-600 shrink-0" /><dt className="sr-only">Role</dt><dd className="capitalize">{employee?.role || 'employee'}</dd></div>
+                            <div className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-slate-600 shrink-0" /><dt className="sr-only">Joined</dt><dd>Since {employee?.created_at ? format(new Date(employee.created_at), 'dd MMM yyyy') : '—'}</dd></div>
                         </dl>
-                        <p className="mt-2 text-[10px] text-slate-400 uppercase tracking-[0.2em]">
-                            {employee?.avatar_url ? 'Photo from latest terminal scan' : 'No terminal photo yet'} // Attendance history
+                        <p className="mt-2 text-xs text-slate-600">
+                            {employee?.avatar_url ? 'Photo from latest terminal scan' : 'No terminal photo yet'} &middot; Attendance history
                         </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                     <button onClick={handleExportPdf} disabled={exportingPdf}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-rose-600/80 hover:bg-rose-600 disabled:opacity-60 border border-rose-500/40 rounded-xl text-white text-xs font-black transition-all">
+                        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 disabled:opacity-60 border border-slate-300 rounded-lg text-slate-700 text-sm font-medium shadow-sm transition-colors">
                         {exportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} Export PDF
                     </button>
                     <button onClick={handleExportExcel} disabled={exporting}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 rounded-xl text-white text-xs font-black transition-all">
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 rounded-lg text-white text-sm font-medium shadow-sm transition-colors">
                         {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Export Excel
                     </button>
                 </div>
@@ -228,31 +228,31 @@ export default function EmployeeAttendance() {
             {/* ── Summary Stats ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'Working Days', value: summary?.present_days, icon: UserCheck, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
-                    { label: 'Total Hours', value: summary?.total_work_hours != null ? `${summary.total_work_hours}h` : '—', icon: Clock, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-                    { label: 'Late Days', value: summary?.late_days, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-                    { label: 'On-time Days', value: summary ? Math.max(0, (summary.present_days || 0) - (summary.late_days || 0)) : '—', icon: CheckCircle2, color: 'text-teal-400', bg: 'bg-teal-500/10 border-teal-500/20' },
+                    { label: 'Working Days', value: summary?.present_days, icon: UserCheck, color: 'bg-blue-50 text-blue-600' },
+                    { label: 'Total Hours', value: summary?.total_work_hours != null ? `${summary.total_work_hours}h` : '—', icon: Clock, color: 'bg-emerald-50 text-emerald-600' },
+                    { label: 'Late Days', value: summary?.late_days, icon: AlertTriangle, color: 'bg-amber-50 text-amber-700' },
+                    { label: 'On-time Days', value: summary ? Math.max(0, (summary.present_days || 0) - (summary.late_days || 0)) : '—', icon: CheckCircle2, color: 'bg-teal-50 text-teal-600' },
                 ].map(s => (
-                    <div key={s.label} className={`p-4 rounded-2xl border ${s.bg} flex items-center gap-3 transition-all hover:brightness-110`}>
-                        <div className={`w-9 h-9 rounded-xl bg-black/20 flex items-center justify-center ${s.color}`}>
+                    <div key={s.label} className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${s.color}`}>
                             <s.icon className="w-4 h-4" />
                         </div>
                         <div>
-                            <div className={`text-xl font-black tabular-nums ${s.color}`}>{loading ? '—' : s.value}</div>
-                            <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{s.label}</div>
+                            <div className="text-2xl font-bold tabular-nums text-slate-900 leading-none">{loading ? '—' : s.value}</div>
+                            <div className="text-xs font-medium text-slate-500 mt-1">{s.label}</div>
                         </div>
                     </div>
                 ))}
             </div>
 
             {/* ── Filters ── */}
-            <div className="p-4 md:p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex flex-col gap-4">
+            <div className="p-4 md:p-5 rounded-xl bg-white border border-slate-200 shadow-sm flex flex-col gap-4">
                 <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest mr-1">Quick Filters:</span>
+                    <span className="text-xs font-semibold text-slate-600 mr-1">Quick range:</span>
                     {[['today', 'Today'], ['week', 'This Week'], ['month', 'This Month']].map(([key, label]) => (
                         <button key={key} onClick={() => applyPreset(key)}
-                            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border
-                                ${activePreset === key ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/[0.03] border-white/[0.06] text-slate-500'}`}>
+                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border
+                                ${activePreset === key ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'}`}>
                             {label}
                         </button>
                     ))}
@@ -309,35 +309,35 @@ export default function EmployeeAttendance() {
             </div>
 
             {/* ── Table ── */}
-            <div className="rounded-3xl bg-white/[0.02] border border-white/[0.05] overflow-hidden">
+            <div className="rounded-xl bg-slate-100 border border-slate-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="border-b border-white/[0.03] bg-white/[0.01]">
-                                <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Date</th>
-                                <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Check In</th>
-                                <th className="hidden sm:table-cell px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Check Out</th>
-                                <th className="hidden lg:table-cell px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Work Hours</th>
-                                <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Status</th>
-                                <th className="hidden md:table-cell px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Method</th>
+                            <tr className="border-b border-slate-200 bg-slate-100">
+                                <th className="px-4 md:px-6 py-4 text-xs font-bold text-slate-500">Date</th>
+                                <th className="px-4 md:px-6 py-4 text-xs font-bold text-slate-500">Check In</th>
+                                <th className="hidden sm:table-cell px-6 py-4 text-xs font-bold text-slate-500">Check Out</th>
+                                <th className="hidden lg:table-cell px-6 py-4 text-xs font-bold text-slate-500 text-center">Work Hours</th>
+                                <th className="px-4 md:px-6 py-4 text-xs font-bold text-slate-500 text-center">Status</th>
+                                <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-slate-500 text-center">Method</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/[0.025]">
                             {loading ? Array(5).fill(0).map((_, i) => (
                                 <tr key={i} className="animate-pulse">
-                                    {Array(6).fill(0).map((_, j) => <td key={j} className="px-6 py-4"><div className="h-6 bg-white/[0.04] rounded-lg" /></td>)}
+                                    {Array(6).fill(0).map((_, j) => <td key={j} className="px-6 py-4"><div className="h-6 bg-slate-100 rounded-lg" /></td>)}
                                 </tr>
                             )) : attendance.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-8 py-20 text-center">
-                                        <div className="flex flex-col items-center gap-4 text-slate-500 uppercase font-black text-xs tracking-widest">
+                                        <div className="flex flex-col items-center gap-4 text-slate-500 font-bold text-xs">
                                             <Calendar className="w-12 h-12 text-slate-800" />
                                             No attendance records for this period
                                         </div>
                                     </td>
                                 </tr>
                             ) : attendance.map((rec) => (
-                                <tr key={rec.id} className="group hover:bg-white/[0.02] transition-colors">
+                                <tr key={rec.id} className="group hover:bg-slate-100 transition-colors">
                                     <td className="px-4 md:px-6 py-3"><span className="text-xs font-bold text-slate-700">{fmtDate(rec.date)}</span></td>
                                     <td className="px-4 md:px-6 py-3">
                                         <div className="flex items-center gap-2.5">
@@ -349,15 +349,15 @@ export default function EmployeeAttendance() {
                                                 </button>
                                             ) : (
                                                 <div className="w-12 h-12 shrink-0 rounded-lg border border-dashed border-slate-200 flex items-center justify-center" title="No check-in photo">
-                                                    <Camera className="w-3.5 h-3.5 text-slate-300" />
+                                                    <Camera className="w-3.5 h-3.5 text-slate-500" />
                                                 </div>
                                             )}
                                             <div className="flex flex-col gap-0.5">
-                                                <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-bold text-emerald-600">
+                                                <div className="flex items-center gap-2 text-xs md:text-xs font-bold text-emerald-600">
                                                     <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-emerald-500" />
                                                     {fmtTime(rec.check_in)}
                                                 </div>
-                                                <div className={`sm:hidden flex items-center gap-1.5 text-[9px] font-bold ${rec.check_out ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                <div className={`sm:hidden flex items-center gap-1.5 text-xs font-bold ${rec.check_out ? 'text-slate-500' : 'text-slate-600'}`}>
                                                     {rec.check_out && rec.photo_urls?.out && (
                                                         <button type="button" onClick={() => setPhotoView({ record: rec, kind: 'out' })}
                                                             aria-label={`Check-out photo on ${fmtDate(rec.date)}`}
@@ -380,16 +380,16 @@ export default function EmployeeAttendance() {
                                                 </button>
                                             ) : (
                                                 <div className="w-12 h-12 shrink-0 rounded-lg border border-dashed border-slate-200 flex items-center justify-center" title={rec.check_out ? 'No check-out photo' : 'Not checked out'}>
-                                                    <Camera className="w-3.5 h-3.5 text-slate-300" />
+                                                    <Camera className="w-3.5 h-3.5 text-slate-500" />
                                                 </div>
                                             )}
-                                            <div className={`flex items-center gap-2 text-[11px] font-bold ${rec.check_out ? 'text-slate-600' : 'text-slate-300'}`}>
+                                            <div className={`flex items-center gap-2 text-xs font-bold ${rec.check_out ? 'text-slate-600' : 'text-slate-500'}`}>
                                                 <div className={`w-1.5 h-1.5 rounded-full ${rec.check_out ? 'bg-amber-500' : 'bg-slate-200'}`} />{fmtTime(rec.check_out)}
                                             </div>
                                         </div>
                                     </td>
                                     <td className="hidden lg:table-cell px-6 py-4 text-center">
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-950 border border-white/[0.05] text-xs font-black text-white">
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 border border-slate-200 text-xs font-bold text-slate-900">
                                             <Clock className="w-3 h-3 text-slate-600" />{workHoursDisplay(rec)}
                                         </div>
                                     </td>
@@ -403,13 +403,13 @@ export default function EmployeeAttendance() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                    <div className="px-8 py-5 border-t border-white/[0.03] flex items-center justify-between">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                            Page <span className="text-white">{page}</span> of <span className="text-white">{totalPages}</span>
+                    <div className="px-8 py-5 border-t border-slate-200 flex items-center justify-between">
+                        <p className="text-xs font-bold text-slate-500">
+                            Page <span className="text-slate-900">{page}</span> of <span className="text-slate-900">{totalPages}</span>
                         </p>
                         <div className="flex items-center gap-2">
-                            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-white disabled:opacity-20"><ChevronLeft className="w-4 h-4" /></button>
-                            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-white disabled:opacity-20"><ChevronRight className="w-4 h-4" /></button>
+                            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-20"><ChevronLeft className="w-4 h-4" /></button>
+                            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-20"><ChevronRight className="w-4 h-4" /></button>
                         </div>
                     </div>
                 )}

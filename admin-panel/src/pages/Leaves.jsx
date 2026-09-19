@@ -34,13 +34,13 @@ function ApproverModal({ decision, approvers, types, onPick, onClose }) {
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center px-4" onClick={onClose}>
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-            <div className="relative z-10 w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="relative z-10 w-full max-w-sm bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="p-5 border-b border-slate-100">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                    <div className="text-xs font-bold text-slate-600 mb-1">
                         {status === 'Approved' ? 'Approve' : 'Reject'} leave — who is signing?
                     </div>
                     <div className="text-sm font-bold text-slate-900">{first.employee?.name} · {types[first.type] || first.type}</div>
-                    <div className="text-[11px] text-slate-400 mt-1">Tick everyone who is signing — more than one is fine.</div>
+                    <div className="text-xs text-slate-600 mt-1">Tick everyone who is signing — more than one is fine.</div>
                 </div>
                 <div className="p-3 grid grid-cols-1 gap-1">
                     {approvers.map(name => (
@@ -77,28 +77,28 @@ function ViewModal({ group, types, avatar, onShare, onDecide, onDelete, onClose 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" onClick={onClose}>
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-            <div className="relative z-10 w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="relative z-10 w-full max-w-md bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="flex items-start justify-between gap-3 p-5 border-b border-slate-100">
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="w-12 h-12 rounded-full border-2 border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center font-bold text-sm text-brand-navy shrink-0">
                             {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" /> : initials(first.employee?.name)}
                         </div>
                         <div className="min-w-0">
-                            <div className="text-base font-black text-slate-900 truncate">{first.employee?.name}</div>
-                            <div className="text-[11px] text-slate-500 truncate">{first.employee?.department} · <span className="font-mono">{first.employee?.employee_id}</span></div>
+                            <div className="text-base font-bold text-slate-900 truncate">{first.employee?.name}</div>
+                            <div className="text-xs text-slate-500 truncate">{first.employee?.department} · <span className="font-mono">{first.employee?.employee_id}</span></div>
                         </div>
                     </div>
-                    <button type="button" aria-label="Close" onClick={onClose} className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center shrink-0"><X className="w-4 h-4" /></button>
+                    <button type="button" aria-label="Close" onClick={onClose} className="w-8 h-8 rounded-lg text-slate-600 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center shrink-0"><X className="w-4 h-4" /></button>
                 </div>
                 <div className="p-5 space-y-4">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${TYPE_TONE[first.type] || 'bg-slate-100 text-slate-600'}`}>{first.type}</span>
-                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${STATUS_TONE[status]}`}>{status}</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${TYPE_TONE[first.type] || 'bg-slate-100 text-slate-600'}`}>{first.type}</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${STATUS_TONE[status]}`}>{status}</span>
                         <span className="text-sm font-semibold text-slate-700">{types[first.type] || first.type}</span>
-                        <span className="text-sm text-slate-400">· {group.length} day{group.length > 1 ? 's' : ''}</span>
+                        <span className="text-sm text-slate-600">· {group.length} day{group.length > 1 ? 's' : ''}</span>
                     </div>
                     <div>
-                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Dates</div>
+                        <div className="text-xs font-bold text-slate-600 mb-2">Dates</div>
                         <div className="flex flex-wrap gap-1.5">
                             {group.map(l => (
                                 <span key={l.id} className="font-mono text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-700">
@@ -109,16 +109,16 @@ function ViewModal({ group, types, avatar, onShare, onDecide, onDelete, onClose 
                     </div>
                     {first.note && (
                         <div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Reason for requested leave</div>
+                            <div className="text-xs font-bold text-slate-600 mb-1">Reason for requested leave</div>
                             <div className="text-sm text-slate-700">{first.note}</div>
                         </div>
                     )}
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400 pt-1 border-t border-slate-100">
+                    <div className="flex items-center gap-2 text-xs text-slate-600 pt-1 border-t border-slate-100">
                         <UserIcon className="w-3.5 h-3.5" />
                         Added by {first.created_by || 'admin'}{first.created_at ? ` · ${format(new Date(first.created_at), 'dd MMM, HH:mm')}` : ''}
                     </div>
                     {status !== 'Pending' && first.approved_by?.length > 0 && (
-                        <div className={`text-[11px] font-semibold ${status === 'Approved' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        <div className={`text-xs font-semibold ${status === 'Approved' ? 'text-emerald-600' : 'text-rose-600'}`}>
                             {status} by {first.approved_by.join(', ')}
                         </div>
                     )}
@@ -323,8 +323,8 @@ export default function Leaves() {
         <div className="space-y-8 animate-in fade-in duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 tracking-tighter">Leaves &amp; Holidays</h1>
-                    <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2 tracking-tight">Leaves &amp; Holidays</h1>
+                    <p className="text-slate-500 text-xs md:text-sm font-medium">
                         Leave register // <span className="text-brand-navy">{leaves.length}</span> leave days this month · {monthHolidays.length} holidays
                     </p>
                 </div>
@@ -336,7 +336,7 @@ export default function Leaves() {
             </div>
 
             {setupNeeded && (
-                <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
                     <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                     <div><b>Leave register is not set up yet.</b> Run <code className="font-mono">supabase/migration_v8_leaves.sql</code> once in the Supabase SQL editor, then reload this page.</div>
                 </div>
@@ -346,18 +346,18 @@ export default function Leaves() {
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {Object.entries(types).map(([k, label]) => (
-                    <div key={k} className="p-4 rounded-2xl bg-white border border-slate-200">
-                        <div className="flex items-center justify-between"><span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${TYPE_TONE[k] || 'bg-slate-100 text-slate-600'}`}>{k}</span><span className="text-2xl font-black text-slate-900">{counts[k] || 0}</span></div>
-                        <div className="text-[11px] text-slate-500 mt-1">{label}</div>
+                    <div key={k} className="p-4 rounded-xl bg-white border border-slate-200">
+                        <div className="flex items-center justify-between"><span className={`text-xs font-bold px-2 py-0.5 rounded-md ${TYPE_TONE[k] || 'bg-slate-100 text-slate-600'}`}>{k}</span><span className="text-2xl font-bold text-slate-900">{counts[k] || 0}</span></div>
+                        <div className="text-xs text-slate-500 mt-1">{label}</div>
                     </div>
                 ))}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
-                    <form onSubmit={addLeave} className="p-5 rounded-2xl bg-white border border-slate-200 space-y-3">
+                    <form onSubmit={addLeave} className="p-5 rounded-xl bg-white border border-slate-200 space-y-3">
                         <div className="flex flex-wrap gap-3 items-end">
-                            <label className="block flex-[2] min-w-[190px]"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Staff</span>
+                            <label className="block flex-[2] min-w-[190px]"><span className="text-xs font-bold text-slate-600">Staff</span>
                                 <select value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))} aria-label="Staff" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 outline-none focus:border-brand-navy">
                                     <option value="">Choose…</option>
                                     {employees.map(e => {
@@ -365,38 +365,38 @@ export default function Leaves() {
                                         return <option key={e.employee_id} value={e.employee_id}>{e.name} · {e.employee_id}{cl?.cl_balance != null ? ` · CL ${cl.cl_balance}` : ''}</option>;
                                     })}
                                 </select></label>
-                            <label className="block w-[128px]"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">From</span>
+                            <label className="block w-[128px]"><span className="text-xs font-bold text-slate-600">From</span>
                                 <input type="date" value={form.from} onChange={e => setForm(f => ({ ...f, from: e.target.value, to: f.to < e.target.value ? e.target.value : f.to }))} aria-label="Leave from date" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono text-slate-800 outline-none focus:border-brand-navy" /></label>
-                            <label className="block w-[128px]"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">To</span>
+                            <label className="block w-[128px]"><span className="text-xs font-bold text-slate-600">To</span>
                                 <input type="date" value={form.to} min={form.from} onChange={e => setForm(f => ({ ...f, to: e.target.value }))} aria-label="Leave to date" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono text-slate-800 outline-none focus:border-brand-navy" /></label>
-                            <label className="block w-[112px]"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Type</span>
+                            <label className="block w-[112px]"><span className="text-xs font-bold text-slate-600">Type</span>
                                 <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} aria-label="Leave type" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 outline-none focus:border-brand-navy">
                                     {Object.keys(types).map(k => <option key={k} value={k}>{k}</option>)}
                                 </select></label>
-                            <label className="block flex-[3] min-w-[160px]"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reason</span>
+                            <label className="block flex-[3] min-w-[160px]"><span className="text-xs font-bold text-slate-600">Reason</span>
                                 <input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="reason for leave" aria-label="Reason for requested leave" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 outline-none focus:border-brand-navy" /></label>
                             <button type="submit" disabled={saving || setupNeeded} className="shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-sm font-bold hover:bg-brand-navy-light disabled:opacity-50">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Add leave
                             </button>
                         </div>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
                             <span>{dayCount > 1 ? `${dayCount} calendar days selected — ` : ''}Sundays and holidays in between are skipped automatically.</span>
                             {selectedCl && <span className="font-semibold text-brand-navy">{selectedCl.name}'s CL balance: {selectedCl.cl_balance ?? '—'}{selectedCl.cl_balance != null && form.type === 'CL' && dayCount > 0 && selectedCl.cl_balance < dayCount ? ' — this request may exceed the balance' : ''}</span>}
                         </div>
                     </form>
 
-                    <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden">
+                    <div className="rounded-xl bg-white border border-slate-200 overflow-hidden">
                         <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between gap-3">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Leaves in {format(month, 'MMMM')}</span>
+                            <span className="text-xs font-bold text-slate-500">Leaves in {format(month, 'MMMM')}</span>
                             {leaveGroups.length > 0 && (
-                                <button type="button" onClick={() => share(leaveGroups.map(shareText).join('\n\n'))} className="flex items-center gap-1.5 text-[11px] font-bold text-brand-navy hover:underline">
+                                <button type="button" onClick={() => share(leaveGroups.map(shareText).join('\n\n'))} className="flex items-center gap-1.5 text-xs font-bold text-brand-navy hover:underline">
                                     <Share2 className="w-3.5 h-3.5" /> Share list
                                 </button>
                             )}
                         </div>
                         <div className="divide-y divide-slate-100">
-                            {loading && <div className="p-8 text-center text-slate-400 text-xs font-semibold"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>}
-                            {!loading && leaves.length === 0 && <div className="p-8 text-center text-slate-400 text-xs font-semibold flex flex-col items-center gap-2"><CalendarOff className="w-6 h-6" />No leaves recorded this month.</div>}
+                            {loading && <div className="p-8 text-center text-slate-600 text-xs font-semibold"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>}
+                            {!loading && leaves.length === 0 && <div className="p-8 text-center text-slate-600 text-xs font-semibold flex flex-col items-center gap-2"><CalendarOff className="w-6 h-6" />No leaves recorded this month.</div>}
                             {leaveGroups.map(group => {
                                 const first = group[0], last = group[group.length - 1];
                                 const status = groupStatus(group);
@@ -410,23 +410,23 @@ export default function Leaves() {
                                         </button>
                                         <button type="button" onClick={() => setViewGroup(group)} className="min-w-0 flex-1 text-left">
                                             <div className="text-sm font-bold text-slate-900 truncate">{first.employee?.name}</div>
-                                            <div className="text-[11px] text-slate-500 truncate">{first.employee?.department} · <span className="font-mono">{first.employee?.employee_id}</span>{first.note ? ` · ${first.note}` : ''}</div>
+                                            <div className="text-xs text-slate-500 truncate">{first.employee?.department} · <span className="font-mono">{first.employee?.employee_id}</span>{first.note ? ` · ${first.note}` : ''}</div>
                                         </button>
-                                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${TYPE_TONE[first.type] || 'bg-slate-100 text-slate-600'}`}>{first.type}</span>
-                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${STATUS_TONE[status]}`}>{status}</span>
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${TYPE_TONE[first.type] || 'bg-slate-100 text-slate-600'}`}>{first.type}</span>
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${STATUS_TONE[status]}`}>{status}</span>
                                         <div className="text-right w-36 shrink-0">
                                             <div className="font-mono text-xs text-slate-600 whitespace-nowrap">{dateLabel}</div>
-                                            {group.length > 1 && <div className="text-[10px] text-slate-400">{group.length} days</div>}
+                                            {group.length > 1 && <div className="text-xs text-slate-600">{group.length} days</div>}
                                         </div>
                                         {status === 'Pending' && (
                                             <>
-                                                <button type="button" aria-label={`Approve leave for ${first.employee?.name}`} onClick={() => askDecision(group, 'Approved')} className="w-8 h-8 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 flex items-center justify-center"><CheckCircle2 className="w-4 h-4" /></button>
-                                                <button type="button" aria-label={`Reject leave for ${first.employee?.name}`} onClick={() => askDecision(group, 'Rejected')} className="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center"><XCircle className="w-4 h-4" /></button>
+                                                <button type="button" aria-label={`Approve leave for ${first.employee?.name}`} onClick={() => askDecision(group, 'Approved')} className="w-8 h-8 rounded-lg text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 flex items-center justify-center"><CheckCircle2 className="w-4 h-4" /></button>
+                                                <button type="button" aria-label={`Reject leave for ${first.employee?.name}`} onClick={() => askDecision(group, 'Rejected')} className="w-8 h-8 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center"><XCircle className="w-4 h-4" /></button>
                                             </>
                                         )}
-                                        <button type="button" aria-label={`View leave for ${first.employee?.name}`} onClick={() => setViewGroup(group)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-brand-navy hover:bg-slate-100 flex items-center justify-center"><Eye className="w-4 h-4" /></button>
-                                        <button type="button" aria-label={`Share leave for ${first.employee?.name}`} onClick={() => share(shareText(group))} className="w-8 h-8 rounded-lg text-slate-400 hover:text-brand-navy hover:bg-slate-100 flex items-center justify-center"><Share2 className="w-4 h-4" /></button>
-                                        <button type="button" aria-label={`Delete leave for ${first.employee?.name}`} onClick={() => removeGroup(group)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-4 h-4" /></button>
+                                        <button type="button" aria-label={`View leave for ${first.employee?.name}`} onClick={() => setViewGroup(group)} className="w-8 h-8 rounded-lg text-slate-600 hover:text-brand-navy hover:bg-slate-100 flex items-center justify-center"><Eye className="w-4 h-4" /></button>
+                                        <button type="button" aria-label={`Share leave for ${first.employee?.name}`} onClick={() => share(shareText(group))} className="w-8 h-8 rounded-lg text-slate-600 hover:text-brand-navy hover:bg-slate-100 flex items-center justify-center"><Share2 className="w-4 h-4" /></button>
+                                        <button type="button" aria-label={`Delete leave for ${first.employee?.name}`} onClick={() => removeGroup(group)} className="w-8 h-8 rounded-lg text-slate-600 hover:text-red-600 hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-4 h-4" /></button>
                                     </div>
                                 );
                             })}
@@ -435,38 +435,38 @@ export default function Leaves() {
                 </div>
 
                 <div className="space-y-4">
-                    <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden">
-                        <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500"><Wallet className="w-4 h-4 text-brand-navy" /> CL balance — {format(month, 'MMMM yyyy')}</div>
+                    <div className="rounded-xl bg-white border border-slate-200 overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2 text-xs font-bold text-slate-500"><Wallet className="w-4 h-4 text-brand-navy" /> CL balance — {format(month, 'MMMM yyyy')}</div>
                         <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
-                            {clRows.length === 0 && <div className="p-6 text-center text-slate-400 text-xs font-semibold">No CL data for this month yet.</div>}
+                            {clRows.length === 0 && <div className="p-6 text-center text-slate-600 text-xs font-semibold">No CL data for this month yet.</div>}
                             {[...clRows].sort((a, b) => a.name.localeCompare(b.name)).map(r => (
                                 <div key={r.employee_id} className="flex items-center gap-3 px-4 py-2.5">
                                     <div className="min-w-0 flex-1">
                                         <div className="text-xs font-bold text-slate-800 truncate">{r.name}</div>
-                                        <div className="text-[10px] text-slate-400 font-mono">{r.employee_id}{r.cl ? ` · ${r.cl} CL used` : ''}</div>
+                                        <div className="text-xs text-slate-600 font-mono">{r.employee_id}{r.cl ? ` · ${r.cl} CL used` : ''}</div>
                                     </div>
-                                    <span className={`text-sm font-black tabular-nums ${r.cl_balance == null ? 'text-slate-300' : r.cl_balance < 0 ? 'text-red-600' : r.cl_balance === 0 ? 'text-slate-500' : 'text-emerald-600'}`}>
+                                    <span className={`text-sm font-bold tabular-nums ${r.cl_balance == null ? 'text-slate-500' : r.cl_balance < 0 ? 'text-red-600' : r.cl_balance === 0 ? 'text-slate-500' : 'text-emerald-600'}`}>
                                         {r.cl_balance == null ? '—' : r.cl_balance}
                                     </span>
                                 </div>
                             ))}
                         </div>
-                        <div className="px-4 py-2.5 border-t border-slate-100 text-[10px] text-slate-400">Add or remove a CL leave above to adjust a balance — it recalculates here automatically.</div>
+                        <div className="px-4 py-2.5 border-t border-slate-100 text-xs text-slate-600">Add or remove a CL leave above to adjust a balance — it recalculates here automatically.</div>
                     </div>
 
-                    <form onSubmit={addHoliday} className="p-5 rounded-2xl bg-white border border-slate-200 space-y-3">
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500"><Sun className="w-4 h-4 text-amber-500" /> Holidays {month.getFullYear()}</div>
+                    <form onSubmit={addHoliday} className="p-5 rounded-xl bg-white border border-slate-200 space-y-3">
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-500"><Sun className="w-4 h-4 text-amber-700" /> Holidays {month.getFullYear()}</div>
                         <input type="date" value={holForm.date} onChange={e => setHolForm(f => ({ ...f, date: e.target.value }))} aria-label="Holiday date" className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono outline-none focus:border-brand-navy" />
                         <input value={holForm.name} onChange={e => setHolForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Diwali" aria-label="Holiday name" className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm outline-none focus:border-brand-navy" />
                         <button type="submit" disabled={saving || setupNeeded} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-brand-navy text-sm font-bold hover:bg-slate-50 disabled:opacity-50"><Plus className="w-4 h-4" /> Add holiday</button>
                     </form>
-                    <div className="rounded-2xl bg-white border border-slate-200 divide-y divide-slate-100">
-                        {holidays.length === 0 && <div className="p-6 text-center text-slate-400 text-xs font-semibold">No holidays entered for {month.getFullYear()}. Weekends (Sat, Sun) are already excluded from working days.</div>}
+                    <div className="rounded-xl bg-white border border-slate-200 divide-y divide-slate-100">
+                        {holidays.length === 0 && <div className="p-6 text-center text-slate-600 text-xs font-semibold">No holidays entered for {month.getFullYear()}. Weekends (Sat, Sun) are already excluded from working days.</div>}
                         {holidays.map(h => (
                             <div key={h.date} className={`flex items-center gap-3 px-4 py-2.5 ${h.date >= from && h.date <= to ? '' : 'opacity-60'}`}>
                                 <span className="font-mono text-xs text-slate-600 w-24">{format(new Date(h.date + 'T00:00:00'), 'EEE dd MMM')}</span>
                                 <span className="text-sm font-semibold text-slate-800 flex-1 truncate">{h.name}</span>
-                                <button type="button" aria-label={`Delete holiday ${h.name}`} onClick={() => removeHoliday(h.date)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-4 h-4" /></button>
+                                <button type="button" aria-label={`Delete holiday ${h.name}`} onClick={() => removeHoliday(h.date)} className="w-8 h-8 rounded-lg text-slate-600 hover:text-red-600 hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-4 h-4" /></button>
                             </div>
                         ))}
                     </div>

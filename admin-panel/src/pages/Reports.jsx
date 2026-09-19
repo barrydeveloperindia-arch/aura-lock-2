@@ -63,14 +63,14 @@ export default function Reports() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 mb-2 tracking-tighter uppercase">Attendance Analytics</h1>
-                    <p className="text-slate-500 text-sm font-medium uppercase tracking-[0.2em]">Data Insights // Performance Audit</p>
+                    <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">Attendance Analytics</h1>
+                    <p className="text-slate-500 text-sm font-medium">Data Insights &middot; Performance Audit</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                    <button className="flex-1 md:flex-none px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-[10px] md:text-xs font-black transition-all flex items-center justify-center gap-2">
+                    <button className="flex-1 md:flex-none px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-xs md:text-xs font-bold transition-all flex items-center justify-center gap-2">
                         <Download className="w-4 h-4" /> Export
                     </button>
-                    <button className="flex-1 md:flex-none px-4 py-2 bg-brand-navy hover:bg-brand-navy-light rounded-xl text-white text-[10px] md:text-xs font-black transition-all flex items-center justify-center gap-2">
+                    <button className="flex-1 md:flex-none px-4 py-2 bg-brand-navy hover:bg-brand-navy-light rounded-xl text-white text-xs md:text-xs font-bold transition-all flex items-center justify-center gap-2">
                         <FileText className="w-4 h-4" /> Audit Log
                     </button>
                 </div>
@@ -82,10 +82,10 @@ export default function Reports() {
                 <div className="card p-8 bg-white border border-slate-200">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Presence Volume</h2>
-                            <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-bold">7-Day Rolling Activity</p>
+                            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Presence Volume</h2>
+                            <p className="text-xs text-slate-500 mt-1 font-bold">7-Day Rolling Activity</p>
                         </div>
-                        <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                        <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600">
                             <TrendingUp className="w-4 h-4" />
                         </div>
                     </div>
@@ -115,10 +115,10 @@ export default function Reports() {
                 <div className="card p-8 bg-white border border-slate-200">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-xl font-black text-slate-900 tracking-tight">Punctuality Score</h2>
-                            <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-bold">Consistency Metrics</p>
+                            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Punctuality Score</h2>
+                            <p className="text-xs text-slate-500 mt-1 font-bold">Consistency Metrics</p>
                         </div>
-                        <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                        <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600">
                             <Clock className="w-4 h-4" />
                         </div>
                     </div>
@@ -147,16 +147,16 @@ export default function Reports() {
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Monthly Report Generation</h2>
-                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Personnel Aggregation // {months[selectedMonth - 1]} {selectedYear}</p>
+                        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Monthly Report Generation</h2>
+                        <p className="text-slate-500 text-xs font-bold mt-1">Personnel Aggregation &middot; {months[selectedMonth - 1]} {selectedYear}</p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 p-2 bg-white border border-slate-200 rounded-2xl">
+                    <div className="flex flex-wrap items-center gap-2 p-2 bg-white border border-slate-200 rounded-xl">
                         <div className="flex items-center flex-1 md:flex-none">
                             <select
                                 value={selectedMonth}
                                 onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                                className="bg-transparent text-[10px] md:text-xs font-black text-slate-800 uppercase tracking-widest px-3 md:px-4 py-2 focus:outline-none cursor-pointer flex-1"
+                                className="bg-transparent text-xs md:text-xs font-bold text-slate-800 px-3 md:px-4 py-2 focus:outline-none cursor-pointer flex-1"
                             >
                                 {months.map((m, i) => (
                                     <option key={i} value={i + 1}>{m}</option>
@@ -165,7 +165,7 @@ export default function Reports() {
                             <select
                                 value={selectedYear}
                                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                                className="bg-transparent text-[10px] md:text-xs font-black text-slate-800 uppercase tracking-widest px-3 md:px-4 py-2 border-l border-slate-200 focus:outline-none cursor-pointer"
+                                className="bg-transparent text-xs md:text-xs font-bold text-slate-800 px-3 md:px-4 py-2 border-l border-slate-200 focus:outline-none cursor-pointer"
                             >
                                 {years.map(y => (
                                     <option key={y} value={y}>{y}</option>
@@ -175,7 +175,7 @@ export default function Reports() {
                         <button
                             onClick={fetchMonthlyReport}
                             disabled={generating}
-                            className={`w-full md:w-auto px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${generating ? 'bg-slate-100 text-slate-600' : 'bg-blue-600 hover:bg-blue-500 text-white'
+                            className={`w-full md:w-auto px-6 py-2 rounded-xl text-xs font-bold transition-all ${generating ? 'bg-slate-100 text-slate-600' : 'bg-blue-600 hover:bg-blue-500 text-white'
                                 }`}
                         >
                             {generating ? 'Generating...' : 'Refresh'}
@@ -184,20 +184,20 @@ export default function Reports() {
                 </div>
 
                 {/* Monthly Summary Table */}
-                <div className="rounded-3xl bg-white border border-slate-200 overflow-hidden">
+                <div className="rounded-xl bg-white border border-slate-200 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="bg-slate-50 border-b border-slate-200 text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                <tr className="bg-slate-50 border-b border-slate-200 text-xs md:text-xs font-bold text-slate-500">
                                     <th className="px-4 md:px-8 py-5">Personnel</th>
                                     <th className="hidden md:table-cell px-8 py-5">Department</th>
                                     <th className="hidden lg:table-cell px-8 py-5 text-center">Working Days</th>
                                     <th className="px-4 md:px-8 py-5 text-center">Present</th>
-                                    <th className="px-4 md:px-8 py-5 text-center text-red-400">Absent</th>
+                                    <th className="px-4 md:px-8 py-5 text-center text-red-600">Absent</th>
                                     <th className="px-4 md:px-8 py-5 text-center text-brand-navy">CL used</th>
                                     <th className="hidden md:table-cell px-8 py-5 text-center text-brand-navy">CL bal.</th>
                                     <th className="hidden sm:table-cell px-8 py-5 text-center">Leave</th>
-                                    <th className="hidden sm:table-cell px-8 py-5 text-center text-amber-400">Late</th>
+                                    <th className="hidden sm:table-cell px-8 py-5 text-center text-amber-700">Late</th>
                                     <th className="px-4 md:px-8 py-5 text-right">Hours</th>
                                 </tr>
                             </thead>
@@ -205,7 +205,7 @@ export default function Reports() {
                                 {generating ? (
                                     Array(3).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td colSpan="10" className="px-8 py-6 h-16 bg-white/[0.01]"></td>
+                                            <td colSpan="10" className="px-8 py-6 h-16 bg-slate-100"></td>
                                         </tr>
                                     ))
                                 ) : monthlyReport?.data.length > 0 ? (
@@ -213,53 +213,53 @@ export default function Reports() {
                                         <tr key={row.id} className="group hover:bg-slate-50 transition-colors">
                                             <td className="px-4 md:px-8 py-5">
                                                 <div className="flex items-center gap-3 md:gap-4">
-                                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-brand-navy/10 border border-brand-navy/10 flex items-center justify-center text-[10px] md:text-xs font-black text-brand-navy uppercase">
+                                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-brand-navy/10 border border-brand-navy/10 flex items-center justify-center text-xs md:text-xs font-bold text-brand-navy">
                                                         {(row.name || '?')[0]}
                                                     </div>
                                                     <div className="min-w-0">
                                                         <div className="text-xs md:text-sm font-bold text-slate-900 group-hover:text-brand-navy transition-colors truncate">{row.name}</div>
-                                                        <div className="text-[9px] md:text-[10px] font-medium text-slate-500 tracking-wider">ID: {row.employee_id}</div>
+                                                        <div className="text-xs md:text-xs font-medium text-slate-500">ID: {row.employee_id}</div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="hidden md:table-cell px-8 py-5">
                                                 <div className="flex items-center gap-2">
                                                     <Briefcase className="w-3.5 h-3.5 text-slate-600" />
-                                                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{row.department}</span>
+                                                    <span className="text-xs font-semibold text-slate-600">{row.department}</span>
                                                 </div>
                                             </td>
                                             <td className="hidden lg:table-cell px-8 py-5 text-center font-bold text-slate-500 italic tabular-nums">
                                                 {monthlyReport.workingDaysInMonth}
                                             </td>
                                             <td className="px-4 md:px-8 py-5 text-center">
-                                                <div className="inline-flex items-center gap-1 px-2 md:gap-1.5 md:px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] md:text-[11px] font-black text-emerald-400 tabular-nums">
+                                                <div className="inline-flex items-center gap-1 px-2 md:gap-1.5 md:px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs md:text-xs font-bold text-emerald-600 tabular-nums">
                                                     <CheckCircle className="w-3 h-3" /> {row.presentDays}
                                                 </div>
                                             </td>
                                             <td className="px-4 md:px-8 py-5 text-center">
-                                                <div className={`inline-flex items-center gap-1 px-2 md:gap-1.5 md:px-3 py-1 rounded-full text-[10px] md:text-[11px] font-black tabular-nums ${row.absentDays > 3 ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-slate-100 text-slate-600'
+                                                <div className={`inline-flex items-center gap-1 px-2 md:gap-1.5 md:px-3 py-1 rounded-full text-xs md:text-xs font-bold tabular-nums ${row.absentDays > 3 ? 'bg-red-500/10 border-red-500/20 text-red-600' : 'bg-slate-100 text-slate-600'
                                                     }`}>
                                                     <AlertTriangle className="w-3 h-3" /> {row.absentDays}
                                                 </div>
                                             </td>
                                             <td className="px-4 md:px-8 py-5 text-center">
-                                                <span className="inline-flex px-2 md:px-3 py-1 rounded-full bg-brand-navy/10 text-[10px] md:text-[11px] font-black text-brand-navy tabular-nums" title={row.cl_source === 'sheet' ? 'from the payroll sheet' : row.cl_source === 'leaves' ? 'from the leave register' : ''}>{row.cl ?? 0}</span>
+                                                <span className="inline-flex px-2 md:px-3 py-1 rounded-full bg-brand-navy/10 text-xs md:text-xs font-bold text-brand-navy tabular-nums" title={row.cl_source === 'sheet' ? 'from the payroll sheet' : row.cl_source === 'leaves' ? 'from the leave register' : ''}>{row.cl ?? 0}</span>
                                             </td>
                                             <td className="hidden md:table-cell px-8 py-5 text-center">
-                                                <span className="text-[11px] font-black text-slate-700 tabular-nums">{row.cl_balance == null ? '—' : row.cl_balance}</span>
+                                                <span className="text-xs font-bold text-slate-700 tabular-nums">{row.cl_balance == null ? '—' : row.cl_balance}</span>
                                             </td>
                                             <td className="hidden sm:table-cell px-8 py-5 text-center">
-                                                <span className="inline-flex px-3 py-1 rounded-full bg-slate-100 text-[11px] font-black text-slate-600 tabular-nums" title={Object.entries(row.leaves || {}).map(([k, v]) => `${k} ${v}`).join(' · ') || 'no leave'}>{row.leaveDays ?? 0}</span>
+                                                <span className="inline-flex px-3 py-1 rounded-full bg-slate-100 text-xs font-bold text-slate-600 tabular-nums" title={Object.entries(row.leaves || {}).map(([k, v]) => `${k} ${v}`).join(' · ') || 'no leave'}>{row.leaveDays ?? 0}</span>
                                             </td>
                                             <td className="hidden sm:table-cell px-8 py-5 text-center">
-                                                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black tabular-nums ${row.lateDays > 5 ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-slate-100 text-slate-600'
+                                                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tabular-nums ${row.lateDays > 5 ? 'bg-amber-500/10 border-amber-500/20 text-amber-700' : 'bg-slate-100 text-slate-600'
                                                     }`}>
                                                     <Timer className="w-3 h-3" /> {row.lateDays}
                                                 </div>
                                             </td>
                                             <td className="px-4 md:px-8 py-5 text-right">
-                                                <div className="flex items-center justify-end gap-1.5 md:gap-2 text-xs md:text-sm font-black text-slate-900 tabular-nums">
-                                                    <Clock className="w-3 md:w-3.5 h-3 md:h-3.5 text-blue-500" />
+                                                <div className="flex items-center justify-end gap-1.5 md:gap-2 text-xs md:text-sm font-bold text-slate-900 tabular-nums">
+                                                    <Clock className="w-3 md:w-3.5 h-3 md:h-3.5 text-blue-600" />
                                                     {row.totalWorkHours}h
                                                 </div>
                                             </td>
@@ -270,7 +270,7 @@ export default function Reports() {
                                         <td colSpan="10" className="px-8 py-20 text-center">
                                             <div className="flex flex-col items-center gap-4">
                                                 <Calendar className="w-12 h-12 text-slate-900" />
-                                                <div className="text-slate-600 text-[10px] font-black uppercase tracking-[0.2em]">No analytics data for this period</div>
+                                                <div className="text-slate-600 text-xs font-bold">No analytics data for this period</div>
                                             </div>
                                         </td>
                                     </tr>

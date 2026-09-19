@@ -45,37 +45,37 @@ const workHoursDisplay = (record) => {
 function StatusBadge({ status, leaveType }) {
     if (status === 'ABSENT')
         return (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-[10px] font-black text-red-400 uppercase tracking-widest">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-xs font-bold text-red-600">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500" />Absent
             </span>
         );
     if (status === 'LEAVE')
         return (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-navy/10 border border-brand-navy/20 text-[10px] font-black text-brand-navy uppercase tracking-widest">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-navy/10 border border-brand-navy/20 text-xs font-bold text-brand-navy">
                 <span className="w-1.5 h-1.5 rounded-full bg-brand-navy" />{leaveType || 'Leave'}
             </span>
         );
     if (status === 'LATE')
         return (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-black text-amber-400 uppercase tracking-widest">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-bold text-amber-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Late
             </span>
         );
     if (status === 'ON_TIME')
         return (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-600">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />On Time
             </span>
         );
-    return <span className="text-[10px] text-slate-600 font-bold">—</span>;
+    return <span className="text-xs text-slate-600 font-bold">—</span>;
 }
 
 // ── Method badge ──────────────────────────────────────────────────────────────
 function MethodBadge({ method }) {
     const isFace = method === 'face';
     return (
-        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border
-            ${isFace ? 'bg-blue-500/10 border-blue-500/20 text-emerald-500' : 'bg-purple-500/10 border-purple-500/20 text-purple-400'}`}>
+        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border
+            ${isFace ? 'bg-blue-500/10 border-blue-500/20 text-emerald-600' : 'bg-purple-500/10 border-purple-500/20 text-purple-600'}`}>
             {isFace ? <ScanFace className="w-3 h-3" /> : <Fingerprint className="w-3 h-3" />}
             {method || '—'}
         </div>
@@ -88,12 +88,12 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
     const Icon = active ? (sortDir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
     return (
         <th
-            className={`px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest cursor-pointer
-                        select-none hover:text-slate-300 transition-colors group ${className}`}
+            className={`px-6 py-4 text-xs font-bold text-slate-500 cursor-pointer
+                        select-none hover:text-slate-500 transition-colors group ${className}`}
             onClick={() => onSort(col)}>
             <div className="flex items-center gap-1.5">
                 {label}
-                <Icon className={`w-3 h-3 transition-colors ${active ? 'text-emerald-500' : 'text-slate-700 group-hover:text-slate-500'}`} />
+                <Icon className={`w-3 h-3 transition-colors ${active ? 'text-emerald-600' : 'text-slate-700 group-hover:text-slate-500'}`} />
             </div>
         </th>
     );
@@ -291,7 +291,7 @@ export default function Attendance() {
     const _checkedOut = attendance.filter(r => r.check_out).length;
     const onTimeCount = attendance.filter(r => r.status === 'ON_TIME').length;
 
-    const inputCls = 'w-full bg-white border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500/30 transition-colors';
+    const inputCls = 'w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors';
     const selCls = `${inputCls} appearance-none cursor-pointer`;
 
     return (
@@ -300,14 +300,14 @@ export default function Attendance() {
             {/* ── Header ── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 tracking-tighter">
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2 tracking-tight">
                         {absentView ? 'Absent Today' : 'Attendance Registry'}
                     </h1>
-                    <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em] flex items-center gap-2 flex-wrap">
-                        {absentView ? 'Not Checked In' : 'Verified Presence'} // <span className="text-emerald-500">{totalRecords}</span> Records
+                    <p className="text-slate-500 text-xs md:text-sm font-medium flex items-center gap-2 flex-wrap">
+                        {absentView ? 'Not checked in' : 'Verified presence'} &middot; <span className="font-semibold text-slate-900">{totalRecords}</span> records
                         {absentView && (
                             <button onClick={() => setAbsentView(false)}
-                                className="ml-1 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-black normal-case tracking-normal">
+                                className="ml-1 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
                                 <X className="w-3 h-3" /> Clear
                             </button>
                         )}
@@ -315,13 +315,13 @@ export default function Attendance() {
                 </div>
                 <div className="flex items-center gap-3">
                     <button onClick={handleExportPdf} disabled={exportingPdf}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-rose-600/80 hover:bg-rose-600 disabled:opacity-60 disabled:cursor-not-allowed border border-rose-500/40 rounded-xl text-slate-900 text-xs font-black shadow-lg shadow-rose-600/20 transition-all">
+                        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed border border-slate-300 rounded-lg text-slate-700 text-sm font-medium shadow-sm transition-colors">
                         {exportingPdf
                             ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
                             : <><FileText className="w-4 h-4" /> Export PDF</>}
                     </button>
                     <button onClick={handleExport} disabled={exporting}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl text-slate-900 text-xs font-black shadow-lg shadow-emerald-600/20 transition-all">
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg text-white text-sm font-medium shadow-sm transition-colors">
                         {exporting
                             ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
                             : <><Download className="w-4 h-4" /> Export Excel</>}
@@ -332,36 +332,36 @@ export default function Attendance() {
             {/* ── Summary Stat Cards ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'Total Records', value: totalRecords, icon: Users, color: 'text-emerald-500', bg: 'bg-blue-500/10 border-blue-500/20' },
-                    { label: 'Checked In (this page)', value: presentCount, icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-                    { label: 'On Time (this page)', value: onTimeCount, icon: CheckCircle2, color: 'text-teal-400', bg: 'bg-teal-500/10 border-teal-500/20' },
-                    { label: 'Late (this page)', value: lateCount, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+                    { label: 'Total records', value: totalRecords, icon: Users, color: 'bg-blue-50 text-blue-600' },
+                    { label: 'Checked in (this page)', value: presentCount, icon: UserCheck, color: 'bg-emerald-50 text-emerald-600' },
+                    { label: 'On time (this page)', value: onTimeCount, icon: CheckCircle2, color: 'bg-teal-50 text-teal-600' },
+                    { label: 'Late (this page)', value: lateCount, icon: AlertTriangle, color: 'bg-amber-50 text-amber-700' },
                 ].map(s => (
-                    <div key={s.label} className={`p-4 rounded-2xl border ${s.bg} flex items-center gap-3 cursor-pointer transition-all hover:brightness-110`}
-                        onClick={() => { setSelectedStatus(s.label.startsWith('Late') ? 'LATE' : s.label.startsWith('On Time') ? 'ON_TIME' : ''); setPage(1); }}>
-                        <div className={`w-9 h-9 rounded-xl bg-black/20 flex items-center justify-center ${s.color}`}>
+                    <div key={s.label} className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center gap-3 cursor-pointer transition-shadow hover:shadow-md"
+                        onClick={() => { setSelectedStatus(s.label.startsWith('Late') ? 'LATE' : s.label.startsWith('On time') ? 'ON_TIME' : ''); setPage(1); }}>
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${s.color}`}>
                             <s.icon className="w-4 h-4" />
                         </div>
                         <div>
-                            <div className={`text-xl font-black tabular-nums ${s.color}`}>{loading ? '—' : s.value}</div>
-                            <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{s.label}</div>
+                            <div className="text-2xl font-bold tabular-nums text-slate-900 leading-none">{loading ? '—' : s.value}</div>
+                            <div className="text-xs font-medium text-slate-500 mt-1">{s.label}</div>
                         </div>
                     </div>
                 ))}
             </div>
 
             {/* ── Filter Bar ── */}
-            <div className="p-5 rounded-2xl bg-white border-slate-200 space-y-4">
+            <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm space-y-4">
 
                 {/* Quick Date Presets */}
                 <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest mr-1">Quick:</span>
+                    <span className="text-xs font-semibold text-slate-600 mr-1">Quick range:</span>
                     {[['today', 'Today'], ['week', 'This Week'], ['month', 'This Month'], ['custom', 'Custom']].map(([key, label]) => (
                         <button key={key} onClick={() => applyPreset(key)}
-                            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border
+                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border
                                 ${activePreset === key
-                                    ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/20'
-                                    : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900 hover:border-slate-300'}`}>
+                                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                                    : 'bg-white border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}>
                             {label}
                         </button>
                     ))}
@@ -371,8 +371,8 @@ export default function Attendance() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
 
                     {/* Date Range */}
-                    <div className="space-y-1.5 lg:col-span-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Date Range</label>
+                    <div className="space-y-1.5 sm:col-span-2">
+                        <label className="text-xs font-semibold text-slate-600">Date Range</label>
                         <div className="flex items-center gap-2">
                             <input type="date" value={startDate} max={endDate}
                                 onChange={e => { setStartDate(e.target.value); setActivePreset('custom'); setPage(1); }}
@@ -386,7 +386,7 @@ export default function Attendance() {
 
                     {/* Search */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Search Name</label>
+                        <label className="text-xs font-semibold text-slate-600">Search Name</label>
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600 pointer-events-none" />
                             <input type="text" placeholder="Type to search…"
@@ -398,7 +398,7 @@ export default function Attendance() {
 
                     {/* Department */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Department</label>
+                        <label className="text-xs font-semibold text-slate-600">Department</label>
                         <select value={selectedDept}
                             onChange={e => { setSelectedDept(e.target.value); setPage(1); }}
                             className={selCls}>
@@ -409,7 +409,7 @@ export default function Attendance() {
 
                     {/* Status */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</label>
+                        <label className="text-xs font-semibold text-slate-600">Status</label>
                         <select value={selectedStatus}
                             onChange={e => { setSelectedStatus(e.target.value); setPage(1); }}
                             className={selCls}>
@@ -422,10 +422,10 @@ export default function Attendance() {
                     {/* Reset */}
                     <div className="flex items-end">
                         <button onClick={resetFilters}
-                            className={`w-full py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5
+                            className={`w-full py-2 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center gap-1.5
                                 ${hasActiveFilter
-                                    ? 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
-                                    : 'bg-slate-900 border-white/[0.07] text-slate-600 cursor-default'}`}
+                                    ? 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
+                                    : 'bg-slate-100 border-slate-200 text-slate-400 cursor-default'}`}
                             disabled={!hasActiveFilter}>
                             <X className="w-3 h-3" /> Reset All
                         </button>
@@ -436,21 +436,21 @@ export default function Attendance() {
                 {hasActiveFilter && (
                     <div className="flex flex-wrap gap-2 pt-1">
                         {searchInput && (
-                            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 text-emerald-500 rounded-lg text-[10px] font-bold">
+                            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-xs font-semibold">
                                 Name: "{searchInput}"
                                 <button onClick={() => setSearchInput('')}><X className="w-2.5 h-2.5" /></button>
                             </span>)}
                         {selectedDept && (
-                            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-500/10 border border-violet-500/20 text-violet-400 rounded-lg text-[10px] font-bold">
+                            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 border border-violet-200 text-violet-700 rounded-lg text-xs font-semibold">
                                 Dept: {selectedDept}
                                 <button onClick={() => setSelectedDept('')}><X className="w-2.5 h-2.5" /></button>
                             </span>)}
                         {selectedStatus && (
-                            <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold border
+                            <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border
                                 ${selectedStatus === 'LATE'
-                                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                                    : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
-                                Status: {selectedStatus === 'LATE' ? '🟡 Late' : '🟢 On Time'}
+                                    ? 'bg-amber-50 border-amber-200 text-amber-800'
+                                    : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+                                Status: {selectedStatus === 'LATE' ? 'Late' : 'On time'}
                                 <button onClick={() => setSelectedStatus('')}><X className="w-2.5 h-2.5" /></button>
                             </span>)}
                     </div>
@@ -458,21 +458,21 @@ export default function Attendance() {
             </div>
 
             {/* ── Table ── */}
-            <div className="rounded-3xl bg-white border-slate-200 overflow-hidden">
+            <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-50">
-                                <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Sr. No.</th>
-                                <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Employee</th>
-                                <th className="hidden xl:table-cell px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Company</th>
-                                <th className="hidden lg:table-cell px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Department</th>
+                                <th className="px-4 md:px-6 py-4 text-xs font-semibold text-slate-600">Sr. No.</th>
+                                <th className="px-4 md:px-6 py-4 text-xs font-semibold text-slate-600">Employee</th>
+                                <th className="hidden xl:table-cell px-6 py-4 text-xs font-semibold text-slate-600">Company</th>
+                                <th className="hidden lg:table-cell px-6 py-4 text-xs font-semibold text-slate-600">Department</th>
                                 <SortTh label="Date" col="date" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-center" />
-                                <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Check In</th>
-                                <th className="hidden sm:table-cell px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Check Out</th>
+                                <th className="px-4 md:px-6 py-4 text-xs font-semibold text-slate-600">Check In</th>
+                                <th className="hidden sm:table-cell px-6 py-4 text-xs font-semibold text-slate-600">Check Out</th>
                                 <SortTh label="Work Hours" col="working_hours" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-center hidden xl:table-cell" />
-                                <th className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Status</th>
-                                <th className="hidden md:table-cell px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Method</th>
+                                <th className="px-4 md:px-6 py-4 text-xs font-semibold text-slate-600 text-center">Status</th>
+                                <th className="hidden md:table-cell px-6 py-4 text-xs font-semibold text-slate-600 text-center">Method</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
@@ -481,7 +481,7 @@ export default function Attendance() {
                                     <tr key={i} className="animate-pulse">
                                         {Array(9).fill(0).map((_, j) => (
                                             <td key={j} className="px-6 py-4">
-                                                <div className="h-6 bg-white/[0.04] rounded-lg" />
+                                                <div className="h-6 bg-slate-100 rounded-lg" />
                                             </td>
                                         ))}
                                     </tr>
@@ -491,11 +491,11 @@ export default function Attendance() {
                                     <td colSpan={10} className="px-8 py-20 text-center">
                                         <div className="flex flex-col items-center gap-4">
                                             <Calendar className="w-12 h-12 text-slate-800" />
-                                            <div className="text-slate-500 text-xs font-black uppercase tracking-widest">
+                                            <div className="text-slate-500 text-xs font-bold">
                                                 No records match the selected filters
                                             </div>
                                             <button onClick={resetFilters}
-                                                className="text-[10px] text-emerald-500 hover:underline font-bold">
+                                                className="text-xs text-emerald-600 hover:underline font-bold">
                                                 Clear filters
                                             </button>
                                         </div>
@@ -515,16 +515,16 @@ export default function Attendance() {
                                         {/* Employee */}
                                         <td className="px-4 md:px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/20 to-slate-800 border border-white/[0.06] flex items-center justify-center text-[10px] md:text-[11px] font-black text-emerald-500 overflow-hidden">
+                                                <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-semibold text-slate-600 overflow-hidden">
                                                     {(avatars[rec.employees?.employee_id] || rec.employees?.image_url)
                                                         ? <img src={avatars[rec.employees?.employee_id] || rec.employees.image_url} alt="" className="w-full h-full object-cover" />
                                                         : initials}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <div className="text-sm font-bold text-slate-900 group-hover:text-emerald-500 transition-colors whitespace-nowrap truncate">
+                                                    <div className="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors whitespace-nowrap truncate">
                                                         {name}
                                                     </div>
-                                                    <div className="text-[9px] md:text-[10px] font-mono text-slate-500 truncate">
+                                                    <div className="text-xs md:text-xs font-mono text-slate-500 truncate">
                                                         {rec.employees?.employee_id || '—'}
                                                     </div>
                                                 </div>
@@ -535,7 +535,7 @@ export default function Attendance() {
                                         <td className="hidden xl:table-cell px-6 py-4">
                                             <div className="flex items-center gap-1.5">
                                                 <Building2 className="w-3 h-3 text-slate-600 shrink-0" />
-                                                <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">
+                                                <span className="text-sm text-slate-700 whitespace-nowrap">
                                                     {rec.employees?.company || 'Englabs India Pvt Ltd'}
                                                 </span>
                                             </div>
@@ -545,7 +545,7 @@ export default function Attendance() {
                                         <td className="hidden lg:table-cell px-6 py-4">
                                             <div className="flex items-center gap-1.5">
                                                 <Briefcase className="w-3 h-3 text-slate-600 shrink-0" />
-                                                <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">
+                                                <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">
                                                     {rec.employees?.department || 'General'}
                                                 </span>
                                             </div>
@@ -553,7 +553,7 @@ export default function Attendance() {
 
                                         {/* Date */}
                                         <td className="px-4 md:px-6 py-4 text-center">
-                                            <span className="text-[11px] md:text-xs font-bold text-slate-300 tabular-nums whitespace-nowrap">
+                                            <span className="text-sm text-slate-700 tabular-nums whitespace-nowrap">
                                                 {fmtDate(rec.date)}
                                             </span>
                                         </td>
@@ -570,17 +570,17 @@ export default function Attendance() {
                                                     </button>
                                                 ) : (
                                                     <div className="w-11 h-11 shrink-0 rounded-lg border border-dashed border-slate-200 flex items-center justify-center" title="No check-in photo">
-                                                        <Camera className="w-3.5 h-3.5 text-slate-300" />
+                                                        <Camera className="w-3.5 h-3.5 text-slate-500" />
                                                     </div>
                                                 )}
                                                 <div className="flex flex-col gap-1">
-                                                    <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-bold text-emerald-500 tabular-nums">
+                                                    <div className="flex items-center gap-2 text-xs md:text-xs font-bold text-emerald-600 tabular-nums">
                                                         <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-emerald-500 shrink-0" />
                                                         {fmtTime(rec.check_in)}
                                                     </div>
                                                     {/* Phones hide the Check Out column: show OUT here instead */}
                                                     {rec.check_out && (
-                                                        <div className="sm:hidden flex items-center gap-1.5 text-[10px] font-bold text-slate-500 tabular-nums">
+                                                        <div className="sm:hidden flex items-center gap-1.5 text-xs font-bold text-slate-500 tabular-nums">
                                                             {rec.photo_urls?.out ? (
                                                                 <button type="button"
                                                                     onClick={(e) => { e.stopPropagation(); setPhotoView({ record: rec, kind: 'out' }); }}
@@ -608,11 +608,11 @@ export default function Attendance() {
                                                     </button>
                                                 ) : (
                                                     <div className="w-11 h-11 shrink-0 rounded-lg border border-dashed border-slate-200 flex items-center justify-center" title={rec.check_out ? 'No check-out photo' : 'Not checked out yet'}>
-                                                        <Camera className="w-3.5 h-3.5 text-slate-300" />
+                                                        <Camera className="w-3.5 h-3.5 text-slate-500" />
                                                     </div>
                                                 )}
-                                                <div className={`flex items-center gap-2 text-[11px] font-bold tabular-nums
-                                                    ${rec.check_out ? 'text-slate-600' : 'text-slate-300'}`}>
+                                                <div className={`flex items-center gap-2 text-xs font-bold tabular-nums
+                                                    ${rec.check_out ? 'text-slate-600' : 'text-slate-500'}`}>
                                                     <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${rec.check_out ? 'bg-amber-500' : 'bg-slate-200'}`} />
                                                     {fmtTime(rec.check_out)}
                                                 </div>
@@ -621,7 +621,7 @@ export default function Attendance() {
 
                                         {/* Working Hours */}
                                         <td className="hidden xl:table-cell px-6 py-4 text-center">
-                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-950 border border-white/[0.05] text-xs font-black text-slate-900 tabular-nums">
+                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 border border-slate-200 text-xs font-bold text-slate-900 tabular-nums">
                                                 <Clock className="w-3 h-3 text-slate-600" />
                                                 {workHoursDisplay(rec)}
                                             </div>
@@ -646,7 +646,7 @@ export default function Attendance() {
 
                 {/* ── Pagination ── */}
                 <div className="px-8 py-5 border-t border-slate-200 flex items-center justify-between gap-4">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    <p className="text-xs font-bold text-slate-500">
                         Showing&nbsp;
                         <span className="text-slate-900">{((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalRecords)}</span>
                         &nbsp;of&nbsp;
@@ -657,7 +657,7 @@ export default function Attendance() {
                     <div className="flex items-center gap-2">
                         <button disabled={page === 1}
                             onClick={() => setPage(p => Math.max(1, p - 1))}
-                            className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-slate-900 disabled:opacity-20 transition-all">
+                            className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-20 transition-all">
                             <ChevronLeft className="w-4 h-4" />
                         </button>
 
@@ -669,10 +669,10 @@ export default function Attendance() {
                             if (p > (totalPages || 1)) return null;
                             return (
                                 <button key={p} onClick={() => setPage(p)}
-                                    className={`w-8 h-8 rounded-xl text-xs font-black transition-all
+                                    className={`w-8 h-8 rounded-xl text-xs font-bold transition-all
                                         ${p === page
-                                            ? 'bg-blue-600 text-slate-900 shadow-lg shadow-blue-600/20'
-                                            : 'bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-slate-900'}`}>
+                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                                            : 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900'}`}>
                                     {p}
                                 </button>
                             );
@@ -680,7 +680,7 @@ export default function Attendance() {
 
                         <button disabled={page >= (totalPages || 1)}
                             onClick={() => setPage(p => p + 1)}
-                            className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.05] text-slate-400 hover:text-slate-900 disabled:opacity-20 transition-all">
+                            className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-20 transition-all">
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>

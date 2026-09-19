@@ -32,14 +32,14 @@ function Toast({ toasts, dismiss }) {
         <div className="fixed top-5 right-5 z-[200] flex flex-col gap-2 pointer-events-none">
             {toasts.map(t => (
                 <div key={t.id}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-2xl text-sm font-bold
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl text-sm font-bold
                         pointer-events-auto animate-in slide-in-from-right-8 duration-300
                         ${t.type === 'success'
-                            ? 'bg-emerald-950 border-emerald-500/30 text-emerald-300'
-                            : 'bg-red-950 border-red-500/30 text-red-300'}`}>
+                            ? 'bg-emerald-950 border-emerald-500/30 text-emerald-600'
+                            : 'bg-red-950 border-red-500/30 text-red-600'}`}>
                     {t.type === 'success'
-                        ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                        : <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />}
+                        ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        : <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />}
                     <span>{t.message}</span>
                     <button onClick={() => dismiss(t.id)} className="ml-2 opacity-50 hover:opacity-100 transition-opacity">
                         <X className="w-3.5 h-3.5" />
@@ -67,7 +67,7 @@ function Modal({ open, onClose, children, maxW = 'max-w-lg' }) {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" onClick={onClose}>
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-            <div className={`relative z-10 w-full ${maxW} bg-[#0a0f1e] border border-white/[0.08] rounded-3xl shadow-2xl p-5 md:p-8 max-h-[90vh] overflow-y-auto`}
+            <div className={`relative z-10 w-full ${maxW} bg-[#0a0f1e] border border-slate-200 rounded-xl shadow-2xl p-5 md:p-8 max-h-[90vh] overflow-y-auto`}
                 onClick={e => e.stopPropagation()}>
                 {children}
             </div>
@@ -80,23 +80,23 @@ function DeleteDialog({ user, onConfirm, onCancel }) {
     return (
         <Modal open={!!user} onClose={onCancel}>
             <div className="flex flex-col items-center text-center gap-5">
-                <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-                    <AlertTriangle className="w-8 h-8 text-red-500" />
+                <div className="w-16 h-16 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                    <AlertTriangle className="w-8 h-8 text-red-600" />
                 </div>
                 <div>
-                    <h2 className="text-xl font-black text-white mb-2">Deactivate employee</h2>
-                    <p className="text-sm text-slate-400 leading-relaxed">
+                    <h2 className="text-xl font-bold text-white mb-2">Deactivate employee</h2>
+                    <p className="text-sm text-slate-600 leading-relaxed">
                         <span className="text-white font-bold">{user?.name}</span> will be hidden from all lists and can no longer
                         check in or unlock the door. Attendance history and photos are kept for records.
                     </p>
                 </div>
                 <div className="flex gap-3 w-full pt-2">
                     <button onClick={onCancel}
-                        className="flex-1 py-3 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:border-white/20 text-sm font-bold transition-all">
+                        className="flex-1 py-3 rounded-xl border border-white/10 text-slate-600 hover:text-white hover:border-white/20 text-sm font-bold transition-all">
                         Cancel
                     </button>
                     <button onClick={onConfirm}
-                        className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-black transition-all shadow-lg shadow-red-600/20">
+                        className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition-all shadow-lg shadow-red-600/20">
                         Deactivate
                     </button>
                 </div>
@@ -149,11 +149,11 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
 
     const field = (label, key, type = 'text', placeholder = '') => (
         <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</label>
+            <label className="text-xs font-bold text-slate-500">{label}</label>
             <input type={type} value={form[key] || ''}
                 onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                 placeholder={placeholder}
-                className="w-full bg-slate-950 border border-white/[0.07] rounded-xl px-4 py-2.5 text-sm text-white
+                className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-white
                            focus:outline-none focus:border-blue-500/40 transition-colors placeholder:text-slate-700" />
         </div>
     );
@@ -161,7 +161,7 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
     return (
         <Modal open onClose={onClose}>
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-black text-white">{mode === 'add' ? 'Add Employee' : 'Edit Employee'}</h2>
+                <h2 className="text-lg font-bold text-white">{mode === 'add' ? 'Add Employee' : 'Edit Employee'}</h2>
                 <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={e => handleSubmit(e)} className="space-y-4">
@@ -169,13 +169,13 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                 {field('Email', 'email', 'email', 'e.g. rahul@company.com')}
                 {field('Employee ID', 'employee_id', 'text', 'e.g. EL107')}
                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Department</label>
+                    <label className="text-xs font-bold text-slate-500">Department</label>
                     <input 
                         list="departments-list"
                         value={form.department || ''}
                         onChange={e => setForm(f => ({ ...f, department: e.target.value }))}
                         placeholder="Select or type department"
-                        className="w-full bg-slate-950 border border-white/[0.07] rounded-xl px-4 py-2.5 text-sm text-white
+                        className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-white
                                    focus:outline-none focus:border-blue-500/40 transition-colors placeholder:text-slate-700" 
                     />
                     <datalist id="departments-list">
@@ -183,13 +183,13 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                     </datalist>
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Company</label>
+                    <label className="text-xs font-bold text-slate-500">Company</label>
                     <input
                         list="companies-list"
                         value={form.company || ''}
                         onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
                         placeholder="Which Disha Arcade tenant — defaults to Englabs"
-                        className="w-full bg-slate-950 border border-white/[0.07] rounded-xl px-4 py-2.5 text-sm text-white
+                        className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-white
                                    focus:outline-none focus:border-blue-500/40 transition-colors placeholder:text-slate-700"
                     />
                     <datalist id="companies-list">
@@ -236,30 +236,30 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                         {field('Last Working Day', 'last_working_day', 'date')}
                     </div>
                 )}
-                {err && <p className="text-xs font-bold text-red-400 bg-red-500/10 px-3 py-2 rounded-xl border border-red-500/20">{err}</p>}
+                {err && <p className="text-xs font-bold text-red-600 bg-red-500/10 px-3 py-2 rounded-xl border border-red-500/20">{err}</p>}
                 
                 <div className="flex gap-3 pt-2">
                     <button type="button" onClick={onClose}
-                        className="flex-1 py-3 rounded-xl border border-white/10 text-slate-400 hover:text-white text-sm font-bold transition-all">
+                        className="flex-1 py-3 rounded-xl border border-white/10 text-slate-600 hover:text-white text-sm font-bold transition-all">
                         Cancel
                     </button>
                     <button type="submit" disabled={saving}
-                        className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-black transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
+                        className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
                         <Save className="w-4 h-4" />
                         {saving ? 'Saving...' : mode === 'add' ? 'Save Only' : 'Save Changes'}
                     </button>
                 </div>
 
-                <div className="pt-4 mt-2 border-t border-white/[0.04]">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-3">Biometrics Setup</label>
+                <div className="pt-4 mt-2 border-t border-slate-200">
+                    <label className="text-xs font-bold text-slate-500 block mb-3">Biometrics Setup</label>
                     <div className="flex gap-3">
                         <button type="button" onClick={(e) => handleSubmit(e, 'face')} disabled={saving}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 text-[13px] font-bold transition-all">
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-600 text-[13px] font-bold transition-all">
                             <ScanFace className="w-4 h-4" /> 
                             {mode === 'edit' && initialData?.face_registered ? 'Update Face' : 'Add Face'}
                         </button>
                         <button type="button" onClick={(e) => handleSubmit(e, 'fp')} disabled={saving}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 text-violet-400 text-[13px] font-bold transition-all">
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 text-violet-600 text-[13px] font-bold transition-all">
                             <Fingerprint className="w-4 h-4" />
                             {mode === 'edit' && initialData?.fingerprint_registered ? 'Update Finger' : 'Add Finger'}
                         </button>
@@ -267,19 +267,19 @@ function EmployeeModal({ mode, initialData, onSave, onClose, onEnrollFace, onEnr
                 </div>
 
                 {mode === 'edit' && (
-                    <div className="pt-4 mt-2 border-t border-white/[0.04]">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-3">ID Card Photo</label>
-                        <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
+                    <div className="pt-4 mt-2 border-t border-slate-200">
+                        <label className="text-xs font-bold text-slate-500 block mb-3">ID Card Photo</label>
+                        <p className="text-xs text-slate-500 mb-3 leading-relaxed">
                             Upload a proper passport-style photo to use on the profile and printable ID card, instead of the
                             biometric scan capture.
                         </p>
                         <input ref={photoInputRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={handlePhotoUpload} />
                         <button type="button" onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-50 text-emerald-400 text-[13px] font-bold transition-all">
+                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-50 text-emerald-600 text-[13px] font-bold transition-all">
                             {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                             {uploadingPhoto ? 'Uploading…' : 'Upload Passport Photo'}
                         </button>
-                        {photoMsg && <p className="text-[11px] text-slate-400 mt-2">{photoMsg}</p>}
+                        {photoMsg && <p className="text-xs text-slate-600 mt-2">{photoMsg}</p>}
                     </div>
                 )}
             </form>
@@ -411,8 +411,8 @@ function FaceEnrollModal({ user, onDone, onClose }) {
         <Modal open onClose={onClose} maxW="max-w-2xl">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h2 className="text-lg font-black text-white flex items-center gap-2">
-                        <ScanFace className="w-5 h-5 text-blue-400" /> Enroll Face
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                        <ScanFace className="w-5 h-5 text-blue-600" /> Enroll Face
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">Enrolling biometric identity for <span className="text-white font-bold">{user.name}</span></p>
                 </div>
@@ -422,10 +422,10 @@ function FaceEnrollModal({ user, onDone, onClose }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Camera */}
                 <div className="space-y-3">
-                    <div className="relative aspect-square rounded-2xl overflow-hidden bg-slate-900 border border-white/[0.07]">
+                    <div className="relative aspect-square rounded-xl overflow-hidden bg-slate-900 border border-slate-200">
                         {camError ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">
-                                <AlertCircle className="w-10 h-10 text-red-400 opacity-50" />
+                                <AlertCircle className="w-10 h-10 text-red-600 opacity-50" />
                                 <p className="text-xs text-slate-500">{camError}</p>
                             </div>
                         ) : captured ? (
@@ -438,23 +438,23 @@ function FaceEnrollModal({ user, onDone, onClose }) {
                                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                                     <div className="w-40 h-52 rounded-full border-2 border-blue-400/40" />
                                 </div>
-                                <div className="absolute bottom-3 left-0 right-0 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                <div className="absolute bottom-3 left-0 right-0 text-center text-xs font-bold text-slate-500">
                                     Position face in oval
                                 </div>
                             </>
                         )}
 
                         {loading && (
-                            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
-                                <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-                                <p className="text-xs text-slate-400 font-bold">Processing biometric…</p>
+                            <div className="absolute inset-0 bg-slate-100/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                                <p className="text-xs text-slate-600 font-bold">Processing biometric…</p>
                             </div>
                         )}
 
                         {status === 'success' && (
                             <div className="absolute inset-0 bg-emerald-950/90 flex flex-col items-center justify-center gap-3">
-                                <CheckCircle2 className="w-12 h-12 text-emerald-400" />
-                                <p className="text-sm font-black text-emerald-300">Face Enrolled!</p>
+                                <CheckCircle2 className="w-12 h-12 text-emerald-600" />
+                                <p className="text-sm font-bold text-emerald-600">Face Enrolled!</p>
                             </div>
                         )}
                     </div>
@@ -463,16 +463,16 @@ function FaceEnrollModal({ user, onDone, onClose }) {
                         <div className="flex flex-col gap-2">
                             <div className="flex gap-2">
                                 <button onClick={capture} disabled={!!camError || loading}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-[13px] font-black rounded-xl transition-all">
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-[13px] font-bold rounded-xl transition-all">
                                     <Camera className="w-4 h-4" /> Snapshot
                                 </button>
                                 <button onClick={captureWithCapacitor} disabled={loading}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-[13px] font-black rounded-xl transition-all">
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-[13px] font-bold rounded-xl transition-all">
                                     <Smartphone className="w-4 h-4" /> Direct Cam
                                 </button>
                             </div>
                             <button onClick={() => fileInputRef.current?.click()} disabled={loading}
-                                className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white text-[13px] font-black rounded-xl transition-all border border-white/5">
+                                className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white text-[13px] font-bold rounded-xl transition-all border border-white/5">
                                 <Upload className="w-4 h-4" /> Upload / Mobile Capture
                             </button>
                             <input 
@@ -500,19 +500,19 @@ function FaceEnrollModal({ user, onDone, onClose }) {
                         <InfoRow label="Email" value={user.email} mono />
                         <InfoRow label="Department" value={user.department || 'General'} />
 
-                        <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/10 text-[11px] text-slate-500 leading-relaxed">
+                        <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/10 text-xs text-slate-500 leading-relaxed">
                             Capture a clear, front-facing photo. The biometric engine will extract and store a secure face embedding. No raw image is stored.
                         </div>
                     </div>
 
                     <div className="space-y-3 mt-4">
                         {errMsg && (
-                            <p className="text-xs font-bold text-red-400 bg-red-500/10 px-3 py-2 rounded-xl border border-red-500/20 flex items-center gap-2">
+                            <p className="text-xs font-bold text-red-600 bg-red-500/10 px-3 py-2 rounded-xl border border-red-500/20 flex items-center gap-2">
                                 <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {errMsg}
                             </p>
                         )}
                         <button onClick={enroll} disabled={!captured || loading || status === 'success'}
-                            className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-sm font-black rounded-xl transition-all shadow-lg shadow-emerald-600/20">
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/20">
                             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                             {loading ? 'Enrolling…' : 'Enroll Face'}
                         </button>
@@ -527,7 +527,7 @@ function FaceEnrollModal({ user, onDone, onClose }) {
 // ── Section heading with icon, used across the profile ───────────────────────
 function SectionHeading({ icon: Icon, children }) {
     return (
-        <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 mb-3">
             <Icon className="w-3 h-3" /> {children}
         </div>
     );
@@ -545,16 +545,16 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
                     <BrandLogo variant="mark" className="absolute -right-4 -top-4 w-28 h-28 opacity-[0.08]" />
                 </div>
                 <button onClick={onClose}
-                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm flex items-center justify-center text-slate-300 hover:text-white transition-colors">
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm flex items-center justify-center text-slate-500 hover:text-white transition-colors">
                     <X className="w-4 h-4" />
                 </button>
                 <div className="px-5 md:px-8 -mt-10 flex items-end gap-4 pb-5">
-                    <div className="w-20 h-20 shrink-0 rounded-2xl bg-gradient-to-br from-blue-600/40 to-indigo-600/40 border-4 border-[#0a0f1e] flex items-center justify-center text-xl font-black text-emerald-400 overflow-hidden shadow-xl">
+                    <div className="w-20 h-20 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/40 to-indigo-600/40 border-4 border-[#0a0f1e] flex items-center justify-center text-xl font-bold text-emerald-600 overflow-hidden shadow-xl">
                         {photoUrl ? <img src={photoUrl} alt="" className="w-full h-full object-cover" /> : (user.name || '?').slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0 pb-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                            <h2 className="text-xl font-black text-white truncate">{user.name}</h2>
+                            <h2 className="text-xl font-bold text-white truncate">{user.name}</h2>
                             <StatusBadge status={user.status || 'Active'} />
                         </div>
                         <p className="text-xs text-slate-500 font-mono mt-0.5">{user.employee_id} · {user.designation || user.department || 'General'}</p>
@@ -573,7 +573,7 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
                     </div>
                 </div>
 
-                <div className="pt-4 border-t border-white/[0.06]">
+                <div className="pt-4 border-t border-slate-200">
                     <SectionHeading icon={Briefcase}>Employment</SectionHeading>
                     <div className="grid grid-cols-2 gap-4">
                         <InfoRow label="Company" value={user.company || 'Englabs India Pvt Ltd'} />
@@ -585,7 +585,7 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
                     </div>
                 </div>
 
-                <div className="pt-4 border-t border-white/[0.06]">
+                <div className="pt-4 border-t border-slate-200">
                     <SectionHeading icon={UserCheck}>Personal</SectionHeading>
                     <div className="grid grid-cols-2 gap-4">
                         <InfoRow label="Date of Birth" value={fmtDate(user.date_of_birth)} />
@@ -597,7 +597,7 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
                     </div>
                 </div>
 
-                <div className="pt-4 border-t border-white/[0.06]">
+                <div className="pt-4 border-t border-slate-200">
                     <SectionHeading icon={CreditCard}>Government ID</SectionHeading>
                     <div className="grid grid-cols-2 gap-4">
                         <InfoRow label="PAN Number" value={user.pan_number || 'Not added'} mono />
@@ -605,7 +605,7 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
                     </div>
                 </div>
 
-                <div className="pt-4 border-t border-white/[0.06]">
+                <div className="pt-4 border-t border-slate-200">
                     <SectionHeading icon={Mail}>Contact</SectionHeading>
                     <div className="grid grid-cols-2 gap-4">
                         <InfoRow label="Contact Number" value={user.contact_number || 'Not added'} mono />
@@ -613,7 +613,7 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
                     </div>
                 </div>
 
-                <div className="pt-4 border-t border-white/[0.06]">
+                <div className="pt-4 border-t border-slate-200">
                     <SectionHeading icon={CreditCard}>Bank Details</SectionHeading>
                     <div className="grid grid-cols-2 gap-4">
                         <InfoRow label="Bank Name" value={user.bank_name || 'Not added'} />
@@ -623,13 +623,13 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
                     </div>
                 </div>
 
-                <div className="pt-4 border-t border-white/[0.06]">
+                <div className="pt-4 border-t border-slate-200">
                     <SectionHeading icon={ScanFace}>Biometrics</SectionHeading>
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black ${user.face_registered ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'}`}>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${user.face_registered ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'}`}>
                             <ScanFace className="w-3 h-3" /> {user.face_registered ? 'Face Enrolled' : 'Face Not Enrolled'}
                         </span>
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black ${user.fingerprint_registered ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'}`}>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${user.fingerprint_registered ? 'bg-violet-500/10 text-violet-600 border border-violet-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'}`}>
                             <Fingerprint className="w-3 h-3" /> {user.fingerprint_registered ? 'Fingerprint Enrolled' : 'Fingerprint Not Enrolled'}
                         </span>
                     </div>
@@ -638,15 +638,15 @@ function StaffProfileModal({ user, photoUrl, onClose, onEdit, onViewCard }) {
 
             <div className="flex gap-3 pt-6 mt-2">
                 <button onClick={onClose}
-                    className="py-3 px-4 rounded-xl border border-white/10 text-slate-400 hover:text-white text-sm font-bold transition-all">
+                    className="py-3 px-4 rounded-xl border border-white/10 text-slate-600 hover:text-white text-sm font-bold transition-all">
                     Close
                 </button>
                 <button onClick={() => onViewCard(user)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 text-white text-sm font-black transition-all">
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 hover:bg-white/[0.1] border border-white/10 text-white text-sm font-bold transition-all">
                     <BadgeCheck className="w-4 h-4" /> ID Card
                 </button>
                 <button onClick={() => onEdit(user)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-black transition-all shadow-lg shadow-blue-600/20">
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-lg shadow-blue-600/20">
                     <Edit2 className="w-4 h-4" /> Edit Details
                 </button>
             </div>
@@ -672,7 +672,7 @@ function IdCardModal({ user, photoUrl, onClose }) {
             `}</style>
 
             <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-black text-white">Employee ID Card</h2>
+                <h2 className="text-lg font-bold text-white">Employee ID Card</h2>
                 <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
@@ -685,57 +685,57 @@ function IdCardModal({ user, photoUrl, onClose }) {
                     <BrandLogo variant="mark" className="absolute -right-3 -top-3 w-16 h-16 opacity-[0.12]" />
                     <BrandLogo variant="mark" className="w-[0.24in] h-[0.24in] shrink-0" />
                     <div className="leading-tight">
-                        <div className="text-white text-[10.5px] font-black tracking-wide">ENGLABS INDIA PVT LTD</div>
-                        <div className="text-[#8fb8f0] text-[7px] font-bold uppercase tracking-[0.15em]">Staff Identity Card</div>
+                        <div className="text-white text-[10.5px] font-bold">ENGLABS INDIA PVT LTD</div>
+                        <div className="text-[#8fb8f0] text-xs font-bold">Staff Identity Card</div>
                     </div>
                     <div className="ml-auto text-right leading-tight">
-                        <div className="text-[6px] text-[#8fb8f0] font-bold uppercase tracking-widest">Valid Employee</div>
-                        <div className="text-white text-[9px] font-black font-mono tracking-wide">{user.employee_id}</div>
+                        <div className="text-[6px] text-[#8fb8f0] font-bold">Valid Employee</div>
+                        <div className="text-white text-xs font-bold font-mono">{user.employee_id}</div>
                     </div>
                 </div>
 
                 {/* Body: photo badge overlapping the header, details grid alongside */}
                 <div className="flex-1 flex gap-[0.14in] px-[0.14in] pt-[0.08in] pb-[0.04in]">
                     <div className="shrink-0 -mt-[0.18in]">
-                        <div className="w-[0.92in] h-[0.92in] rounded-[0.08in] overflow-hidden border-[2.5px] border-white shadow-md bg-gradient-to-br from-[#0f2a52] to-[#1a4a8f] flex items-center justify-center text-white font-black text-[20px]">
+                        <div className="w-[0.92in] h-[0.92in] rounded-[0.08in] overflow-hidden border-[2.5px] border-white shadow-md bg-gradient-to-br from-[#0f2a52] to-[#1a4a8f] flex items-center justify-center text-white font-bold text-[20px]">
                             {photoUrl ? <img src={photoUrl} alt="" className="w-full h-full object-cover" /> : initials}
                         </div>
                         {user.blood_group && (
-                            <div className="mt-[0.035in] text-center bg-[#c0281f] text-white text-[6px] font-black uppercase tracking-wider rounded-[0.03in] py-[0.02in]">
+                            <div className="mt-[0.035in] text-center bg-[#c0281f] text-white text-[6px] font-bold rounded-[0.03in] py-[0.02in]">
                                 {user.blood_group}
                             </div>
                         )}
                     </div>
 
                     <div className="min-w-0 flex-1 leading-tight pt-[0.02in]">
-                        <div className="text-[13.5px] font-black truncate tracking-tight">{user.name}</div>
-                        <div className="inline-block mt-[0.02in] px-[0.06in] py-[0.015in] rounded-[0.03in] bg-[#fdf1de] text-[#9a5b12] text-[7.5px] font-bold uppercase tracking-wide truncate max-w-full">
+                        <div className="text-[13.5px] font-bold truncate tracking-tight">{user.name}</div>
+                        <div className="inline-block mt-[0.02in] px-[0.06in] py-[0.015in] rounded-[0.03in] bg-[#fdf1de] text-[#9a5b12] text-[7.5px] font-bold truncate max-w-full">
                             {user.designation || 'Staff'}
                         </div>
 
                         <div className="mt-[0.05in] grid grid-cols-2 gap-x-[0.08in] gap-y-[0.025in] text-[6.5px]">
                             <div>
-                                <div className="text-[5px] font-black text-slate-400 uppercase tracking-wider">Company</div>
+                                <div className="text-[5px] font-bold text-slate-600">Company</div>
                                 <div className="font-bold truncate">{user.company || 'Englabs India Pvt Ltd'}</div>
                             </div>
                             <div>
-                                <div className="text-[5px] font-black text-slate-400 uppercase tracking-wider">Department</div>
+                                <div className="text-[5px] font-bold text-slate-600">Department</div>
                                 <div className="font-bold truncate">{user.department || 'General'}</div>
                             </div>
                             <div>
-                                <div className="text-[5px] font-black text-slate-400 uppercase tracking-wider">Joined</div>
+                                <div className="text-[5px] font-bold text-slate-600">Joined</div>
                                 <div className="font-bold">{fmtDate(user.joining_date)}</div>
                             </div>
                             <div>
-                                <div className="text-[5px] font-black text-slate-400 uppercase tracking-wider">Contact</div>
+                                <div className="text-[5px] font-bold text-slate-600">Contact</div>
                                 <div className="font-bold">{user.contact_number || '—'}</div>
                             </div>
                             <div>
-                                <div className="text-[5px] font-black text-slate-400 uppercase tracking-wider">PAN</div>
+                                <div className="text-[5px] font-bold text-slate-600">PAN</div>
                                 <div className="font-bold font-mono truncate">{user.pan_number || '—'}</div>
                             </div>
                             <div className="min-w-0">
-                                <div className="text-[5px] font-black text-slate-400 uppercase tracking-wider">Address</div>
+                                <div className="text-[5px] font-bold text-slate-600">Address</div>
                                 <div className="font-bold truncate" title={user.address || ''}>{user.address || '—'}</div>
                             </div>
                         </div>
@@ -744,12 +744,12 @@ function IdCardModal({ user, photoUrl, onClose }) {
 
                 {/* Signature strip */}
                 <div className="shrink-0 px-[0.14in] pb-[0.05in] flex items-end justify-between">
-                    <div className="text-[6px] text-slate-400 font-semibold leading-tight max-w-[1.6in]">
+                    <div className="text-[6px] text-slate-600 font-semibold leading-tight max-w-[1.6in]">
                         If found, please return to Englabs India Pvt Ltd, MDC Sector 4, Panchkula
                     </div>
                     <div className="text-right">
                         <div className="w-[0.85in] border-b border-slate-300 mb-[0.015in]" />
-                        <div className="text-[6px] text-slate-400 font-bold uppercase tracking-wider">Authorized Signatory</div>
+                        <div className="text-[6px] text-slate-600 font-bold">Authorized Signatory</div>
                     </div>
                 </div>
 
@@ -759,11 +759,11 @@ function IdCardModal({ user, photoUrl, onClose }) {
 
             <div className="flex gap-3 pt-6">
                 <button onClick={onClose}
-                    className="flex-1 py-3 rounded-xl border border-white/10 text-slate-400 hover:text-white text-sm font-bold transition-all">
+                    className="flex-1 py-3 rounded-xl border border-white/10 text-slate-600 hover:text-white text-sm font-bold transition-all">
                     Close
                 </button>
                 <button onClick={() => window.print()}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-black transition-all shadow-lg shadow-blue-600/20">
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-lg shadow-blue-600/20">
                     <Printer className="w-4 h-4" /> Print Card
                 </button>
             </div>
@@ -774,8 +774,8 @@ function IdCardModal({ user, photoUrl, onClose }) {
 function InfoRow({ label, value, mono = false }) {
     return (
         <div>
-            <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-0.5">{label}</div>
-            <div className={`text-sm font-bold text-white ${mono ? 'font-mono text-slate-300' : ''}`}>{value}</div>
+            <div className="text-xs font-bold text-slate-600 mb-0.5">{label}</div>
+            <div className={`text-sm font-bold text-white ${mono ? 'font-mono text-slate-500' : ''}`}>{value}</div>
         </div>
     );
 }
@@ -805,8 +805,8 @@ function FingerprintEnrollModal({ user, onDone, onClose }) {
         <Modal open onClose={onClose}>
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h2 className="text-lg font-black text-white flex items-center gap-2">
-                        <Fingerprint className="w-5 h-5 text-violet-400" /> Enroll Fingerprint
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                        <Fingerprint className="w-5 h-5 text-violet-600" /> Enroll Fingerprint
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">Biometric enrollment for <span className="text-white font-bold">{user.name}</span></p>
                 </div>
@@ -818,10 +818,10 @@ function FingerprintEnrollModal({ user, onDone, onClose }) {
                 <div className={`relative w-28 h-28 rounded-full flex items-center justify-center border-2 transition-all
                     ${done ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-violet-500/10 border-violet-500/30'}`}>
                     {done ? (
-                        <CheckCircle2 className="w-14 h-14 text-emerald-400" />
+                        <CheckCircle2 className="w-14 h-14 text-emerald-600" />
                     ) : (
                         <>
-                            <Fingerprint className={`w-14 h-14 text-violet-400 ${loading ? 'animate-pulse' : ''}`} />
+                            <Fingerprint className={`w-14 h-14 text-violet-600 ${loading ? 'animate-pulse' : ''}`} />
                             {loading && (
                                 <div className="absolute inset-0 rounded-full border-2 border-violet-400 border-t-transparent animate-spin" />
                             )}
@@ -832,12 +832,12 @@ function FingerprintEnrollModal({ user, onDone, onClose }) {
                 <div className="text-center space-y-1">
                     {done ? (
                         <>
-                            <p className="text-lg font-black text-emerald-400">Fingerprint Enrolled!</p>
+                            <p className="text-lg font-bold text-emerald-600">Fingerprint Enrolled!</p>
                             <p className="text-xs text-slate-500">Record updated successfully.</p>
                         </>
                     ) : (
                         <>
-                            <p className="text-base font-black text-white">Confirm Fingerprint Enrollment</p>
+                            <p className="text-base font-bold text-white">Confirm Fingerprint Enrollment</p>
                             <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
                                 This will mark <span className="text-white">{user.name}</span>'s fingerprint as registered.
                                 The actual fingerprint capture happens at the physical terminal device.
@@ -847,7 +847,7 @@ function FingerprintEnrollModal({ user, onDone, onClose }) {
                 </div>
 
                 {err && (
-                    <p className="text-xs font-bold text-red-400 bg-red-500/10 px-4 py-2 rounded-xl border border-red-500/20 flex items-center gap-2">
+                    <p className="text-xs font-bold text-red-600 bg-red-500/10 px-4 py-2 rounded-xl border border-red-500/20 flex items-center gap-2">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {err}
                     </p>
                 )}
@@ -855,11 +855,11 @@ function FingerprintEnrollModal({ user, onDone, onClose }) {
                 {!done && (
                     <div className="flex gap-3 w-full">
                         <button onClick={onClose}
-                            className="flex-1 py-3 rounded-xl border border-white/10 text-slate-400 hover:text-white text-sm font-bold transition-all">
+                            className="flex-1 py-3 rounded-xl border border-white/10 text-slate-600 hover:text-white text-sm font-bold transition-all">
                             Cancel
                         </button>
                         <button onClick={enroll} disabled={loading}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-black transition-all shadow-lg shadow-violet-600/20">
+                            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-bold transition-all shadow-lg shadow-violet-600/20">
                             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Fingerprint className="w-4 h-4" />}
                             {loading ? 'Enrolling…' : 'Confirm Enroll'}
                         </button>
@@ -878,17 +878,17 @@ function BiometricsCell({ user, onEnrollFace, onEnrollFP }) {
             <div className="flex items-center">
                 {user.face_registered ? (
                     <div className="flex items-center bg-emerald-500/10 border border-emerald-500/20 rounded-full overflow-hidden">
-                        <span className="px-2.5 py-1 text-[10px] font-black text-emerald-400 flex items-center gap-1">
+                        <span className="px-2.5 py-1 text-xs font-bold text-emerald-600 flex items-center gap-1">
                             <ScanFace className="w-3 h-3" /> Face ✓
                         </span>
                         <button onClick={() => onEnrollFace(user)} title="Update Face Biometric"
-                            className="px-2 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-[9px] font-black text-emerald-300 border-l border-emerald-500/20 transition-all">
+                            className="px-2 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-xs font-bold text-emerald-600 border-l border-emerald-500/20 transition-all">
                             Update
                         </button>
                     </div>
                 ) : (
                     <button onClick={() => onEnrollFace(user)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-black text-blue-400 hover:bg-blue-500/20 transition-all">
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-bold text-blue-600 hover:bg-blue-500/20 transition-all">
                         <ScanFace className="w-3 h-3" /> Enroll Face
                     </button>
                 )}
@@ -898,17 +898,17 @@ function BiometricsCell({ user, onEnrollFace, onEnrollFP }) {
             <div className="flex items-center">
                 {user.fingerprint_registered ? (
                     <div className="flex items-center bg-violet-500/10 border border-violet-500/20 rounded-full overflow-hidden">
-                        <span className="px-2.5 py-1 text-[10px] font-black text-violet-400 flex items-center gap-1">
+                        <span className="px-2.5 py-1 text-xs font-bold text-violet-600 flex items-center gap-1">
                             <Fingerprint className="w-3 h-3" /> Finger ✓
                         </span>
                         <button onClick={() => onEnrollFP(user)} title="Update Fingerprint"
-                            className="px-2 py-1 bg-violet-500/20 hover:bg-violet-500/30 text-[9px] font-black text-violet-300 border-l border-violet-500/20 transition-all">
+                            className="px-2 py-1 bg-violet-500/20 hover:bg-violet-500/30 text-xs font-bold text-violet-600 border-l border-violet-500/20 transition-all">
                             Update
                         </button>
                     </div>
                 ) : (
                     <button onClick={() => onEnrollFP(user)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-500/10 border border-slate-500/20 text-[10px] font-black text-slate-400 hover:bg-slate-500/20 transition-all">
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-500/10 border border-slate-500/20 text-xs font-bold text-slate-600 hover:bg-slate-500/20 transition-all">
                         <Fingerprint className="w-3 h-3" /> Enroll FP
                     </button>
                 )}
@@ -919,13 +919,13 @@ function BiometricsCell({ user, onEnrollFace, onEnrollFP }) {
 
 function StatusBadge({ status }) {
     const cfg = {
-        Active: { dot: 'bg-emerald-500', text: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-        Disabled: { dot: 'bg-amber-500', text: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-        Deleted: { dot: 'bg-red-500', text: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
+        Active: { dot: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+        Disabled: { dot: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-500/10 border-amber-500/20' },
+        Deleted: { dot: 'bg-red-500', text: 'text-red-600', bg: 'bg-red-500/10 border-red-500/20' },
     };
     const c = cfg[status] || cfg.Active;
     return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${c.bg} ${c.text}`}>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${c.bg} ${c.text}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} /> {status || 'Active'}
         </span>
     );
@@ -1147,17 +1147,17 @@ export default function Users() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600" />
                         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                             placeholder="Search name, email or ID..."
-                            className="w-full bg-white border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900
+                            className="w-full bg-white border border-slate-200 shadow-sm rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900
                                        focus:outline-none focus:border-blue-500/30 placeholder:text-slate-700" />
                     </div>
                     <select value={companyFilter} onChange={e => setCompanyFilter(e.target.value)}
-                        className="bg-white border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900
+                        className="bg-white border border-slate-200 shadow-sm rounded-xl px-3 py-2 text-sm text-slate-900
                                    focus:outline-none focus:border-blue-500/30">
                         <option value="">All Companies</option>
                         {allCompanies.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                     <select value={departmentFilter} onChange={e => setDepartmentFilter(e.target.value)}
-                        className="bg-white border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900
+                        className="bg-white border border-slate-200 shadow-sm rounded-xl px-3 py-2 text-sm text-slate-900
                                    focus:outline-none focus:border-blue-500/30">
                         <option value="">All Departments</option>
                         {departmentsInUse.map(d => <option key={d} value={d}>{d}</option>)}
@@ -1185,32 +1185,32 @@ export default function Users() {
                                 <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 hidden sm:table-cell" aria-sort={sort.key === 'employee_id' ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
                                     <button onClick={() => toggleSort('employee_id')} className="inline-flex items-center gap-1 hover:text-slate-900">
                                         Employee ID
-                                        {sort.key === 'employee_id' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-400" />}
+                                        {sort.key === 'employee_id' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-600" />}
                                     </button>
                                 </th>
                                 <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10" aria-sort={sort.key === 'name' ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
                                     <button onClick={() => toggleSort('name')} className="inline-flex items-center gap-1 hover:text-slate-900">
                                         Employee
-                                        {sort.key === 'name' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-400" />}
+                                        {sort.key === 'name' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-600" />}
                                     </button>
                                 </th>
                                 <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 hidden md:table-cell" aria-sort={sort.key === 'department' ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
                                     <button onClick={() => toggleSort('department')} className="inline-flex items-center gap-1 hover:text-slate-900">
                                         Department
-                                        {sort.key === 'department' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-400" />}
+                                        {sort.key === 'department' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-600" />}
                                     </button>
                                 </th>
                                 <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10" aria-sort={sort.key === 'status' ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
                                     <button onClick={() => toggleSort('status')} className="inline-flex items-center gap-1 hover:text-slate-900">
                                         Status
-                                        {sort.key === 'status' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-400" />}
+                                        {sort.key === 'status' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-600" />}
                                     </button>
                                 </th>
                                 <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 hidden lg:table-cell">Biometrics</th>
                                 <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 hidden xl:table-cell" aria-sort={sort.key === 'joining_date' ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
                                     <button onClick={() => toggleSort('joining_date')} className="inline-flex items-center gap-1 hover:text-slate-900">
                                         Joined
-                                        {sort.key === 'joining_date' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-400" />}
+                                        {sort.key === 'joining_date' ? (sort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-slate-600" />}
                                     </button>
                                 </th>
                                 <th className="px-4 md:px-6 py-3 text-xs font-semibold text-slate-600 sticky top-0 bg-slate-50 z-10 text-right">Actions</th>
@@ -1226,7 +1226,7 @@ export default function Users() {
                                     </tr>
                                 ))
                             ) : error ? (
-                                <tr><td colSpan={8} className="px-8 py-16 text-center text-red-400 font-bold">{error}</td></tr>
+                                <tr><td colSpan={8} className="px-8 py-16 text-center text-red-600 font-bold">{error}</td></tr>
                             ) : filtered.length === 0 ? (
                                 <tr><td colSpan={8} className="px-8 py-16 text-center text-slate-600 font-semibold">No employees found.</td></tr>
                             ) : filtered.map((user, idx) => {
@@ -1250,7 +1250,7 @@ export default function Users() {
                                         <td className="px-4 md:px-6 py-3">
                                             <button onClick={() => setProfileTarget(user)} title="View full profile"
                                                 className="flex items-center gap-3 text-left group/row">
-                                                <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/30 to-indigo-600/30 border border-blue-500/20 flex items-center justify-center text-[10px] md:text-xs font-black text-emerald-500 overflow-hidden">
+                                                <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-xl bg-gradient-to-br from-blue-600/30 to-indigo-600/30 border border-blue-500/20 flex items-center justify-center text-xs md:text-xs font-bold text-emerald-600 overflow-hidden">
                                                     {(profilePhotos[user.employee_id] || avatars[user.employee_id] || user.image_url)
                                                         ? <img src={profilePhotos[user.employee_id] || avatars[user.employee_id] || user.image_url} alt="" className="w-full h-full object-cover" />
                                                         : initials}
@@ -1300,22 +1300,22 @@ export default function Users() {
                                         <td className="px-4 md:px-6 py-3 text-right">
                                             <div className="flex items-center justify-end gap-0.5 md:gap-1">
                                                 <button onClick={() => setCardTarget(user)} title="Print ID Card"
-                                                    className="p-1.5 md:p-2 rounded-lg hover:bg-indigo-500/10 text-slate-500 hover:text-indigo-500 transition-all">
+                                                    className="p-1.5 md:p-2 rounded-lg hover:bg-indigo-500/10 text-slate-500 hover:text-indigo-600 transition-all">
                                                     <CreditCard className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                                 </button>
                                                 <button onClick={() => setEditTarget(user)} title="Edit"
-                                                    className="p-1.5 md:p-2 rounded-lg hover:bg-blue-500/10 text-slate-500 hover:text-emerald-500 transition-all">
+                                                    className="p-1.5 md:p-2 rounded-lg hover:bg-blue-500/10 text-slate-500 hover:text-emerald-600 transition-all">
                                                     <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                                 </button>
                                                 <button onClick={() => handleDisableToggle(user)} disabled={isActioning}
                                                     title={isDisabled ? 'Enable' : 'Disable'}
                                                     className={`p-1.5 md:p-2 rounded-lg transition-all ${isDisabled
-                                                        ? 'hover:bg-emerald-500/10 text-slate-500 hover:text-emerald-400'
-                                                        : 'hover:bg-amber-500/10  text-slate-500 hover:text-amber-400'}`}>
+                                                        ? 'hover:bg-emerald-500/10 text-slate-500 hover:text-emerald-600'
+                                                        : 'hover:bg-amber-500/10  text-slate-500 hover:text-amber-700'}`}>
                                                     {isDisabled ? <UserCheck className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <UserX className="w-3.5 h-3.5 md:w-4 md:h-4" />}
                                                 </button>
                                                 <button onClick={() => setDeleteTarget(user)} disabled={isActioning} title="Delete"
-                                                    className="p-1.5 md:p-2 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-500 transition-all">
+                                                    className="p-1.5 md:p-2 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-600 transition-all">
                                                     <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                                 </button>
                                             </div>

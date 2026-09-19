@@ -277,7 +277,7 @@ export default function Dashboard() {
                                 <Activity className="w-4 h-4 text-blue-400" />
                                 <h2 className="text-base font-semibold text-slate-900">Daily Attendance Trend</h2>
                             </div>
-                            <p className="text-sm text-slate-500">Present vs Late // Last 15 Days</p>
+                            <p className="text-sm text-slate-500">Present vs Late &middot; Last 15 Days</p>
                         </div>
                         <div className="flex items-center flex-wrap gap-4 text-xs font-medium text-slate-500">
                             <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" />Present</div>
@@ -316,7 +316,7 @@ export default function Dashboard() {
                             <BarChart2 className="w-4 h-4 text-indigo-400" />
                             <h2 className="text-base font-semibold text-slate-900">Monthly Pulse</h2>
                         </div>
-                        <p className="text-sm text-slate-500 mb-8">Active Attendance // This vs Last Month</p>
+                        <p className="text-sm text-slate-500 mb-8">Active Attendance &middot; This vs Last Month</p>
                     </div>
 
                     <div className="flex flex-col gap-6">
@@ -348,7 +348,7 @@ export default function Dashboard() {
                             <Building2 className="w-4 h-4 text-purple-400" />
                             <h2 className="text-base font-semibold text-slate-900">Department Attendance</h2>
                         </div>
-                        <p className="text-sm text-slate-500">Present vs Absent // Today's Breakdown</p>
+                        <p className="text-sm text-slate-500">Present vs Absent &middot; Today's Breakdown</p>
                     </div>
                     <div className="flex items-center flex-wrap gap-4 text-xs font-medium text-slate-500">
                         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500" />Present</div>
@@ -380,7 +380,7 @@ export default function Dashboard() {
                             <h2 className="text-base font-semibold text-slate-900">Monthly Attendance Rate</h2>
                         </div>
                         <p className="text-sm text-slate-500">
-                            Unique Attendees as % of Workforce // Last 6 Months
+                            Unique Attendees as % of Workforce &middot; Last 6 Months
                         </p>
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-500/10 border border-teal-500/20 rounded-xl">
@@ -424,7 +424,7 @@ export default function Dashboard() {
                             <Shield className="w-4 h-4 text-slate-400" />
                             <h2 className="text-base font-semibold text-slate-900">Access Distribution</h2>
                         </div>
-                        <p className="text-sm text-slate-500">Biometric Activity // Last 24 Hours</p>
+                        <p className="text-sm text-slate-500">Biometric Activity &middot; Last 24 Hours</p>
                     </div>
                     <div className="flex items-center flex-wrap gap-4 text-xs font-medium text-slate-500">
                         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500" />Face</div>

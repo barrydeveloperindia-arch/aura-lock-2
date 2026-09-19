@@ -70,7 +70,7 @@ export default function AttendancePhotoModal({ record, kind: initialKind, onClos
             aria-label={`${isIn ? 'Check-in' : 'Check-out'} photo of ${name}`}
         >
             <div
-                className="relative w-full max-w-2xl rounded-3xl bg-white border border-slate-200 overflow-hidden shadow-2xl"
+                className="relative w-full max-w-2xl rounded-xl bg-white border border-slate-200 overflow-hidden shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -81,7 +81,7 @@ export default function AttendancePhotoModal({ record, kind: initialKind, onClos
                         </div>
                         <div className="min-w-0">
                             <div className="text-sm font-bold text-slate-900 truncate">{name}</div>
-                            <div className="text-[10px] font-mono text-slate-500 truncate">{empId}</div>
+                            <div className="text-xs font-mono text-slate-500 truncate">{empId}</div>
                         </div>
                     </div>
 
@@ -91,7 +91,7 @@ export default function AttendancePhotoModal({ record, kind: initialKind, onClos
                                 type="button"
                                 onClick={() => setKind('in')}
                                 disabled={!hasIn}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all
                                     ${isIn ? 'bg-emerald-500/15 text-emerald-700' : 'text-slate-500 hover:text-slate-900'}
                                     disabled:opacity-30 disabled:cursor-not-allowed`}
                             >
@@ -101,7 +101,7 @@ export default function AttendancePhotoModal({ record, kind: initialKind, onClos
                                 type="button"
                                 onClick={() => setKind('out')}
                                 disabled={!hasOut}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all
                                     ${!isIn ? 'bg-amber-500/15 text-amber-700' : 'text-slate-500 hover:text-slate-900'}
                                     disabled:opacity-30 disabled:cursor-not-allowed`}
                             >
@@ -122,14 +122,14 @@ export default function AttendancePhotoModal({ record, kind: initialKind, onClos
                 {/* Image area */}
                 <div className="relative bg-black aspect-[4/3] flex items-center justify-center">
                     {state.loading && (
-                        <div className="flex flex-col items-center gap-3 text-slate-300">
+                        <div className="flex flex-col items-center gap-3 text-slate-500">
                             <Loader2 className="w-6 h-6 animate-spin" />
                             <span className="text-xs font-semibold">Loading photo…</span>
                         </div>
                     )}
                     {!state.loading && state.error && (
-                        <div className="flex flex-col items-center gap-3 text-slate-300 px-6 text-center">
-                            <AlertTriangle className="w-6 h-6 text-amber-400" />
+                        <div className="flex flex-col items-center gap-3 text-slate-500 px-6 text-center">
+                            <AlertTriangle className="w-6 h-6 text-amber-700" />
                             <span className="text-xs font-semibold">{state.error}</span>
                         </div>
                     )}
@@ -142,7 +142,7 @@ export default function AttendancePhotoModal({ record, kind: initialKind, onClos
                             />
                             {/* Name / IN-OUT / date-time are stamped into the image by the server.
                                 Show the DB-recorded time as a small badge at the top so it never covers the stamp. */}
-                            <div className={`absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase shadow
+                            <div className={`absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold shadow
                                 ${isIn ? 'bg-emerald-500/90 text-white' : 'bg-amber-500/90 text-white'}`}>
                                 {isIn ? <LogIn className="w-3 h-3" /> : <LogOut className="w-3 h-3" />}
                                 {isIn ? 'Check In' : 'Check Out'}
@@ -180,26 +180,26 @@ export default function AttendancePhotoModal({ record, kind: initialKind, onClos
 
                 {state.photo?.location && typeof state.photo.location.lat === 'number' && typeof state.photo.location.lng === 'number' && (
                     <div className="px-5 py-3 border-t border-slate-200 flex items-center justify-between gap-4 bg-slate-50">
-                        <div className="text-[11px] text-slate-700 min-w-0">
-                            <span className="font-black uppercase tracking-widest text-[10px] text-slate-500 mr-2">Location</span>
+                        <div className="text-xs text-slate-700 min-w-0">
+                            <span className="font-bold text-xs text-slate-500 mr-2">Location</span>
                             {state.photo.address && <span className="font-semibold text-slate-800 block">{state.photo.address}</span>}
                             <span className="font-mono">{state.photo.location.lat.toFixed(5)}, {state.photo.location.lng.toFixed(5)}</span>
                             {state.photo.location.accuracy_m != null && (
                                 <span className="text-slate-500"> · ±{state.photo.location.accuracy_m} m</span>
                             )}
-                            <span className="text-slate-400"> · {state.photo.location_source === 'terminal' ? 'terminal tablet GPS' : state.photo.location_source}</span>
+                            <span className="text-slate-600"> · {state.photo.location_source === 'terminal' ? 'terminal tablet GPS' : state.photo.location_source}</span>
                         </div>
                         <a
                             href={`https://www.google.com/maps?q=${state.photo.location.lat},${state.photo.location.lng}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="shrink-0 text-[11px] font-bold text-emerald-700 hover:underline"
+                            className="shrink-0 text-xs font-bold text-emerald-700 hover:underline"
                         >
                             Open in Google Maps ↗
                         </a>
                     </div>
                 )}
-                <div className="px-5 py-3 text-[10px] text-slate-500 border-t border-slate-200 flex items-center justify-between gap-4">
+                <div className="px-5 py-3 text-xs text-slate-500 border-t border-slate-200 flex items-center justify-between gap-4">
                     <span>Captured by the terminal at the moment of verification. Name, time and location are stamped by the server.</span>
                     {state.photo?.expires_at && (
                         <span className="font-mono shrink-0">link valid until {format(new Date(state.photo.expires_at), 'HH:mm')}</span>

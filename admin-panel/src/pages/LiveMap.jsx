@@ -245,17 +245,17 @@ export default function LiveMap() {
             <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-slate-100 shrink-0">
                 <div>
                     <div className="font-display text-[17px] font-bold text-slate-900">{isToday ? 'Today' : format(new Date(date + 'T00:00:00'), 'dd MMM yyyy')}{isToday ? `, ${format(new Date(), 'dd MMM')}` : ''}</div>
-                    <div className="text-[11px] text-slate-500">{located} located of {rows.length} present{updatedAt ? ` · updated ${agoText(now - updatedAt)}` : ''}</div>
+                    <div className="text-xs text-slate-500">{located} located of {rows.length} present{updatedAt ? ` · updated ${agoText(now - updatedAt)}` : ''}</div>
                 </div>
-                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 cursor-pointer">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 cursor-pointer">
                     <Calendar className="w-3.5 h-3.5" />
                     <input type="date" value={date} max={todayIST()} aria-label="Date" onChange={(e) => { if (e.target.value) { setDate(e.target.value); setSelected(null); } }} className="bg-transparent outline-none font-mono text-slate-700 w-[118px]" />
                 </label>
             </div>
             <div className="overflow-y-auto divide-y divide-slate-100 flex-1">
-                {loading && rows.length === 0 && <div className="p-8 text-center text-slate-400 text-xs font-semibold flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading…</div>}
-                {!loading && rows.length === 0 && !error && <div className="p-8 text-center text-slate-400 text-xs font-semibold">Nobody has checked in on this date.</div>}
-                {!loading && rows.length > 0 && visible.length === 0 && <div className="p-8 text-center text-slate-400 text-xs font-semibold">No one matches this filter.</div>}
+                {loading && rows.length === 0 && <div className="p-8 text-center text-slate-600 text-xs font-semibold flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading…</div>}
+                {!loading && rows.length === 0 && !error && <div className="p-8 text-center text-slate-600 text-xs font-semibold">Nobody has checked in on this date.</div>}
+                {!loading && rows.length > 0 && visible.length === 0 && <div className="p-8 text-center text-slate-600 text-xs font-semibold">No one matches this filter.</div>}
                 {error && <div className="p-4 text-xs font-semibold text-red-600">{error}</div>}
                 {visible.map(row => {
                     const p = lastPoint(row);
@@ -269,14 +269,14 @@ export default function LiveMap() {
                             </div>
                             <div className="min-w-0 flex-1">
                                 <div className="text-sm font-bold text-slate-900 truncate">{row.name}</div>
-                                <div className="text-[11px] text-slate-500 truncate">{rowSubtitle(row)}</div>
+                                <div className="text-xs text-slate-500 truncate">{rowSubtitle(row)}</div>
                             </div>
-                            <div className="text-right text-[11px] font-mono text-slate-600 shrink-0 leading-tight">
+                            <div className="text-right text-xs font-mono text-slate-600 shrink-0 leading-tight">
                                 <div><span className="text-emerald-600 font-bold">IN</span> {fmtClock(row.check_in)}</div>
-                                <div><span className="text-amber-600 font-bold">OUT</span> {fmtClock(row.check_out)}</div>
+                                <div><span className="text-amber-700 font-bold">OUT</span> {fmtClock(row.check_out)}</div>
                             </div>
                             <button type="button" aria-label={`Open ${row.name} attendance`} onClick={(e) => { e.stopPropagation(); navigate(`/admin/attendance/employee/${row.employee_id}`); }}
-                                className="w-8 h-8 rounded-lg border border-slate-200 text-slate-400 hover:text-brand-navy hover:bg-white flex items-center justify-center shrink-0">
+                                className="w-8 h-8 rounded-lg border border-slate-200 text-slate-600 hover:text-brand-navy hover:bg-white flex items-center justify-center shrink-0">
                                 <ExternalLink className="w-3.5 h-3.5" />
                             </button>
                         </div>
@@ -292,11 +292,11 @@ export default function LiveMap() {
 
             {/* top-left: search + filters */}
             <div className="absolute left-4 top-4 w-[400px] max-w-[calc(100%-2rem)] flex flex-col gap-2.5 z-[600]">
-                <label className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-[0_12px_32px_rgba(11,30,54,0.10)]">
-                    <Search className="w-5 h-5 text-slate-400 shrink-0" />
+                <label className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-[0_12px_32px_rgba(11,30,54,0.10)]">
+                    <Search className="w-5 h-5 text-slate-600 shrink-0" />
                     <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search staff, site or address" aria-label="Search staff"
-                        className="flex-1 min-w-0 bg-transparent outline-none text-sm text-slate-800 placeholder:text-slate-400" />
-                    <span className={`flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full ${isToday ? 'bg-brand-teal/15 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                        className="flex-1 min-w-0 bg-transparent outline-none text-sm text-slate-800 placeholder:text-slate-600" />
+                    <span className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${isToday ? 'bg-brand-teal/15 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                         <span className={`w-2 h-2 rounded-full ${isToday ? 'bg-brand-teal' : 'bg-slate-400'}`} />{isToday ? 'LIVE' : 'HISTORY'}
                     </span>
                 </label>
@@ -319,7 +319,7 @@ export default function LiveMap() {
             <div className={`md:hidden absolute left-0 right-0 bottom-0 bg-white rounded-t-3xl shadow-[0_-12px_40px_rgba(11,30,54,0.14)] flex flex-col z-[600] transition-[height] ${sheetOpen ? 'h-[62vh]' : 'h-[132px]'}`}>
                 <button type="button" onClick={() => setSheetOpen(o => !o)} aria-label={sheetOpen ? 'Collapse' : 'Expand'} className="flex flex-col items-center pt-2 pb-1 shrink-0">
                     <span className="w-10 h-1 rounded-full bg-slate-300" />
-                    {sheetOpen ? <ChevronDown className="w-4 h-4 text-slate-400 mt-1" /> : <ChevronUp className="w-4 h-4 text-slate-400 mt-1" />}
+                    {sheetOpen ? <ChevronDown className="w-4 h-4 text-slate-600 mt-1" /> : <ChevronUp className="w-4 h-4 text-slate-600 mt-1" />}
                 </button>
                 {selectedRow ? null : listPanel}
             </div>
@@ -338,7 +338,7 @@ export default function LiveMap() {
                     { label: 'Door', ok: doorOnline, text: doorOnline == null ? 'Door' : doorOnline ? (doorLocked === false ? 'Door unlocked' : 'Door locked') : 'Door offline' },
                     { label: 'GPS', ok: gpsAge == null ? null : gpsAge < 15 * 60000, text: gpsAge == null ? 'Tablet GPS' : `Tablet GPS ${agoText(gpsAge)}` },
                 ].map(c => (
-                    <span key={c.label} className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-full px-3 py-1.5 text-[11px] font-semibold text-slate-600 shadow-[0_6px_16px_rgba(11,30,54,0.08)]">
+                    <span key={c.label} className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-[0_6px_16px_rgba(11,30,54,0.08)]">
                         <span className={`w-2 h-2 rounded-full ${c.ok == null ? 'bg-slate-300' : c.ok ? 'bg-brand-teal' : 'bg-amber-400'}`} />{c.text}
                     </span>
                 ))}
@@ -349,7 +349,7 @@ export default function LiveMap() {
                 <div className="flex bg-white border border-slate-200 rounded-xl p-1 gap-1 shadow-[0_8px_20px_rgba(11,30,54,0.10)]">
                     {['map', 'satellite'].map(k => (
                         <button key={k} type="button" onClick={() => setTiles(k)} aria-pressed={tiles === k}
-                            className={`text-[11px] font-bold px-3 py-1.5 rounded-lg ${tiles === k ? 'bg-brand-navy text-white' : 'text-slate-600 hover:bg-slate-50'}`}>{k === 'map' ? 'Map' : 'Satellite'}</button>
+                            className={`text-xs font-bold px-3 py-1.5 rounded-lg ${tiles === k ? 'bg-brand-navy text-white' : 'text-slate-600 hover:bg-slate-50'}`}>{k === 'map' ? 'Map' : 'Satellite'}</button>
                     ))}
                 </div>
                 <div className="flex flex-col bg-white border border-slate-200 rounded-xl shadow-[0_8px_20px_rgba(11,30,54,0.10)] overflow-hidden">
@@ -360,13 +360,13 @@ export default function LiveMap() {
             </div>
 
             {/* legend (desktop) */}
-            <div className="hidden md:flex absolute left-[428px] bottom-4 items-center gap-4 bg-white/95 border border-slate-200 rounded-xl px-3.5 py-2 text-[11px] font-semibold text-slate-600 shadow-[0_6px_16px_rgba(11,30,54,0.08)] z-[600]">
+            <div className="hidden md:flex absolute left-[428px] bottom-4 items-center gap-4 bg-white/95 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-600 shadow-[0_6px_16px_rgba(11,30,54,0.08)] z-[600]">
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-[3px] border-brand-teal bg-white" />in now</span>
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-[3px] border-amber-400 bg-white" />checked out</span>
                 <span className="flex items-center gap-1.5"><span className="w-[18px] border-t-2 border-dashed border-brand-navy" />today's trail</span>
-                {groups.length === 0 && !loading && <span className="flex items-center gap-1.5 text-slate-400"><MapPin className="w-3 h-3" />no GPS fixes for this date</span>}
+                {groups.length === 0 && !loading && <span className="flex items-center gap-1.5 text-slate-600"><MapPin className="w-3 h-3" />no GPS fixes for this date</span>}
             </div>
-            {updatedAt && <span className="absolute right-4 bottom-[6px] md:bottom-1 z-[600] text-[10px] text-slate-500 bg-white/90 px-2 py-0.5 rounded">updated {agoText(now - updatedAt)}</span>}
+            {updatedAt && <span className="absolute right-4 bottom-[6px] md:bottom-1 z-[600] text-xs text-slate-500 bg-white/90 px-2 py-0.5 rounded">updated {agoText(now - updatedAt)}</span>}
         </div>
     );
 }

@@ -116,9 +116,9 @@ export default function FaceCalibration() {
         <div className="space-y-8 animate-in fade-in duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 tracking-tighter">Face Calibration</h1>
-                    <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">
-                        Measure mode // no attendance, no door // threshold now <span className="text-brand-navy">{fmt(threshold, 2)}</span>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2 tracking-tight">Face Calibration</h1>
+                    <p className="text-slate-500 text-xs md:text-sm font-medium">
+                        Measure mode &middot; no attendance, no door &middot; threshold now <span className="text-brand-navy">{fmt(threshold, 2)}</span>
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -133,13 +133,13 @@ export default function FaceCalibration() {
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 {/* ── Camera + controls ── */}
-                <div className="lg:col-span-2 rounded-2xl bg-white border border-slate-200 overflow-hidden">
+                <div className="lg:col-span-2 rounded-xl bg-white border border-slate-200 overflow-hidden">
                     <div className="relative bg-black aspect-[4/3]">
                         <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
                         <canvas ref={canvasRef} className="hidden" />
                         {!camReady && (
-                            <div className="absolute inset-0 flex items-center justify-center text-slate-300 text-xs font-semibold px-6 text-center">
-                                {camError ? <span className="text-amber-300"><AlertTriangle className="w-5 h-5 inline mr-1" />{camError}</span> : <span><Loader2 className="w-5 h-5 inline mr-1 animate-spin" />Opening camera…</span>}
+                            <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-xs font-semibold px-6 text-center">
+                                {camError ? <span className="text-amber-700"><AlertTriangle className="w-5 h-5 inline mr-1" />{camError}</span> : <span><Loader2 className="w-5 h-5 inline mr-1 animate-spin" />Opening camera…</span>}
                             </div>
                         )}
                         {r && (
@@ -147,7 +147,7 @@ export default function FaceCalibration() {
                                 {!r.face_found ? 'No face detected. Try again.' : (
                                     <>
                                         {correct ? <CheckCircle2 className="w-4 h-4 inline mr-1" /> : <XCircle className="w-4 h-4 inline mr-1" />}
-                                        Engine says <span className="font-black">{r.best?.name?.trim() || r.best?.employee_id}</span> · distance <span className="font-mono">{fmt(r.best?.distance)}</span>
+                                        Engine says <span className="font-bold">{r.best?.name?.trim() || r.best?.employee_id}</span> · distance <span className="font-mono">{fmt(r.best?.distance)}</span>
                                         {r.gap != null && <> · gap <span className="font-mono">{fmt(r.gap)}</span></>}
                                         {' '}· {r.would_pass ? 'would PASS' : 'would FAIL'} at {fmt(r.threshold, 2)}
                                     </>
@@ -157,7 +157,7 @@ export default function FaceCalibration() {
                     </div>
                     <div className="p-5 space-y-4">
                         <div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Who is in front of the camera?</div>
+                            <div className="text-xs font-bold text-slate-600 mb-1.5">Who is in front of the camera?</div>
                             <select value={claimed} onChange={e => setClaimed(e.target.value)} aria-label="Person"
                                 className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 outline-none focus:border-brand-navy">
                                 <option value={VISITOR}>Visitor / not enrolled (impostor test)</option>
@@ -165,11 +165,11 @@ export default function FaceCalibration() {
                             </select>
                         </div>
                         <div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Condition</div>
+                            <div className="text-xs font-bold text-slate-600 mb-1.5">Condition</div>
                             <div className="flex flex-wrap gap-2">
                                 {CONDITIONS.map(c => (
                                     <button key={c.key} type="button" onClick={() => setCondition(c.key)} aria-pressed={condition === c.key}
-                                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${condition === c.key ? 'bg-brand-navy text-white border-brand-navy' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${condition === c.key ? 'bg-brand-navy text-white border-brand-navy' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
                                         {c.label}
                                     </button>
                                 ))}
@@ -177,7 +177,7 @@ export default function FaceCalibration() {
                         </div>
                         <div className="flex gap-3">
                             <button type="button" onClick={measure} disabled={!camReady || measuring}
-                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-brand-navy text-white text-sm font-black hover:bg-brand-navy-light transition-all disabled:opacity-50">
+                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-brand-navy text-white text-sm font-bold hover:bg-brand-navy-light transition-all disabled:opacity-50">
                                 {measuring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ruler className="w-4 h-4" />} Measure
                             </button>
                             <button type="button" onClick={undo} disabled={!data.rows?.length} aria-label="Undo last measurement"
@@ -186,7 +186,7 @@ export default function FaceCalibration() {
                             </button>
                         </div>
                         {error && <div className="flex items-center gap-2 text-xs font-semibold text-red-600"><AlertTriangle className="w-4 h-4" />{error}</div>}
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-xs text-slate-500">
                             Plan for a session: each person 5 to 6 scans (normal, glasses, turned head, far, low light), plus 1 or 2 visitors who are not enrolled. Aim for 6 people.
                         </p>
                     </div>
@@ -198,32 +198,32 @@ export default function FaceCalibration() {
                         {[
                             { label: 'Scans', value: report?.total ?? 0, icon: Camera, tone: 'text-brand-navy bg-brand-navy/[0.07]' },
                             { label: 'Own staff (genuine)', value: report?.genuine?.n ?? 0, icon: Users, tone: 'text-emerald-600 bg-emerald-500/10' },
-                            { label: 'Visitors / wrong', value: report?.impostor?.n ?? 0, icon: ScanFace, tone: 'text-amber-600 bg-amber-500/10' },
+                            { label: 'Visitors / wrong', value: report?.impostor?.n ?? 0, icon: ScanFace, tone: 'text-amber-700 bg-amber-500/10' },
                             { label: 'Suggested', value: report?.suggestion?.threshold != null ? fmt(report.suggestion.threshold, 2) : '—', icon: Ruler, tone: 'text-brand-navy bg-brand-navy/[0.07]' },
                         ].map(s => (
-                            <div key={s.label} className="p-4 rounded-2xl bg-white border border-slate-200 flex items-center gap-3">
+                            <div key={s.label} className="p-4 rounded-xl bg-white border border-slate-200 flex items-center gap-3">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${s.tone}`}><s.icon className="w-5 h-5" /></div>
                                 <div>
-                                    <div className="text-2xl font-black text-slate-900 leading-none">{s.value}</div>
-                                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">{s.label}</div>
+                                    <div className="text-2xl font-bold text-slate-900 leading-none">{s.value}</div>
+                                    <div className="text-xs font-bold text-slate-600 mt-1">{s.label}</div>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="rounded-2xl bg-white border border-slate-200 p-5 space-y-3">
+                    <div className="rounded-xl bg-white border border-slate-200 p-5 space-y-3">
                         <div className="flex items-center justify-between">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Where scans land (distance, lower = more alike)</div>
-                            {threshold != null && <div className="text-[11px] font-mono text-slate-500">current threshold {fmt(threshold, 2)}</div>}
+                            <div className="text-xs font-bold text-slate-500">Where scans land (distance, lower = more alike)</div>
+                            {threshold != null && <div className="text-xs font-mono text-slate-500">current threshold {fmt(threshold, 2)}</div>}
                         </div>
                         <Scale genuine={report?.genuine} impostor={report?.impostor} current={threshold} suggested={report?.suggestion?.threshold} />
-                        <div className="grid grid-cols-2 gap-4 text-[11px] font-mono text-slate-600">
+                        <div className="grid grid-cols-2 gap-4 text-xs font-mono text-slate-600">
                             <div><span className="text-emerald-600 font-bold">Own staff</span> min {fmt(report?.genuine?.min)} · mean {fmt(report?.genuine?.mean)} · max {fmt(report?.genuine?.max)}</div>
-                            <div><span className="text-amber-600 font-bold">Visitors / wrong</span> min {fmt(report?.impostor?.min)} · mean {fmt(report?.impostor?.mean)}</div>
+                            <div><span className="text-amber-700 font-bold">Visitors / wrong</span> min {fmt(report?.impostor?.min)} · mean {fmt(report?.impostor?.mean)}</div>
                         </div>
                         {report?.suggestion && (
                             <div className={`p-3 rounded-xl text-xs ${report.suggestion.threshold == null ? 'bg-slate-50 text-slate-600' : report.suggestion.clean_gap ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
-                                <span className="font-black">Suggested threshold: {report.suggestion.threshold != null ? fmt(report.suggestion.threshold, 2) : '—'}.</span> {report.suggestion.reason}
+                                <span className="font-bold">Suggested threshold: {report.suggestion.threshold != null ? fmt(report.suggestion.threshold, 2) : '—'}.</span> {report.suggestion.reason}
                                 {threshold != null && report.total > 0 && (
                                     <span className="block mt-1 text-slate-600">At today's {fmt(threshold, 2)}: {report.current_false_accepts} visitor scan(s) would pass, {report.current_false_rejects} own-staff scan(s) would fail.</span>
                                 )}
@@ -231,17 +231,17 @@ export default function FaceCalibration() {
                         )}
                     </div>
 
-                    <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden">
-                        <div className="px-5 py-3 border-b border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-500">Per person</div>
+                    <div className="rounded-xl bg-white border border-slate-200 overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-200 text-xs font-bold text-slate-500">Per person</div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-xs">
-                                <thead className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-400">
+                                <thead className="bg-slate-50 text-xs text-slate-600">
                                     <tr><th className="text-left px-4 py-2">Person</th><th className="text-right px-3 py-2">Scans</th><th className="text-right px-3 py-2">Recognised</th><th className="text-right px-3 py-2">Min</th><th className="text-right px-3 py-2">Max</th><th className="text-right px-3 py-2">Pass now</th><th className="text-right px-3 py-2">Pass suggested</th></tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {(report?.employees || []).map(e => (
                                         <tr key={e.employee_id} className={e.wrong > 0 ? 'bg-red-50/60' : ''}>
-                                            <td className="px-4 py-2 font-semibold text-slate-800">{e.name?.trim() || e.employee_id} <span className="font-mono text-slate-400">{e.employee_id !== 'VISITOR' ? e.employee_id : ''}</span></td>
+                                            <td className="px-4 py-2 font-semibold text-slate-800">{e.name?.trim() || e.employee_id} <span className="font-mono text-slate-600">{e.employee_id !== 'VISITOR' ? e.employee_id : ''}</span></td>
                                             <td className="px-3 py-2 text-right font-mono">{e.scans}</td>
                                             <td className="px-3 py-2 text-right font-mono">{e.employee_id === 'VISITOR' ? '—' : `${e.correct}/${e.scans}`}{e.wrong > 0 && <span className="text-red-600"> ({e.wrong} wrong)</span>}</td>
                                             <td className="px-3 py-2 text-right font-mono">{fmt(e.min)}</td>
@@ -250,24 +250,24 @@ export default function FaceCalibration() {
                                             <td className="px-3 py-2 text-right font-mono">{e.pass_suggested == null ? '—' : `${e.pass_suggested}/${e.scans}`}</td>
                                         </tr>
                                     ))}
-                                    {!(report?.employees || []).length && <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-400 font-semibold">No measurements in this session yet.</td></tr>}
+                                    {!(report?.employees || []).length && <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-600 font-semibold">No measurements in this session yet.</td></tr>}
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden">
-                        <div className="px-5 py-3 border-b border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-500">Last measurements</div>
+                    <div className="rounded-xl bg-white border border-slate-200 overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-200 text-xs font-bold text-slate-500">Last measurements</div>
                         <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
                             {[...(data.rows || [])].reverse().slice(0, 30).map((row, i) => (
                                 <div key={`${row.at}-${i}`} className="flex items-center justify-between gap-3 px-4 py-2 text-xs">
                                     <div className="min-w-0">
                                         <span className="font-semibold text-slate-800">{row.claimed_name || row.claimed_id || 'Visitor'}</span>
-                                        <span className="text-slate-400"> · {row.condition}</span>
-                                        <span className="text-slate-400 font-mono"> · {row.at ? format(new Date(row.at), 'HH:mm:ss') : ''}</span>
+                                        <span className="text-slate-600"> · {row.condition}</span>
+                                        <span className="text-slate-600 font-mono"> · {row.at ? format(new Date(row.at), 'HH:mm:ss') : ''}</span>
                                     </div>
                                     <div className="font-mono text-right shrink-0">
-                                        {row.face_found === false ? <span className="text-slate-400">no face</span> : (
+                                        {row.face_found === false ? <span className="text-slate-600">no face</span> : (
                                             <>
                                                 <span className={row.claimed_id && row.matched_id !== row.claimed_id ? 'text-red-600 font-bold' : 'text-slate-700'}>{row.matched_name?.trim() || row.matched_id}</span>
                                                 <span className="text-slate-500"> {fmt(row.distance)}</span>
@@ -276,7 +276,7 @@ export default function FaceCalibration() {
                                     </div>
                                 </div>
                             ))}
-                            {!(data.rows || []).length && <div className="px-4 py-6 text-center text-slate-400 text-xs font-semibold">Nothing measured yet.</div>}
+                            {!(data.rows || []).length && <div className="px-4 py-6 text-center text-slate-600 text-xs font-semibold">Nothing measured yet.</div>}
                         </div>
                     </div>
                 </div>
@@ -298,7 +298,7 @@ function Scale({ genuine, impostor, current, suggested }) {
             {band(impostor, 'bg-amber-400/70', 'visitors')}
             {mark(current, 'bg-slate-700', 'current')}
             {mark(suggested, 'bg-brand-navy', 'suggested')}
-            <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[9px] font-mono text-slate-400">
+            <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs font-mono text-slate-600">
                 {[0.2, 0.4, 0.6, 0.8, 1.0].map(v => <span key={v}>{v.toFixed(1)}</span>)}
             </div>
         </div>

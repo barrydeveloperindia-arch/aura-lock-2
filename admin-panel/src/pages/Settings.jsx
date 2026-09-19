@@ -30,7 +30,7 @@ export default function Settings() {
     const engine = info?.engine || {};
     const cards = [
         {
-            icon: ScanFace, title: 'Face engine', tone: engine.status === 'ready' ? 'text-emerald-600 bg-emerald-500/10' : 'text-amber-600 bg-amber-500/10',
+            icon: ScanFace, title: 'Face engine', tone: engine.status === 'ready' ? 'text-emerald-600 bg-emerald-500/10' : 'text-amber-700 bg-amber-500/10',
             rows: [
                 ['Status', engine.status === 'ready' ? `Ready · ${engine.faces} faces enrolled` : (engine.status || 'unreachable')],
                 ['Match threshold', engine.threshold != null ? `${engine.threshold} (lower = stricter)` : '—'],
@@ -85,8 +85,8 @@ export default function Settings() {
         <div className="space-y-8 animate-in fade-in duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 tracking-tighter">Settings</h1>
-                    <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Live configuration // what the system is actually running with</p>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2 tracking-tight">Settings</h1>
+                    <p className="text-slate-500 text-xs md:text-sm font-medium">Live configuration &middot; what the system is actually running with</p>
                 </div>
                 <button type="button" onClick={load} disabled={loading} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Reload
@@ -97,12 +97,12 @@ export default function Settings() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {cards.map(c => (
-                    <div key={c.title} className="p-5 rounded-2xl bg-white border border-slate-200">
+                    <div key={c.title} className="p-5 rounded-xl bg-white border border-slate-200">
                         <div className="flex items-center gap-3 mb-3">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${c.tone}`}><c.icon className="w-5 h-5" /></div>
                             <h2 className="font-display text-base font-bold text-slate-900">{c.title}</h2>
                         </div>
-                        {loading && !info ? <div className="text-xs text-slate-400 py-4">Loading…</div> : c.rows.map(([l, v]) => <Row key={l} label={l} value={v} />)}
+                        {loading && !info ? <div className="text-xs text-slate-600 py-4">Loading…</div> : c.rows.map(([l, v]) => <Row key={l} label={l} value={v} />)}
                     </div>
                 ))}
             </div>
